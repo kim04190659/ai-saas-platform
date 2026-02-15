@@ -1,0 +1,59 @@
+{
+  "common": {
+    "appName": "AI SaaS Platform",
+    "welcome": "Welcome",
+    "logout": "Logout"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "users": "Users",
+    "profile": "Profile",
+    "settings": "Settings"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "subtitle": "Welcome back! Here's your overview.",
+    "search": "Search users, messages, files...",
+    "stats": {
+      "totalUsers": "Total Users",
+      "revenue": "Revenue",
+      "messages": "Messages",
+      "activeNow": "Active Now"
+    },
+    "sections": {
+      "aiChat": "AI Chat Assistant",
+      "aiChatDesc": "Intelligent responses powered by Claude AI",
+      "userProfiles": "User Profiles",
+      "userProfilesDesc": "Manage user information and preferences",
+      "analytics": "Analytics",
+      "analyticsDesc": "Track performance metrics and insights"
+    },
+    "status": {
+      "active": "Active",
+      "recentlyAdded": "Recently Added",
+      "comingSoon": "Coming Soon"
+    }
+  },
+  "notifications": {
+    "title": "Notification Center Added!",
+    "subtitle": "Stay updated with real-time notifications for system updates, messages, and alerts. Click the bell icon in the header to view your notifications.",
+    "viewButton": "View Notifications"
+  },
+  "aiChat": {
+    "title": "AI Assistant",
+    "placeholder": "Type your message...",
+    "send": "Send",
+    "newChat": "New Chat",
+    "thinking": "Thinking..."
+  },
+  "auth": {
+    "login": "Login",
+    "loginWith": "Login with {provider}",
+    "email": "Email",
+    "password": "Password",
+    "forgotPassword": "Forgot password?",
+    "noAccount": "Don't have an account?",
+    "signUp": "Sign up",
+    "or": "or"
+  }
+}

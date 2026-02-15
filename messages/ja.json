@@ -1,0 +1,59 @@
+{
+  "common": {
+    "appName": "AI SaaS Platform",
+    "welcome": "ようこそ",
+    "logout": "ログアウト"
+  },
+  "nav": {
+    "dashboard": "ダッシュボード",
+    "users": "ユーザー",
+    "profile": "プロフィール",
+    "settings": "設定"
+  },
+  "dashboard": {
+    "title": "ダッシュボード",
+    "subtitle": "お帰りなさい！概要をご覧ください。",
+    "search": "ユーザー、メッセージ、ファイルを検索...",
+    "stats": {
+      "totalUsers": "総ユーザー数",
+      "revenue": "収益",
+      "messages": "メッセージ",
+      "activeNow": "アクティブユーザー"
+    },
+    "sections": {
+      "aiChat": "AIチャットアシスタント",
+      "aiChatDesc": "Claude AIによるインテリジェントな応答",
+      "userProfiles": "ユーザープロファイル",
+      "userProfilesDesc": "ユーザー情報と設定を管理",
+      "analytics": "アナリティクス",
+      "analyticsDesc": "パフォーマンス指標とインサイトを追跡"
+    },
+    "status": {
+      "active": "アクティブ",
+      "recentlyAdded": "最近追加",
+      "comingSoon": "近日公開"
+    }
+  },
+  "notifications": {
+    "title": "通知センター追加！",
+    "subtitle": "システム更新、メッセージ、アラートのリアルタイム通知を受け取ります。ヘッダーのベルアイコンをクリックして通知を表示してください。",
+    "viewButton": "通知を表示"
+  },
+  "aiChat": {
+    "title": "AIアシスタント",
+    "placeholder": "メッセージを入力...",
+    "send": "送信",
+    "newChat": "新しいチャット",
+    "thinking": "考え中..."
+  },
+  "auth": {
+    "login": "ログイン",
+    "loginWith": "{provider}でログイン",
+    "email": "メールアドレス",
+    "password": "パスワード",
+    "forgotPassword": "パスワードをお忘れですか？",
+    "noAccount": "アカウントをお持ちでないですか？",
+    "signUp": "新規登録",
+    "or": "または"
+  }
+}
