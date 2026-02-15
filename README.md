@@ -1,36 +1,206 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AI SaaSプラットフォーム
 
-## Getting Started
+生成AI(Claude API)を統合したWebサービス基盤
 
-First, run the development server:
+## 📋 プロジェクト概要
+
+AI統合SaaSプラットフォームは、Anthropic Claude APIを活用したリアルタイムチャット機能を備えたWebアプリケーションです。
+
+### 主な機能
+
+- ✅ 認証・ログイン機能（Supabase Auth連携準備完了）
+- ✅ 左サイドメニュー（ダッシュボード、設定、ログアウト）
+- ✅ メインコンテンツエリア（レスポンシブデザイン）
+- ✅ **Claude Haiku API連携** - リアルタイムAIチャット機能
+- ✅ チャットパネルの表示・非表示切り替え
+- ✅ チャット履歴管理
+
+## 🛠️ 技術スタック
+
+### Frontend
+
+- **Next.js 16.1.6** (App Router)
+- **TypeScript**
+- **Tailwind CSS v4**
+- **Lucide React** (アイコン)
+
+### Backend/Infrastructure
+
+- **Supabase** (PostgreSQL, Auth, Storage)
+- **Anthropic Claude Haiku API** (AIチャット)
+- **Vercel** (デプロイ)
+
+### Dev Tools
+
+- **GitHub**
+- **ESLint + Prettier**
+
+## 🚀 開発ルール
+
+### AIモデルの使用
+
+**必須**: すべてのAI機能には **Claude 3.5 Haiku** (`claude-3-5-haiku-20241022`) を使用すること
+
+理由:
+
+- 高速なレスポンス時間
+- 低コスト
+- チャット機能に最適なパフォーマンス
+
+### コーディング規約
+
+1. **言語**: デフォルトは日本語
+   - UIテキスト: 日本語
+   - コメント: 日本語
+   - ドキュメント: 日本語
+
+2. **コンポーネント設計**
+   - クライアントコンポーネントには `'use client'` を明記
+   - 再利用可能なコンポーネントは `src/components/` に配置
+
+3. **エラーハンドリング**
+   - APIエラーは必ずユーザーに表示
+   - コンソールにも詳細ログを出力
+
+## 📂 主要ファイル構成
+
+```
+src/
+├── app/
+│   ├── (dashboard)/          # ダッシュボード関連ページ
+│   │   ├── page.tsx          # メインダッシュボード
+│   │   ├── settings/         # 設定ページ
+│   │   └── users/            # ユーザー管理ページ
+│   ├── (auth)/               # 認証関連ページ
+│   │   └── login/            # ログインページ
+│   ├── api/
+│   │   └── chat/
+│   │       └── route.ts      # Claude Haiku APIエンドポイント
+│   ├── layout.tsx            # ルートレイアウト
+│   ├── page.tsx              # ルートページ
+│   └── globals.css           # グローバルスタイル
+├── components/
+│   └── layout/
+│       ├── Sidebar.tsx       # サイドバーコンポーネント
+│       └── ChatPanel.tsx     # AIチャットパネル
+├── contexts/
+│   └── LanguageContext.tsx   # 言語管理コンテキスト
+└── lib/
+    └── supabase.ts           # Supabaseクライアント設定
+```
+
+## 🔧 セットアップ
+
+### 1. 依存関係のインストール
+
+```bash
+npm install
+```
+
+### 2. 環境変数の設定
+
+`.env.local` ファイルを作成し、以下の環境変数を設定:
+
+```env
+# Supabase
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+
+# Anthropic Claude API
+ANTHROPIC_API_KEY=your_anthropic_api_key
+```
+
+### 3. 開発サーバーの起動
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+ブラウザで [http://localhost:3000](http://localhost:3000) を開きます。
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 4. ビルド
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run build
+```
 
-## Learn More
+### 5. 本番環境の起動
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm start
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 📝 変更履歴
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### 2026-02-15: Claude Haikuへの移行と404エラー修正
 
-## Deploy on Vercel
+#### 修正内容
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+1. **404エラーの解決**
+   - ルートページ(`src/app/page.tsx`)を作成
+   - next-intlミドルウェアを削除してシンプルな構成に変更
+   - 日本語をデフォルト言語に設定
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+2. **AIモデルの変更**
+   - Claude Sonnet → **Claude Haiku** (`claude-3-5-haiku-20241022`)
+   - 理由: 高速レスポンス、低コスト、チャット機能に最適
+
+3. **エラーハンドリングの改善**
+   - チャットパネルにエラーメッセージ表示機能を追加
+   - APIエラー時にユーザーフレンドリーなメッセージを表示
+
+4. **UI日本語化**
+   - ChatPanelのすべてのテキストを日本語化
+   - プレースホルダー、ボタンテキスト、ステータスメッセージ
+
+#### 技術的な詳細
+
+**修正前の問題:**
+
+- Vercelデプロイ時に404エラー
+- Claude Sonnetモデル名が古く、404エラー
+- エラーが発生してもユーザーに表示されない
+
+**修正後:**
+
+- ルートページが正常に表示
+- Claude Haikuで高速なAI応答
+- エラーメッセージがチャットパネルに表示される
+
+#### 影響範囲
+
+- `src/app/page.tsx` - 新規作成
+- `src/app/layout.tsx` - 日本語化
+- `src/app/api/chat/route.ts` - モデル変更
+- `src/components/layout/ChatPanel.tsx` - エラーハンドリング追加、日本語化
+- `src/middleware.ts` - 削除
+- `next.config.ts` - next-intlプラグイン削除
+
+## 🌐 デプロイ
+
+### Vercel
+
+1. GitHubリポジトリをVercelに接続
+2. 環境変数を設定:
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - `ANTHROPIC_API_KEY`
+3. デプロイ
+
+**本番URL**: https://ai-saas-platform-gules.vercel.app
+
+## 📚 参考リンク
+
+- [Next.js Documentation](https://nextjs.org/docs)
+- [Supabase Documentation](https://supabase.com/docs)
+- [Anthropic Claude API](https://docs.anthropic.com/)
+- [Tailwind CSS v4](https://tailwindcss.com/docs)
+
+## 📄 ライセンス
+
+Private
+
+## 👥 開発者
+
+- GitHub: [@kim04190659](https://github.com/kim04190659)
+- Repository: [ai-saas-platform](https://github.com/kim04190659/ai-saas-platform)
