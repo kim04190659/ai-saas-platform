@@ -1,32 +1,61 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { Send, X } from 'lucide-react';
+import { useState } from "react";
+import { Send, X } from "lucide-react";
 
-export default function ChatPanel({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
-  const [messages, setMessages] = useState<{ role: string; content: string }[]>([]);
-  const [input, setInput] = useState('');
+export default function ChatPanel({
+  isOpen,
+  onClose,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+}) {
+  const [messages, setMessages] = useState<{ role: string; content: string }[]>(
+    [],
+  );
+  const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
 
   const sendMessage = async () => {
     if (!input.trim()) return;
 
-    const userMessage = { role: 'user', content: input };
+    const userMessage = { role: "user", content: input };
     setMessages([...messages, userMessage]);
-    setInput('');
+    setInput("");
     setLoading(true);
 
     try {
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: input }),
       });
 
       const data = await response.json();
-      setMessages((prev) => [...prev, { role: 'assistant', content: data.reply }]);
+
+      if (!response.ok) {
+        throw new Error(data.error || "APIエラーが発生しました");
+      }
+
+      if (data.reply) {
+        setMessages((prev) => [
+          ...prev,
+          { role: "assistant", content: data.reply },
+        ]);
+      } else {
+        setMessages((prev) => [
+          ...prev,
+          { role: "assistant", content: "エラー: 応答がありませんでした" },
+        ]);
+      }
     } catch (error) {
-      console.error('Chat error:', error);
+      console.error("Chat error:", error);
+      const errorMessage =
+        error instanceof Error ? error.message : "エラーが発生しました";
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: `❌ ${errorMessage}` },
+      ]);
     } finally {
       setLoading(false);
     }
@@ -37,7 +66,7 @@ export default function ChatPanel({ isOpen, onClose }: { isOpen: boolean; onClos
   return (
     <div className="w-96 h-screen bg-white border-l border-gray-200 flex flex-col">
       <div className="p-4 border-b border-gray-200 flex justify-between items-center">
-        <h2 className="font-semibold">AI Assistant</h2>
+        <h2 className="font-semibold">AIアシスタント</h2>
         <button onClick={onClose} className="hover:bg-gray-100 p-2 rounded">
           <X size={20} />
         </button>
@@ -48,13 +77,13 @@ export default function ChatPanel({ isOpen, onClose }: { isOpen: boolean; onClos
           <div
             key={idx}
             className={`p-3 rounded-lg ${
-              msg.role === 'user' ? 'bg-blue-100 ml-auto' : 'bg-gray-100'
+              msg.role === "user" ? "bg-blue-100 ml-auto" : "bg-gray-100"
             } max-w-[80%]`}
           >
             {msg.content}
           </div>
         ))}
-        {loading && <div className="text-gray-500">Thinking...</div>}
+        {loading && <div className="text-gray-500">考え中...</div>}
       </div>
 
       <div className="p-4 border-t border-gray-200">
@@ -63,8 +92,8 @@ export default function ChatPanel({ isOpen, onClose }: { isOpen: boolean; onClos
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
-            placeholder="Ask AI..."
+            onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+            placeholder="AIに質問する..."
             className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           <button
