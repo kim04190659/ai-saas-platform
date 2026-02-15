@@ -1,11 +1,13 @@
 'use client';
 
-import { Home, Settings, LogOut } from 'lucide-react';
+import { Home, Settings, LogOut, User, Users } from 'lucide-react';
 import Link from 'next/link';
 
 export default function Sidebar() {
   const menuItems = [
     { icon: Home, label: 'Dashboard', href: '/' },
+    { icon: Users, label: 'Users', href: '/users' },
+    { icon: User, label: 'Profile', href: '/profile' },
     { icon: Settings, label: 'Settings', href: '/settings' },
   ];
 
