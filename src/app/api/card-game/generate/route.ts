@@ -116,7 +116,7 @@ ${planRevision}
 以下のJSON形式で回答してください（JSON以外のテキストは一切含めないこと）:
 
 {
-  "improvedPlan": "改善されたビジネスプラン全文（800文字以上）。具体的な施策、数値目標、タイムライン、リスク対策を含めること",
+  "improvedPlan": "改善されたビジネスプラン全文（400文字程度）。具体的な施策、数値目標、主要リスク対策を含めること",
   "executiveSummary": "エグゼクティブサマリー（200文字以内）。投資家に一言で魅力を伝える文章",
   "targetCustomer": "ターゲット顧客の詳細な定義（150文字以内）",
   "valueProposition": "バリュープロポジション（価値提案）を1文で（100文字以内）",
@@ -146,7 +146,7 @@ ${planRevision}
     // Claude APIを呼び出す（haiku = コスト効率が良いモデル）
     const message = await anthropic.messages.create({
       model: "claude-haiku-4-5-20251001",
-      max_tokens: 3000,
+      max_tokens: 4096,
       messages: [{ role: "user", content: prompt }],
     });
 
@@ -154,12 +154,30 @@ ${planRevision}
     const rawText = message.content[0].type === "text" ? message.content[0].text : "";
 
     // JSONをパース（コードブロックがある場合は除去）
-    const jsonStr = rawText
+    let jsonStr = rawText
       .replace(/```json\n?/g, "")
       .replace(/```\n?/g, "")
       .trim();
 
-    const result = JSON.parse(jsonStr);
+    // JSON部分だけを抽出（{ から最後の } まで）
+    const jsonStart = jsonStr.indexOf("{");
+    const jsonEnd = jsonStr.lastIndexOf("}");
+    if (jsonStart !== -1 && jsonEnd !== -1) {
+      jsonStr = jsonStr.slice(jsonStart, jsonEnd + 1);
+    }
+
+    let result;
+    try {
+      result = JSON.parse(jsonStr);
+    } catch (parseError) {
+      // JSONパース失敗時は生テキストをそのまま返す（フォールバック）
+      console.error("JSONパースエラー。生テキスト長:", rawText.length, parseError);
+      console.error("JSONプレビュー:", jsonStr.slice(0, 200));
+      return NextResponse.json(
+        { error: "AI応答のパースに失敗しました。再試行してください。", rawLength: rawText.length },
+        { status: 500 }
+      );
+    }
 
     // 計算した指標も一緒に返す
     return NextResponse.json({
