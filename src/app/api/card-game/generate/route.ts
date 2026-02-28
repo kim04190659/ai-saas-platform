@@ -6,7 +6,8 @@
  * Body: {
  *   teamName, members,
  *   heartCard, diamondCard, clubCard, spadeCard,  // 選択カードデータ
- *   solutionName, userBenefit, advantage, planRevision  // ユーザー入力
+ *   solutionName, userBenefit, advantage, planRevision,  // ユーザー入力
+ *   projection  // 5年間財務プロジェクション（任意）
  * }
  */
 
@@ -33,6 +34,18 @@ type CardData = {
   feasibilityScore: number;
 };
 
+// 5年間プロジェクションの1行の型
+type YearResult = {
+  year: number;
+  monthlySales: number;
+  unitPrice: number;
+  variableCostPerUnit: number;
+  annualRevenue: number;
+  annualCost: number;
+  annualProfit: number;
+  profitMargin: number;
+};
+
 // リクエストボディの型
 type GenerateRequest = {
   teamName: string;
@@ -45,7 +58,17 @@ type GenerateRequest = {
   userBenefit: string;
   advantage: string;
   planRevision: string;
+  projection?: YearResult[]; // 5年間プロジェクション（任意）
 };
+
+// 金額を読みやすい日本語に変換
+function formatYenText(num: number): string {
+  const abs = Math.abs(num);
+  const sign = num < 0 ? "-" : "";
+  if (abs >= 100000000) return `${sign}${(abs / 100000000).toFixed(1)}億円`;
+  if (abs >= 10000) return `${sign}${(abs / 10000).toFixed(0)}万円`;
+  return `${sign}${abs.toLocaleString()}円`;
+}
 
 export async function POST(request: NextRequest) {
   const body: GenerateRequest = await request.json();
@@ -53,14 +76,33 @@ export async function POST(request: NextRequest) {
   const {
     heartCard, diamondCard, clubCard, spadeCard,
     solutionName, userBenefit, advantage, planRevision,
+    projection,
   } = body;
 
-  // ビジネス指標を計算（カードの数値から）
-  const monthlyRevenue = heartCard.monthlySales * diamondCard.unitPrice;  // 月間売上
-  const monthlyProfit = monthlyRevenue - clubCard.variableCost;           // 月間利益
-  const profitMargin = monthlyRevenue > 0                                  // 利益率
+  // ビジネス指標を計算（変動費バグ修正済み：件数 × 変動費/件）
+  const monthlySales = heartCard.monthlySales;
+  const unitPrice = diamondCard.unitPrice;
+  const variableCostPerUnit = clubCard.variableCost; // Notionでは変動費/件として保存
+  const monthlyRevenue = monthlySales * unitPrice;
+  const monthlyCost = variableCostPerUnit * monthlySales;  // 修正: × 販売数
+  const monthlyProfit = monthlyRevenue - monthlyCost;
+  const profitMargin = monthlyRevenue > 0
     ? Math.round((monthlyProfit / monthlyRevenue) * 100)
     : 0;
+
+  // 5年プロジェクションのテキスト表現を生成
+  const projectionText = projection && projection.length > 0
+    ? `
+## 📈 5年間 財務プロジェクション（学生設定値）
+
+| 年次 | 月間販売数 | 販売単価 | 変動費/件 | 年間売上 | 年間変動費 | 年間利益 | 利益率 |
+|------|-----------|---------|---------|---------|---------|---------|------|
+${projection.map(r =>
+  `| ${r.year}年目 | ${r.monthlySales.toLocaleString()}件 | ${formatYenText(r.unitPrice)} | ${formatYenText(r.variableCostPerUnit)} | ${formatYenText(r.annualRevenue)} | ${formatYenText(r.annualCost)} | ${formatYenText(r.annualProfit)} | ${r.profitMargin}% |`
+).join("\n")}
+| **5年合計** | - | - | - | **${formatYenText(projection.reduce((s, r) => s + r.annualRevenue, 0))}** | **${formatYenText(projection.reduce((s, r) => s + r.annualCost, 0))}** | **${formatYenText(projection.reduce((s, r) => s + r.annualProfit, 0))}** | **${Math.round(projection.reduce((s, r) => s + r.annualProfit, 0) / Math.max(projection.reduce((s, r) => s + r.annualRevenue, 0), 1) * 100)}%** |
+`
+    : "";
 
   // Claudeに送るプロンプトを作成
   const prompt = `あなたは経験豊富なビジネスプランコンサルタントです。
@@ -82,19 +124,19 @@ export async function POST(request: NextRequest) {
 ### ♣️ パートナー（誰と組む）
 - カード: ${clubCard.rank} - ${clubCard.title}
 - 詳細: ${clubCard.description}
-- 月額変動費: ¥${clubCard.variableCost.toLocaleString()}
+- 変動費/件: ¥${clubCard.variableCost.toLocaleString()}
 
 ### ♠️ ジョブタイプ（どう実現）
 - カード: ${spadeCard.rank} - ${spadeCard.title}
 - 詳細: ${spadeCard.description}
 - 実現可能性スコア: ${spadeCard.feasibilityScore}/10
 
-## 💰 ビジネス指標（自動計算）
-- 月間売上試算: ¥${monthlyRevenue.toLocaleString()}
-- 月間変動費: ¥${clubCard.variableCost.toLocaleString()}
+## 💰 月次ビジネス指標（自動計算）
+- 月間売上試算: ¥${monthlyRevenue.toLocaleString()}（${monthlySales}件 × ¥${unitPrice.toLocaleString()}）
+- 月間変動費: ¥${monthlyCost.toLocaleString()}（${monthlySales}件 × ¥${variableCostPerUnit.toLocaleString()}/件）
 - 月間利益試算: ¥${monthlyProfit.toLocaleString()}
 - 利益率: ${profitMargin}%
-
+${projectionText}
 ## 📝 学生のビジネスプラン入力
 
 ### ソリューション名
@@ -179,17 +221,19 @@ ${planRevision}
       );
     }
 
-    // 計算した指標も一緒に返す
+    // 計算した指標と5年プロジェクションも一緒に返す
     return NextResponse.json({
       ...result,
       metrics: {
         monthlyRevenue,
         monthlyProfit,
-        variableCost: clubCard.variableCost,
+        monthlyCost,
+        variableCostPerUnit,
         profitMargin,
         feasibilityScore: spadeCard.feasibilityScore,
         marketSize: heartCard.marketSize,
       },
+      projection: projection ?? [],
     });
   } catch (error) {
     console.error("Claude API エラー:", error);
