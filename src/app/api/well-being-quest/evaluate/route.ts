@@ -17,8 +17,10 @@ import { NextRequest, NextResponse } from "next/server";
 
 // Groq APIの設定
 const GROQ_API_KEY = process.env.GROQ_API_KEY!;
-// Groqで使用するモデル（LLaMA 3.3 70B - 無料枠あり、高品質）
-const GROQ_MODEL = "llama-3.3-70b-versatile";
+// Groqで使用するモデル
+// llama-3.1-8b-instant: 高速・低トークン消費（無料枠が長持ちする）
+// llama-3.3-70b-versatile: 高品質だがトークン消費が多い（無料枠が早く切れる）
+const GROQ_MODEL = "llama-3.1-8b-instant";
 const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
 
 // フロントエンドから受け取るデータの型
@@ -199,10 +201,35 @@ ${planText}
 
     // Groq APIのエラーハンドリング
     if (!groqResponse.ok) {
-      const err = await groqResponse.text();
-      console.error("Groq API Error:", groqResponse.status, err);
+      const errText = await groqResponse.text();
+      console.error("Groq API Error:", groqResponse.status, errText);
+
+      // 429 レート制限エラーの場合は、待ち時間を日本語で返す
+      if (groqResponse.status === 429) {
+        let retryMessage = "しばらく時間をおいてから再試行してください。";
+        try {
+          const errJson = JSON.parse(errText);
+          const rawMsg: string = errJson?.error?.message ?? "";
+          // "Please try again in Xm Ys" のパターンを探す
+          const match = rawMsg.match(/try again in (\d+)m([\d.]+)s/);
+          if (match) {
+            const minutes = match[1];
+            const seconds = Math.ceil(parseFloat(match[2]));
+            retryMessage = `AIのトークン上限に達しました。約${minutes}分${seconds}秒後に再試行してください。`;
+          } else {
+            retryMessage = "AIのトークン上限（1日分）に達しました。しばらく時間をおいてから再試行してください。";
+          }
+        } catch {
+          // JSON パース失敗時はデフォルトメッセージを使う
+        }
+        return NextResponse.json(
+          { error: retryMessage },
+          { status: 429 }
+        );
+      }
+
       return NextResponse.json(
-        { error: "AI評価に失敗しました", detail: err },
+        { error: "AI評価に失敗しました", detail: errText },
         { status: 500 }
       );
     }

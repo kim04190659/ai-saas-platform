@@ -1,0 +1,7 @@
+{
+  "functions": {
+    "src/app/api/well-being-quest/evaluate/route.ts": {
+      "maxDuration": 60
+    }
+  }
+}
