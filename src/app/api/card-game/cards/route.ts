@@ -72,8 +72,15 @@ export async function GET(request: NextRequest) {
 
     if (!response.ok) {
       const err = await response.text();
-      console.error("Notion API Error:", err);
-      return NextResponse.json({ error: "Notionからデータ取得失敗" }, { status: 500 });
+      console.error("Notion API Error:", response.status, err);
+      // 環境変数未設定の場合に分かりやすいメッセージを返す
+      if (response.status === 401) {
+        return NextResponse.json({
+          error: "Notion認証エラー: NOTION_API_KEYが未設定またはDB未共有",
+          detail: err,
+        }, { status: 500 });
+      }
+      return NextResponse.json({ error: "Notionからデータ取得失敗", detail: err }, { status: 500 });
     }
 
     const data = await response.json();

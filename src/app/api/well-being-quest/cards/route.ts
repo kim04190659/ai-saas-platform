@@ -1,128 +1,165 @@
 /**
  * /api/well-being-quest/cards
- * Well-Being QUEST カードマスターDBからカード情報を取得するAPIルート
+ * LOGIカードゲーム マスターDB からカード一覧を取得するAPI
  *
- * GET /api/well-being-quest/cards?suit=♠️スペード  → 指定スートのカード一覧
- * GET /api/well-being-quest/cards                  → 全カード一覧
+ * --- 使い方 ---
+ * GET /api/well-being-quest/cards?role=問題・課題   → 役割でフィルタ
+ * GET /api/well-being-quest/cards?role=ペルソナ&theme=配送業・物流人材不足
+ *                                                    → 役割 + テーマで絞り込み
+ * GET /api/well-being-quest/cards?suit=♠️スペード   → 旧API互換（スートで絞り込み）
  *
- * 対応DB: 🃏 Well-Being QUEST カードマスターDB（Notion）
- * DB ID: 環境変数 NOTION_WB_CARD_DB_ID に設定する
+ * --- Vercel環境変数（要設定） ---
+ * NOTION_API_KEY       : Notion integration token
+ * NOTION_WB_CARD_DB_ID : LOGIカードマスターDB ID
+ *   → 設定値: 6b7b85557869432580a24f685e02263e
  */
 
 import { NextRequest, NextResponse } from "next/server";
 
-// Notion APIの設定（環境変数から取得）
+// 環境変数から取得
 const NOTION_API_KEY = process.env.NOTION_API_KEY!;
-const NOTION_WB_CARD_DB_ID = process.env.NOTION_WB_CARD_DB_ID!;
-// ↑ Vercelの環境変数に以下を追加してください:
-//   NOTION_WB_CARD_DB_ID = 323b1783a93b4e2aa99d2c2b762ca461
+// ⚠️ Vercel環境変数 NOTION_WB_CARD_DB_ID を以下に設定すること
+//    6b7b85557869432580a24f685e02263e（LOGIカードゲーム マスターDB）
+const NOTION_CARD_DB_ID =
+  process.env.NOTION_WB_CARD_DB_ID ?? "6b7b85557869432580a24f685e02263e";
 
-// Notionから返ってくるカードデータの型定義（Well-Being QUEST専用）
-type NotionWBCard = {
+// Notion API v2022-06-28 が返すカードデータの型定義
+type NotionCard = {
   id: string;
   properties: {
-    // タイトル（例: "♠A: 75歳・一人暮らしの農家"）
     "カード名": { title: Array<{ plain_text: string }> };
-    // スート（♠️スペード / ♣️クラブ / ♦️ダイヤ / ♥️ハート）
     "スート": { select: { name: string } | null };
-    // ランク（A / 2〜10 / J / Q / K）
     "ランク": { select: { name: string } | null };
-    // カードのメインタイトル（短い名称）
+    "役割": { select: { name: string } | null };
+    "社会課題テーマ": { select: { name: string } | null };
     "カードタイトル": { rich_text: Array<{ plain_text: string }> };
-    // カードの説明文（ゲーム進行用）
     "説明テキスト": { rich_text: Array<{ plain_text: string }> };
-    // 雰囲気を出すセリフ
     "フレーバーテキスト": { rich_text: Array<{ plain_text: string }> };
-    // Well-Being指数への貢献度（1〜10）
-    "Well-Being改善スコア（1-10）": { number: number | null };
-    // 実現しやすさのスコア（1〜10）
-    "実現可能性スコア（1-10）": { number: number | null };
-    // 影響を受ける住民の数
-    "影響住民数（人）": { number: number | null };
-    // 施策に必要な期間（月数）
-    "実施期間（ヶ月）": { number: number | null };
-    // 年間の必要予算（百万円）
-    "必要予算（百万円/年）": { number: number | null };
+    "マーケットサイズ（万人）": { number: number | null };
+    "月間販売見込数（件）": { number: number | null };
+    "販売単価（円）": { number: number | null };
+    "変動費月額（円）": { number: number | null };
+    "実現可能性スコア": { number: number | null };
+    // v3で追加した新フィールド（未設定の場合はnullの可能性あり）
+    "業務機能": { multi_select: Array<{ name: string }> } | null;
+    "対応ペルソナ": { multi_select: Array<{ name: string }> } | null;
   };
 };
 
 // GETリクエストのハンドラー
 export async function GET(request: NextRequest) {
-  // URLパラメータからスート名を取得（例: ?suit=♠️スペード）
   const { searchParams } = new URL(request.url);
-  const suit = searchParams.get("suit"); // null の場合は全件取得
+
+  // v3: 役割でフィルタ（"問題・課題" | "ペルソナ" | "パートナー" | "ジョブタイプ"）
+  const role = searchParams.get("role");
+  // v3: テーマでも絞り込み（例: "配送業・物流人材不足"）
+  const theme = searchParams.get("theme");
+  // 旧API互換: スートでフィルタ
+  const suit = searchParams.get("suit");
 
   try {
-    // スートが指定された場合はフィルタを作成
-    const filter = suit
-      ? {
-          property: "スート",
-          select: { equals: suit },
-        }
-      : undefined;
+    // Notion API のフィルタ条件を構築
+    let filter: object | undefined;
 
-    // Notion APIにリクエストを送信（データベース検索）
+    if (role) {
+      // 役割フィルタ（v3メイン）
+      const conditions: object[] = [
+        { property: "役割", select: { equals: role } },
+      ];
+      // テーマフィルタ（ペルソナを課題と同じテーマに絞るときに使用）
+      if (theme) {
+        conditions.push({
+          property: "社会課題テーマ",
+          select: { equals: theme },
+        });
+      }
+      // 条件が1つなら単体フィルタ、複数ならAND結合
+      filter = conditions.length === 1 ? conditions[0] : { and: conditions };
+    } else if (suit) {
+      // 旧API互換: スートで絞り込み
+      filter = { property: "スート", select: { equals: suit } };
+    }
+    // filterがundefinedの場合は全件取得
+
+    // Notion API へリクエスト送信
     const response = await fetch(
-      `https://api.notion.com/v1/databases/${NOTION_WB_CARD_DB_ID}/query`,
+      `https://api.notion.com/v1/databases/${NOTION_CARD_DB_ID}/query`,
       {
         method: "POST",
         headers: {
           Authorization: `Bearer ${NOTION_API_KEY}`,
-          "Notion-Version": "2022-06-28", // Notion APIバージョン（必須）
+          "Notion-Version": "2022-06-28",
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          filter: filter,
-          // ランク順に並べる（A→2→3→...→K）
+          filter,
+          // ランクの昇順で並べる（A → 2 → 3 → ... → K）
           sorts: [{ property: "ランク", direction: "ascending" }],
           page_size: 100, // 最大100件（52枚なので余裕あり）
         }),
       }
     );
 
-    // Notion APIのエラーハンドリング
+    // エラーハンドリング
     if (!response.ok) {
-      const err = await response.text();
-      console.error("Notion API Error:", response.status, err);
+      const errText = await response.text();
+      console.error("Notion API Error:", response.status, errText);
+
       if (response.status === 401) {
         return NextResponse.json(
           {
-            error: "Notion認証エラー: NOTION_API_KEYが未設定またはDBが共有されていません",
-            detail: err,
+            error:
+              "Notion認証エラー: NOTION_API_KEYが未設定か、DBが共有されていません",
           },
           { status: 500 }
         );
       }
       return NextResponse.json(
-        { error: "Notionからデータ取得に失敗しました", detail: err },
+        { error: "Notionからデータ取得に失敗しました", detail: errText },
         { status: 500 }
       );
     }
 
     const data = await response.json();
 
-    // NotionのAPIレスポンスをフロントエンドで使いやすい形式に変換
-    const cards = (data.results as NotionWBCard[]).map((page) => ({
+    // Notion APIのレスポンスをフロントエンドで使いやすい形式に変換
+    const cards = (data.results as NotionCard[]).map((page) => ({
       id: page.id,
+
       // カード識別情報
       cardName: page.properties["カード名"]?.title?.[0]?.plain_text ?? "",
       suit: page.properties["スート"]?.select?.name ?? "",
       rank: page.properties["ランク"]?.select?.name ?? "",
+      role: page.properties["役割"]?.select?.name ?? "",
+      theme: page.properties["社会課題テーマ"]?.select?.name ?? "",
+
       // 表示テキスト
       title: page.properties["カードタイトル"]?.rich_text?.[0]?.plain_text ?? "",
-      description: page.properties["説明テキスト"]?.rich_text?.[0]?.plain_text ?? "",
-      flavorText: page.properties["フレーバーテキスト"]?.rich_text?.[0]?.plain_text ?? "",
-      // Well-Being QUEST 専用の数値データ（nullの場合は0を返す）
-      wellBeingScore: page.properties["Well-Being改善スコア（1-10）"]?.number ?? 0,
-      feasibilityScore: page.properties["実現可能性スコア（1-10）"]?.number ?? 0,
-      affectedResidents: page.properties["影響住民数（人）"]?.number ?? 0,
-      implementationMonths: page.properties["実施期間（ヶ月）"]?.number ?? 0,
-      budgetMillionYen: page.properties["必要予算（百万円/年）"]?.number ?? 0,
+      description:
+        page.properties["説明テキスト"]?.rich_text?.[0]?.plain_text ?? "",
+      flavorText:
+        page.properties["フレーバーテキスト"]?.rich_text?.[0]?.plain_text ?? "",
+
+      // Make or Buy 計算用の数値
+      marketSize: page.properties["マーケットサイズ（万人）"]?.number ?? 0,    // 万人
+      monthlyVolume: page.properties["月間販売見込数（件）"]?.number ?? 0,      // 件/月
+      unitPrice: page.properties["販売単価（円）"]?.number ?? 0,               // 円/件
+      variableCost: page.properties["変動費月額（円）"]?.number ?? 0,          // 円/月
+      feasibilityScore: page.properties["実現可能性スコア"]?.number ?? 0,       // 1-10
+
+      // v3新フィールド（未設定の場合は空配列で返す）
+      businessFunctions: (
+        page.properties["業務機能"]?.multi_select ?? []
+      ).map((s: { name: string }) => s.name),
+
+      targetPersonas: (
+        page.properties["対応ペルソナ"]?.multi_select ?? []
+      ).map((s: { name: string }) => s.name),
     }));
 
     return NextResponse.json({ cards });
   } catch (error) {
-    console.error("Well-Being QUESTカード取得エラー:", error);
+    console.error("LOGIカード取得エラー:", error);
     return NextResponse.json(
       { error: "サーバーエラーが発生しました" },
       { status: 500 }

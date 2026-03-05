@@ -1,215 +1,197 @@
-"use client";
-
 /**
- * /well-being-quest - Well-Being QUEST トップページ
+ * /well-being-quest - Mission in LOGI-TECH トップページ（v3）
  *
- * ゲームの説明と、チーム名・メンバー名・目標設定を入力してゲームを開始する。
- * ゲームテーマ: 限界自治体（人口10,000人）の公務員として、住民のWell-Beingを高める政策を立案する
+ * ゲームの紹介とルール説明を表示し、
+ * 「ゲーム開始」ボタンで /well-being-quest/select に遷移する。
+ *
+ * v3変更点:
+ * - Well-Being QUESTから「Mission in LOGI-TECH」にリブランド
+ * - チーム名・目標人口の入力フォームは不要（select画面でゲームが始まる）
+ * - Make or Buy のコンセプトを簡単に説明するランディングページ
  */
 
-import { useState } from "react";
+"use client";
+
 import { useRouter } from "next/navigation";
 
-export default function WellBeingQuestTopPage() {
+// ゲームの流れを表示するステップデータ
+const GAME_STEPS = [
+  {
+    step: 1,
+    icon: "♦",
+    iconColor: "text-red-400",
+    title: "課題を選ぶ",
+    desc: "どんな社会課題を解決するか選ぶ。難しい課題ほど単価が高くなる。",
+  },
+  {
+    step: 2,
+    icon: "♥",
+    iconColor: "text-pink-400",
+    title: "ペルソナを選ぶ",
+    desc: "サービスを届ける相手（ペルソナ）を選ぶ。多いほど市場が広がる。",
+  },
+  {
+    step: 3,
+    icon: "♣",
+    iconColor: "text-green-400",
+    title: "パートナーを選ぶ（Buy）",
+    desc: "外部に委託する機能を選ぶ。委託すると変動費が上がるが初期費用は下がる。",
+  },
+  {
+    step: 4,
+    icon: "♠",
+    iconColor: "text-blue-400",
+    title: "アクション確認（Make）",
+    desc: "自社でやる機能が自動で決まる。初期費用はかかるが、長期の利益率が上がる。",
+  },
+];
+
+export default function LogiTechTopPage() {
   const router = useRouter();
 
-  // フォームの入力値を管理する変数（useState = Reactの状態管理）
-  const [teamName, setTeamName] = useState("");
-  const [members, setMembers] = useState("");
-  const [targetPopulation, setTargetPopulation] = useState(12000); // 目標人口（初期値12,000人）
-  const [targetWellBeing, setTargetWellBeing] = useState(75);      // 目標WB指数（初期値75点）
-  const [error, setError] = useState("");
-
-  // 「ゲーム開始」ボタンを押したとき
-  const handleStart = () => {
-    // 入力チェック
-    if (!teamName.trim()) {
-      setError("チーム名を入力してください");
-      return;
-    }
-    if (!members.trim()) {
-      setError("メンバー名を入力してください");
-      return;
-    }
-    if (targetPopulation < 10001 || targetPopulation > 20000) {
-      setError("目標人口は10,001〜20,000人の間で設定してください");
-      return;
-    }
-    if (targetWellBeing < 40 || targetWellBeing > 100) {
-      setError("目標Well-Being指数は40〜100の間で設定してください");
-      return;
-    }
-
-    // チーム情報をブラウザのlocalStorageに保存（次のページで使う）
-    // ゲームのデータは "wbq_" プレフィックスを付けて保存する
-    localStorage.setItem("wbq_teamName", teamName.trim());
-    localStorage.setItem("wbq_members", members.trim());
-    localStorage.setItem("wbq_targetPopulation", String(targetPopulation));
-    localStorage.setItem("wbq_targetWellBeing", String(targetWellBeing));
-
-    // カード選択ページに移動
-    router.push("/well-being-quest/select");
-  };
-
   return (
-    // 全画面: 秋の山里・限界自治体をイメージした深い緑〜茶のグラデーション背景
+    // 背景: 工業・物流をイメージした深いネイビー系グラデーション
     <div
       className="min-h-screen flex items-center justify-center p-4"
       style={{
         background:
-          "radial-gradient(ellipse at top, #2d4a22 0%, #1a3318 40%, #0f2010 100%)",
+          "radial-gradient(ellipse at top, #0c1a2e 0%, #0a1628 50%, #060e1a 100%)",
       }}
     >
       <div className="w-full max-w-lg">
 
-        {/* タイトルエリア */}
+        {/* ── タイトルエリア ── */}
         <div className="text-center mb-6">
-          {/* トランプマーク4つ（スートカードのデコレーション）*/}
-          <div className="flex justify-center gap-2 mb-4">
-            {[
-              { suit: "♠", label: "ペルソナ", color: "#f0f0f0" },
-              { suit: "♣", label: "課題", color: "#f0f0f0" },
-              { suit: "♦", label: "パートナー", color: "#ef4444" },
-              { suit: "♥", label: "アクション", color: "#ef4444" },
-            ].map((item, i) => (
+          {/* トランプカード4枚のデコレーション */}
+          <div className="flex justify-center gap-2 mb-5">
+            {GAME_STEPS.map((s, i) => (
               <div
                 key={i}
                 className="flex flex-col items-center"
-                style={{ transform: `rotate(${(i - 1.5) * 4}deg)` }}
+                style={{ transform: `rotate(${(i - 1.5) * 5}deg)` }}
               >
-                <div
-                  className="w-12 h-16 bg-white rounded-lg shadow-lg flex flex-col items-center justify-center text-lg font-bold"
-                  style={{ color: item.color }}
-                >
-                  {item.suit}
-                  <span className="text-gray-400 text-xs font-normal">{item.label}</span>
+                <div className="w-12 h-16 bg-slate-800 border border-slate-600 rounded-lg shadow-lg flex flex-col items-center justify-center">
+                  <span className={`text-xl font-bold ${s.iconColor}`}>
+                    {s.icon}
+                  </span>
+                  <span className="text-slate-500 text-xs mt-0.5 font-normal leading-tight text-center px-0.5">
+                    {s.title.split("（")[0].replace("を選ぶ", "").replace("確認", "")}
+                  </span>
                 </div>
               </div>
             ))}
           </div>
 
           <h1 className="text-3xl font-bold text-white mb-1">
-            🏘️ Well-Being QUEST
+            🏭 Mission in LOGI-TECH
           </h1>
-          <p className="text-green-300 text-sm mb-1">
-            限界自治体の公務員として、住民のWell-Beingを守る政策を立案する
+          <p className="text-cyan-400 text-sm mb-1">
+            Make or Buy カードゲーム v3
           </p>
-          <p className="text-green-400 text-xs">
-            起点: 人口10,000人 / 高齢化率50%以上の限界自治体
+          <p className="text-slate-500 text-xs">
+            鹿児島高専 物流テーマPBL授業用
           </p>
         </div>
 
-        {/* 入力フォームカード */}
-        <div className="bg-white/95 backdrop-blur rounded-2xl shadow-2xl p-6">
-          <h2 className="text-base font-bold text-gray-800 mb-4 text-center">
-            チーム情報と目標を設定してスタート！
+        {/* ── メインカード ── */}
+        <div className="bg-slate-800 border border-slate-600 rounded-2xl shadow-2xl p-6">
+
+          {/* ゲームコンセプト */}
+          <div className="bg-slate-700 rounded-xl p-4 mb-5 text-center">
+            <p className="text-white text-sm font-semibold leading-relaxed">
+              物流課題を解決するサービスを設計しよう！
+            </p>
+            <p className="text-slate-400 text-xs mt-1 leading-relaxed">
+              4枚のカードを選ぶだけで、<br />
+              自動的に<span className="text-cyan-400 font-semibold">利益・回収期間・ランク</span>が計算される。
+            </p>
+          </div>
+
+          {/* ゲームの流れ */}
+          <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-3">
+            📋 ゲームの流れ
           </h2>
 
-          {/* チーム名入力 */}
-          <div className="mb-4">
-            <label className="block text-sm font-semibold text-gray-700 mb-1">
-              チーム名 <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={teamName}
-              onChange={(e) => { setTeamName(e.target.value); setError(""); }}
-              placeholder="例) チームA、まちの未来チーム"
-              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-green-500 focus:outline-none text-gray-800"
-              maxLength={50}
-            />
+          <div className="space-y-3 mb-6">
+            {GAME_STEPS.map((s) => (
+              <div key={s.step} className="flex items-start gap-3">
+                {/* ステップ番号 */}
+                <div className="w-6 h-6 rounded-full bg-slate-600 flex items-center justify-center text-xs font-bold text-slate-300 flex-shrink-0 mt-0.5">
+                  {s.step}
+                </div>
+                {/* スートとタイトル・説明 */}
+                <div className="flex-1">
+                  <div className="flex items-center gap-1.5">
+                    <span className={`text-base ${s.iconColor}`}>{s.icon}</span>
+                    <span className="text-white text-sm font-semibold">
+                      {s.title}
+                    </span>
+                  </div>
+                  <p className="text-slate-400 text-xs mt-0.5 leading-relaxed">
+                    {s.desc}
+                  </p>
+                </div>
+              </div>
+            ))}
           </div>
 
-          {/* メンバー名入力 */}
-          <div className="mb-4">
-            <label className="block text-sm font-semibold text-gray-700 mb-1">
-              メンバー名 <span className="text-red-500">*</span>
-            </label>
-            <textarea
-              value={members}
-              onChange={(e) => { setMembers(e.target.value); setError(""); }}
-              placeholder={"例)\n山田太郎\n鈴木花子\n田中一郎"}
-              rows={3}
-              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-green-500 focus:outline-none text-gray-800 resize-none"
-            />
-            <p className="text-xs text-gray-400 mt-1">メンバー全員の名前を改行で区切って入力</p>
-          </div>
-
-          {/* 目標設定エリア */}
-          <div className="mb-4 p-4 bg-amber-50 rounded-xl border border-amber-200">
-            <p className="text-sm font-bold text-amber-800 mb-3">
-              🎯 10年後の目標を設定する（起点: 人口10,000人、WB指数 50点）
-            </p>
-
-            {/* 目標人口 */}
-            <div className="mb-3">
-              <label className="block text-sm font-semibold text-gray-700 mb-1">
-                目標人口: <span className="text-green-700 font-bold">{targetPopulation.toLocaleString()}人</span>
-              </label>
-              <input
-                type="range"
-                min={10500}
-                max={20000}
-                step={500}
-                value={targetPopulation}
-                onChange={(e) => { setTargetPopulation(Number(e.target.value)); setError(""); }}
-                className="w-full accent-green-600"
-              />
-              <div className="flex justify-between text-xs text-gray-400">
-                <span>10,500人</span>
-                <span>20,000人</span>
+          {/* Make or Buy の説明 */}
+          <div className="grid grid-cols-2 gap-3 mb-6">
+            <div className="bg-blue-900/50 border border-blue-700 rounded-xl p-3 text-center">
+              <div className="text-2xl mb-1">🔨</div>
+              <div className="text-blue-300 font-bold text-sm">Make</div>
+              <div className="text-slate-400 text-xs mt-1 leading-relaxed">
+                自社でつくる<br />
+                初期費用↑<br />
+                長期利益率↑
               </div>
             </div>
-
-            {/* 目標Well-Being指数 */}
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1">
-                目標Well-Being指数: <span className="text-green-700 font-bold">{targetWellBeing}点</span>
-              </label>
-              <input
-                type="range"
-                min={40}
-                max={100}
-                step={5}
-                value={targetWellBeing}
-                onChange={(e) => { setTargetWellBeing(Number(e.target.value)); setError(""); }}
-                className="w-full accent-green-600"
-              />
-              <div className="flex justify-between text-xs text-gray-400">
-                <span>40点（C以上）</span>
-                <span>100点（S確定）</span>
+            <div className="bg-orange-900/50 border border-orange-700 rounded-xl p-3 text-center">
+              <div className="text-2xl mb-1">🤝</div>
+              <div className="text-orange-300 font-bold text-sm">Buy</div>
+              <div className="text-slate-400 text-xs mt-1 leading-relaxed">
+                外部に委託する<br />
+                初期費用↓<br />
+                変動費率↑
               </div>
             </div>
           </div>
 
-          {/* エラーメッセージ表示 */}
-          {error && (
-            <p className="text-red-500 text-sm mb-4 bg-red-50 rounded-lg px-3 py-2">
-              ⚠️ {error}
+          {/* ランク説明 */}
+          <div className="bg-slate-700 rounded-xl p-3 mb-6">
+            <p className="text-xs text-slate-400 mb-2 font-semibold">
+              🏆 最終ランクは回収期間と利益率で決まる
             </p>
-          )}
+            <div className="flex gap-1.5 flex-wrap">
+              {[
+                { g: "S", color: "bg-yellow-400 text-black", hint: "3ヶ月未満+50%↑" },
+                { g: "A", color: "bg-orange-400 text-black", hint: "6ヶ月未満+40%↑" },
+                { g: "B", color: "bg-blue-400 text-white", hint: "12ヶ月未満+30%↑" },
+                { g: "C", color: "bg-green-500 text-white", hint: "24ヶ月未満" },
+                { g: "D", color: "bg-gray-500 text-white", hint: "赤字/24ヶ月以上" },
+              ].map((item) => (
+                <div key={item.g} className="flex items-center gap-1">
+                  <span className={`text-xs font-bold px-1.5 py-0.5 rounded ${item.color}`}>
+                    {item.g}
+                  </span>
+                  <span className="text-slate-500 text-xs">{item.hint}</span>
+                </div>
+              ))}
+            </div>
+          </div>
 
           {/* ゲーム開始ボタン */}
           <button
-            onClick={handleStart}
-            className="w-full py-4 bg-gradient-to-r from-green-600 to-emerald-700 text-white text-lg font-bold rounded-xl shadow-lg hover:from-green-700 hover:to-emerald-800 transition-all active:scale-95"
+            onClick={() => router.push("/well-being-quest/select")}
+            className="w-full py-4 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white text-lg font-bold rounded-xl shadow-lg transition-all duration-200 active:scale-95"
           >
-            🎮 政策立案スタート！
+            🚀 ゲームスタート！
           </button>
-
-          {/* ゲームの流れ説明 */}
-          <div className="mt-4 p-3 bg-gray-50 rounded-xl text-xs text-gray-600 space-y-1">
-            <p className="font-semibold text-gray-700 mb-1">📋 ゲームの流れ（約90分）</p>
-            <p>① 4枚のカードを1枚ずつ選ぶ（ペルソナ・課題・パートナー・アクション）</p>
-            <p>② 4枚のカードを組み合わせた政策提案書を作成する</p>
-            <p>③ AIが政策を評価・Well-Being指数と人口シミュレーションを算出</p>
-            <p>④ チームで発表・ディスカッション</p>
-          </div>
         </div>
 
-        {/* フッター注記 */}
-        <p className="text-center text-green-600 text-xs mt-3">
-          Powered by Groq AI × Notion DB
+        {/* フッター */}
+        <p className="text-center text-slate-600 text-xs mt-4">
+          Powered by Notion DB × Next.js on Vercel
         </p>
       </div>
     </div>
