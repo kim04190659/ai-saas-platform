@@ -34,7 +34,7 @@ type Card = {
   unitPrice: number;      // 販売単価（円/件）
   variableCost: number;   // 変動費月額（円）
   feasibilityScore: number; // 実現可能性スコア（1-10）
-  businessFunctions: string[]; // 業務機能タグ（例: ["配送・物流", "顧客対応"]）
+  businessFunctions: string[]; // 業務機能タグ（例: ["現場・配送", "カスタマーサポート"]）
   targetPersonas: string[];    // 対応ペルソナタグ
 };
 
@@ -48,23 +48,22 @@ type SelectedCards = {
 
 // ─── 定数 ──────────────────────────────────────────────
 
-// 5つの業務機能（すべてをカバーするには最大5枚のMakeカードが必要）
+/**
+ * 5つの業務領域（v3 新部門名）
+ * ↑ result/page.tsx の DEPARTMENT_WEIGHTS と必ず揃えること
+ *    現場・配送: 0.70
+ *    倉庫・ロジスティクス: 0.15
+ *    営業・マーケティング: 0.05
+ *    カスタマーサポート: 0.05
+ *    事務バックオフィス・IT: 0.05
+ */
 const ALL_BUSINESS_FUNCTIONS = [
-  "開発・製造",
-  "販売・マーケティング",
-  "配送・物流",
-  "顧客対応",
-  "管理・運営",
+  "現場・配送",
+  "倉庫・ロジスティクス",
+  "営業・マーケティング",
+  "カスタマーサポート",
+  "事務バックオフィス・IT",
 ] as const;
-
-// グレード表示色（Tailwindクラス名）
-const GRADE_COLORS: Record<string, string> = {
-  S: "bg-yellow-400 text-black",
-  A: "bg-orange-400 text-black",
-  B: "bg-blue-400 text-white",
-  C: "bg-green-500 text-white",
-  D: "bg-gray-500 text-white",
-};
 
 // ステップのラベル
 const STEP_LABELS = [
@@ -77,24 +76,80 @@ const STEP_LABELS = [
 // ─── ヘルパー関数 ───────────────────────────────────────
 
 /**
- * カードのランク（A, 2〜K）をゲームグレード（S/A/B/C/D）に変換する
- * A → S (最高), K/Q → A, J/10/9 → B, 8/7/6/5 → C, 4/3/2 → D
+ * カードの役割（role）からトランプスートの情報を返す
+ * ♦=問題・課題（赤）  ♥=ペルソナ（ピンク）
+ * ♣=パートナー（緑）  ♠=ジョブタイプ（黒）
  */
-function rankToGrade(rank: string): "S" | "A" | "B" | "C" | "D" {
-  if (rank === "A") return "S";
-  if (rank === "K" || rank === "Q") return "A";
-  if (rank === "J" || rank === "10" || rank === "9") return "B";
-  if (rank === "8" || rank === "7" || rank === "6" || rank === "5") return "C";
-  return "D"; // 4, 3, 2
+function getSuitInfo(role: string) {
+  switch (role) {
+    case "問題・課題":
+      return {
+        symbol: "♦",
+        textColor: "text-red-500",
+        bgColor: "bg-white",
+        borderColor: "border-red-300",
+        tagBg: "bg-red-50 text-red-600",
+        selectedBorder: "border-red-500",
+        selectedRing: "ring-2 ring-red-400",
+      };
+    case "ペルソナ":
+      return {
+        symbol: "♥",
+        textColor: "text-rose-500",
+        bgColor: "bg-white",
+        borderColor: "border-rose-300",
+        tagBg: "bg-rose-50 text-rose-600",
+        selectedBorder: "border-rose-500",
+        selectedRing: "ring-2 ring-rose-400",
+      };
+    case "パートナー":
+      return {
+        symbol: "♣",
+        textColor: "text-emerald-700",
+        bgColor: "bg-white",
+        borderColor: "border-emerald-300",
+        tagBg: "bg-emerald-50 text-emerald-700",
+        selectedBorder: "border-emerald-500",
+        selectedRing: "ring-2 ring-emerald-400",
+      };
+    case "ジョブタイプ":
+      return {
+        symbol: "♠",
+        textColor: "text-slate-800",
+        bgColor: "bg-white",
+        borderColor: "border-slate-400",
+        tagBg: "bg-slate-100 text-slate-700",
+        selectedBorder: "border-slate-600",
+        selectedRing: "ring-2 ring-slate-500",
+      };
+    default:
+      return {
+        symbol: "★",
+        textColor: "text-gray-500",
+        bgColor: "bg-white",
+        borderColor: "border-gray-300",
+        tagBg: "bg-gray-100 text-gray-600",
+        selectedBorder: "border-gray-500",
+        selectedRing: "ring-2 ring-gray-400",
+      };
+  }
 }
 
 // ─── サブコンポーネント ─────────────────────────────────
 
 /**
- * カードを表示するカードコンポーネント
- * selected: 選択中かどうか（ハイライト表示）
+ * トランプ風カードコンポーネント（v3）
+ *
+ * デザイン仕様:
+ * - 白背景（明るいカード）
+ * - 左上・右下にスート記号（小さく）
+ * - 中央背景に大きなスート記号（透かし・薄い）
+ * - ランク（S/A/B/C/D）バッジは非表示
+ * - 選択時: 枠色強調 + チェックマーク
+ *
+ * selected: 選択中かどうか
  * disabled: クリック不可（Makeカードの自動表示に使用）
- * showNumbers: 数値（月間件数・単価など）を表示するか
+ * showNumbers: 月間件数・単価を表示するか
  */
 function CardItem({
   card,
@@ -109,75 +164,101 @@ function CardItem({
   disabled?: boolean;
   showNumbers?: boolean;
 }) {
-  const grade = rankToGrade(card.rank);
+  const suit = getSuitInfo(card.role);
 
   return (
     <div
       onClick={disabled ? undefined : onClick}
       className={[
-        "relative rounded-xl border-2 p-4 transition-all duration-200",
+        // トランプ風: 白背景・角丸・影
+        "relative rounded-xl border-2 p-4 transition-all duration-200 overflow-hidden",
+        suit.bgColor,
+        // 選択状態で枠色変化
         selected
-          ? "border-cyan-400 bg-slate-700 shadow-lg shadow-cyan-400/20"
-          : "border-slate-600 bg-slate-800",
-        !disabled && !selected ? "hover:border-slate-400 cursor-pointer" : "",
-        disabled ? "opacity-70 cursor-default" : "",
+          ? `${suit.selectedBorder} ${suit.selectedRing} shadow-lg`
+          : `${suit.borderColor}`,
+        !disabled && !selected ? "hover:shadow-md cursor-pointer hover:scale-[1.01]" : "",
+        disabled ? "opacity-80 cursor-default" : "",
       ].join(" ")}
     >
-      {/* グレードバッジ（右上） */}
-      <span
-        className={`absolute top-3 right-3 text-xs font-bold px-2 py-0.5 rounded-full ${GRADE_COLORS[grade]}`}
+      {/* ── 背景の大きな透かしスート記号 ── */}
+      <div
+        className={`absolute inset-0 flex items-center justify-center pointer-events-none select-none`}
+        aria-hidden="true"
       >
-        {grade}
-      </span>
-
-      {/* 選択チェックマーク（左上） */}
-      {selected && (
-        <span className="absolute top-3 left-3 text-cyan-400 text-lg font-bold">✓</span>
-      )}
-
-      {/* カード識別名（小さく、グレー） */}
-      <div className="text-xs text-slate-500 mb-1 pr-10">{card.cardName}</div>
-
-      {/* カードタイトル（メイン） */}
-      <div className={`text-white font-semibold text-sm mb-2 ${selected ? "pl-5" : ""}`}>
-        {card.title}
+        <span
+          className={`text-8xl font-bold ${suit.textColor} opacity-[0.06]`}
+          style={{ lineHeight: 1 }}
+        >
+          {suit.symbol}
+        </span>
       </div>
 
-      {/* 説明テキスト */}
-      <div className="text-slate-300 text-xs leading-relaxed">{card.description}</div>
+      {/* ── 左上のスート記号（小） ── */}
+      <div className={`absolute top-2 left-3 ${suit.textColor} text-sm font-bold leading-none select-none`}>
+        {suit.symbol}
+      </div>
 
-      {/* フレーバーテキスト（斜体） */}
-      {card.flavorText && (
-        <div className="mt-2 text-slate-500 text-xs italic">
-          &ldquo;{card.flavorText}&rdquo;
+      {/* ── 右下のスート記号（小・逆さ） ── */}
+      <div
+        className={`absolute bottom-2 right-3 ${suit.textColor} text-sm font-bold leading-none select-none`}
+        style={{ transform: "rotate(180deg)" }}
+      >
+        {suit.symbol}
+      </div>
+
+      {/* ── 選択チェックマーク（右上） ── */}
+      {selected && (
+        <div className="absolute top-2 right-2 w-6 h-6 bg-cyan-500 rounded-full flex items-center justify-center">
+          <span className="text-white text-xs font-bold">✓</span>
         </div>
       )}
 
-      {/* 月間件数・単価（課題カードとペルソナカードで表示） */}
-      {showNumbers && (card.monthlyVolume > 0 || card.unitPrice > 0) && (
-        <div className="mt-2 flex gap-3 text-xs text-slate-400">
-          {card.monthlyVolume > 0 && (
-            <span>📦 月間 {card.monthlyVolume.toLocaleString()} 件</span>
-          )}
-          {card.unitPrice > 0 && (
-            <span>💰 単価 {card.unitPrice.toLocaleString()} 円</span>
-          )}
+      {/* ── カード本文エリア（左右パディングで記号スペース確保） ── */}
+      <div className="relative z-10 px-4">
+        {/* カードタイトル（メイン） */}
+        <div className={`font-bold text-sm mb-1 leading-snug ${suit.textColor}`}>
+          {card.title}
         </div>
-      )}
 
-      {/* 業務機能タグ（パートナー・ジョブタイプで表示） */}
-      {card.businessFunctions.length > 0 && (
-        <div className="mt-2 flex flex-wrap gap-1">
-          {card.businessFunctions.map((fn) => (
-            <span
-              key={fn}
-              className="text-xs bg-slate-700 text-slate-300 px-1.5 py-0.5 rounded"
-            >
-              {fn}
-            </span>
-          ))}
+        {/* 説明テキスト */}
+        <div className="text-slate-600 text-xs leading-relaxed">
+          {card.description}
         </div>
-      )}
+
+        {/* フレーバーテキスト（斜体） */}
+        {card.flavorText && (
+          <div className="mt-2 text-slate-400 text-xs italic border-t border-slate-100 pt-2">
+            &ldquo;{card.flavorText}&rdquo;
+          </div>
+        )}
+
+        {/* 月間件数・単価（課題カードとペルソナカードで表示） */}
+        {showNumbers && (card.monthlyVolume > 0 || card.unitPrice > 0) && (
+          <div className="mt-2 flex gap-3 text-xs text-slate-500">
+            {card.monthlyVolume > 0 && (
+              <span>📦 月間 {card.monthlyVolume.toLocaleString()} 件</span>
+            )}
+            {card.unitPrice > 0 && (
+              <span>💰 単価 {card.unitPrice.toLocaleString()} 円</span>
+            )}
+          </div>
+        )}
+
+        {/* 業務機能タグ（パートナー・ジョブタイプで表示） */}
+        {card.businessFunctions.length > 0 && (
+          <div className="mt-2 flex flex-wrap gap-1">
+            {card.businessFunctions.map((fn) => (
+              <span
+                key={fn}
+                className={`text-xs px-1.5 py-0.5 rounded font-medium ${suit.tagBg}`}
+              >
+                {fn}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -434,7 +515,7 @@ export default function SelectPage() {
       makeCards: autoMakeCards,
     };
 
-    // v3専用キーで保存（古い wbq_* キーとは別物）
+    // v3専用キーで保存
     localStorage.setItem("logi_selectedCards", JSON.stringify(payload));
     router.push("/card-game/result");
   }
@@ -644,7 +725,7 @@ export default function SelectPage() {
           {/* 業務機能カバレッジ表示 */}
           <div className="mt-4 p-3 bg-slate-800 rounded-xl border border-slate-600">
             <div className="text-xs text-slate-400 mb-2">
-              業務機能カバレッジ（Buy ✓ ／ Make ✗）
+              業務領域カバレッジ（Buy ✓ ／ Make予定 ✗）
             </div>
             <div className="flex flex-wrap gap-2">
               {ALL_BUSINESS_FUNCTIONS.map((fn) => {
@@ -665,9 +746,12 @@ export default function SelectPage() {
                 );
               })}
             </div>
+            <div className="text-xs text-amber-400 mt-2">
+              ⚠️ カバーできていない領域は売上が下がります
+            </div>
             {selectedPartners.length > 0 && (
-              <div className="text-xs text-slate-500 mt-2">
-                ✗ の機能は次のステップで自動的にMake（自社開発）になります
+              <div className="text-xs text-slate-500 mt-1">
+                ✗ の機能は次のステップで自社Make（開発）になります
               </div>
             )}
           </div>
@@ -706,7 +790,7 @@ export default function SelectPage() {
             <Spinner />
           ) : autoMakeCards.length === 0 ? (
             <div className="p-4 bg-green-900 border border-green-600 rounded-xl text-green-200 text-sm">
-              🎉 すべての業務機能がパートナーでカバーされました！
+              🎉 すべての業務領域がパートナーでカバーされました！
               <br />
               自社開発（Make）コストはゼロです。
             </div>
@@ -735,13 +819,13 @@ export default function SelectPage() {
             </div>
             <div className="space-y-2 text-xs">
               <div>
-                <span className="text-slate-500">♦ 課題：</span>
+                <span className="text-red-400">♦ 課題：</span>
                 <span className="text-white ml-2">
                   {selectedKurai?.title ?? "-"}
                 </span>
               </div>
               <div>
-                <span className="text-slate-500">♥ ペルソナ：</span>
+                <span className="text-rose-400">♥ ペルソナ：</span>
                 <span className="text-white ml-2">
                   {selectedPersonas.length > 0
                     ? selectedPersonas.map((c) => c.title).join("、")
@@ -749,7 +833,7 @@ export default function SelectPage() {
                 </span>
               </div>
               <div>
-                <span className="text-slate-500">♣ パートナー（Buy）：</span>
+                <span className="text-emerald-400">♣ パートナー（Buy）：</span>
                 <span className="text-white ml-2">
                   {selectedPartners.length > 0
                     ? selectedPartners.map((c) => c.title).join("、")
@@ -757,7 +841,7 @@ export default function SelectPage() {
                 </span>
               </div>
               <div>
-                <span className="text-slate-500">♠ アクション（Make）：</span>
+                <span className="text-slate-400">♠ アクション（Make）：</span>
                 <span className="text-white ml-2">
                   {autoMakeCards.length > 0
                     ? autoMakeCards.map((c) => c.title).join("、")
