@@ -1,30 +1,25 @@
 /**
  * /card-game/result
- * Make or Buy ゲーム v3 — 結果表示ページ
+ * Mission in LOGI-TECH — 結果表示ページ（v4.2）
  *
- * localStorage の "logi_selectedCards" を読み込み、
- * クライアントサイドでMake or Buy計算を行い結果を表示する。
+ * localStorage の "logi_selectedCards_v42" を読み込み、
+ * v4.2の財務計算を行い結果を表示する。
+ * Claude AIによるビジネスプラン評価も行う。
  *
- * ── 計算ロジック（v3.1） ──
- * 1. 課題カードのランクからグレード（S/A/B/C/D）を決定
- * 2. グレードから販売単価を決定
- * 3. ペルソナカードの市場規模を合算 × 転換率70% → 月間販売数
- * 4. 【新機能】業務領域カバレッジを計算
- *    → パートナー・Makeカードの businessFunctions をもとに
- *       5領域中どれをカバーしているか確認
- *    → 未カバー領域の重みが売上から失われる（ペナルティ）
- * 5. Buyカード（パートナー）のグレードから変動費率の追加分を合算
- *    変動費率 = 10%（基準） + Buy追加分
- * 6. Makeカード（ジョブタイプ）のグレードから初期費用を合算
- * 7. 月次損益・回収月数・利益率を計算
- * 8. ランク判定（Sは100%カバレッジ必須）
+ * ── v4.2 計算ロジック ──
+ * 1. 事業成功率 = 5% + Σパートナー成功率貢献 + Σジョブ成功率貢献（上限70%）
+ * 2. 市場規模（社）= Σペルソナの潜在顧客数
+ * 3. 年間売上 = 単価（万円）× 市場規模（社）× 事業成功率
+ * 4. 年間コスト = 年間売上 × (30% + Σパートナーコスト変動比率)
+ * 5. 初期費 = Σジョブタイプ初期投資（万円）
+ * 6. 3年間累計利益 = (年間売上 - 年間コスト) × 3 - 初期費
  *
- * ── ランク基準（v3.1強化版） ──
- *   S: 回収3ヶ月未満 + 利益率50%以上 + 全領域100%カバレッジ
- *   A: 回収6ヶ月未満 + 利益率40%以上 + 85%以上カバレッジ
- *   B: 回収12ヶ月未満 + 利益率30%以上 + 70%以上カバレッジ
- *   C: 黒字 かつ 回収24ヶ月未満
- *   D: 赤字 または 回収24ヶ月以上
+ * ── ランク判定 ──
+ * S: 2億円以上（20,000万円以上）
+ * A: 1億円以上（10,000万円以上）
+ * B: 5,000万円以上
+ * C: 黒字（0円以上）
+ * D: 赤字（0円未満）
  */
 
 "use client";
@@ -34,278 +29,171 @@ import { useRouter } from "next/navigation";
 
 // ─── 型定義 ────────────────────────────────────────────
 
+// v4.2 カードの型
 type Card = {
   id: string;
   cardName: string;
   suit: string;
   rank: string;
   role: string;
-  theme: string;
+  baseValue: number;
   title: string;
   description: string;
-  flavorText: string;
-  marketSize: number;
-  monthlyVolume: number;
   unitPrice: number;
-  variableCost: number;
-  feasibilityScore: number;
-  businessFunctions: string[];
-  targetPersonas: string[];
+  potentialCustomers: number;
+  costVarianceRate: number;
+  successContribution: number;
+  initialInvestment: number;
 };
 
+// localStorage に保存された選択結果の型
 type SelectedCards = {
-  kuraiCard: Card;       // 課題カード（1枚）
-  personaCards: Card[];  // ペルソナカード（複数）
-  partnerCards: Card[];  // パートナーカード（Buy、複数）
-  makeCards: Card[];     // アクションカード（Make、自動決定）
+  problemCard: Card;      // ♦️課題カード（1枚）
+  personaCards: Card[];   // ♥️ペルソナカード（複数）
+  partnerCards: Card[];   // ♣️パートナーカード（複数）
+  jobCards: Card[];       // ♠️ジョブタイプカード（複数）
 };
 
-// ─── 計算定数 ──────────────────────────────────────────
-
-// グレード別 販売単価（円/件）
-// 課題カードのグレードで決まる（高ランクほど高付加価値サービス）
-const UNIT_PRICE_BY_GRADE: Record<string, number> = {
-  S: 50_000,
-  A: 30_000,
-  B: 15_000,
-  C:  8_000,
-  D:  3_000,
+// v4.2 計算結果の型
+type CalcResult = {
+  successRate: number;     // 事業成功率（%）
+  marketSize: number;      // 市場規模（社）
+  annualRevenue: number;   // 年間売上（万円）
+  totalCostRate: number;   // コスト変動比率合計（%）
+  annualCost: number;      // 年間コスト（万円）
+  annualProfit: number;    // 年間利益（万円）
+  initialCost: number;     // 初期費（万円）
+  profit3years: number;    // 3年間累計利益（万円）
+  grade: "S" | "A" | "B" | "C" | "D"; // ランク
 };
 
-// グレード別 ペルソナ市場規模（人/月）
-// 設計値を大幅縮小し、Sランクが簡単に出ないよう調整
-const MARKET_SIZE_BY_GRADE: Record<string, number> = {
-  S: 200,
-  A: 100,
-  B:  50,
-  C:  25,
-  D:  10,
-};
-
-// 転換率（固定70%）: 市場規模のうち実際に購買に至る割合
-const CONVERSION_RATE = 0.7;
-
-// グレード別 変動費率追加分（%）
-// Buyカード（パートナー）ごとに加算される委託コスト
-// v3.1: 増加（委託コストをより高く設定してS取得を難化）
-const VAR_COST_ADD_BY_GRADE: Record<string, number> = {
-  S: 15,
-  A: 18,
-  B: 20,
-  C: 22,
-  D: 25,
-};
-
-// グレード別 初期費用（円）
-// Makeカード（ジョブタイプ）ごとに加算される自社開発コスト
-// v3.1: 大幅増加（回収を困難にし、Sランク難化）
-const INITIAL_COST_BY_GRADE: Record<string, number> = {
-  S: 80_000_000,
-  A: 30_000_000,
-  B: 12_000_000,
-  C:  5_000_000,
-  D:  2_000_000,
-};
-
-// 基準変動費率（%）：パートナーなしの場合の最低コスト
-// v3.1: 5% → 10%に引き上げ
-const BASE_VAR_COST_RATE = 10;
+// ─── v4.2 財務計算メイン関数 ───────────────────────────
 
 /**
- * 5つの業務領域ごとの売上への寄与率（重み）
- * ↑ select/page.tsx の ALL_BUSINESS_FUNCTIONS と必ず揃えること
- *
- * 考え方: 選んだカードがカバーしていない領域は「機会損失」として売上を削減する
- * 例: 現場・配送をカバーしていない → 最重要業務が回らず売上 -70%
+ * 選択カードから v4.2 財務計算を行う
  */
-const DEPARTMENT_WEIGHTS: Record<string, number> = {
-  "現場・配送":         0.70,
-  "倉庫・ロジスティクス": 0.15,
-  "営業・マーケティング":  0.05,
-  "カスタマーサポート":   0.05,
-  "事務バックオフィス・IT": 0.05,
-};
+function calcV42(selected: SelectedCards): CalcResult {
+  const { problemCard, personaCards, partnerCards, jobCards } = selected;
+
+  // Step 1: 事業成功率 = 5% + Σパートナー成功率貢献 + Σジョブ成功率貢献（上限70%）
+  const partnerSuccessSum = partnerCards.reduce(
+    (sum, c) => sum + c.successContribution,
+    0
+  );
+  const jobSuccessSum = jobCards.reduce(
+    (sum, c) => sum + c.successContribution,
+    0
+  );
+  const successRate = Math.min(5 + partnerSuccessSum + jobSuccessSum, 70);
+
+  // Step 2: 市場規模（社）= Σペルソナの潜在顧客数
+  const marketSize = personaCards.reduce(
+    (sum, c) => sum + c.potentialCustomers,
+    0
+  );
+
+  // Step 3: 年間売上（万円）= 単価 × 市場規模 × 事業成功率
+  const annualRevenue = problemCard.unitPrice * marketSize * (successRate / 100);
+
+  // Step 4: 年間コスト = 年間売上 × (30%固定 + Σパートナーコスト変動比率)
+  const partnerCostSum = partnerCards.reduce(
+    (sum, c) => sum + c.costVarianceRate,
+    0
+  );
+  const totalCostRate = 30 + partnerCostSum; // %
+  const annualCost = annualRevenue * (totalCostRate / 100);
+
+  // Step 5: 年間利益
+  const annualProfit = annualRevenue - annualCost;
+
+  // Step 6: 初期費（万円）= Σジョブタイプ初期投資
+  const initialCost = jobCards.reduce((sum, c) => sum + c.initialInvestment, 0);
+
+  // Step 7: 3年間累計利益（万円）
+  const profit3years = annualProfit * 3 - initialCost;
+
+  // Step 8: ランク判定
+  let grade: "S" | "A" | "B" | "C" | "D";
+  if (profit3years >= 20000) {
+    grade = "S"; // 2億円以上
+  } else if (profit3years >= 10000) {
+    grade = "A"; // 1億円以上
+  } else if (profit3years >= 5000) {
+    grade = "B"; // 5,000万円以上
+  } else if (profit3years >= 0) {
+    grade = "C"; // 黒字
+  } else {
+    grade = "D"; // 赤字
+  }
+
+  return {
+    successRate,
+    marketSize,
+    annualRevenue,
+    totalCostRate,
+    annualCost,
+    annualProfit,
+    initialCost,
+    profit3years,
+    grade,
+  };
+}
 
 // ─── ヘルパー関数 ───────────────────────────────────────
 
 /**
- * カードのランク（A, 2〜K）をゲームグレード（S/A/B/C/D）に変換
- */
-function rankToGrade(rank: string): "S" | "A" | "B" | "C" | "D" {
-  if (rank === "A") return "S";
-  if (rank === "K" || rank === "Q") return "A";
-  if (rank === "J" || rank === "10" || rank === "9") return "B";
-  if (rank === "8" || rank === "7" || rank === "6" || rank === "5") return "C";
-  return "D"; // 4, 3, 2
-}
-
-/**
- * 数値を日本円形式でフォーマット（例: 1,234,567 → "1,234,567円"）
- */
-function formatYen(amount: number): string {
-  return `${Math.round(amount).toLocaleString("ja-JP")} 円`;
-}
-
-/**
- * 万円単位でフォーマット（例: 5000000 → "500万円"）
+ * 万円単位の数値を見やすい形式でフォーマット
+ * 例: 17530 → "1.8億円", -500 → "▲500万円"
  */
 function formatManYen(amount: number): string {
-  const man = Math.round(amount / 10_000);
-  if (man >= 10_000) {
-    return `${(man / 10_000).toFixed(1)}億円`;
+  const abs = Math.abs(Math.round(amount));
+  const sign = amount < 0 ? "▲" : "";
+  if (abs >= 10000) {
+    return `${sign}${(abs / 10000).toFixed(1)}億円`;
   }
-  return `${man.toLocaleString("ja-JP")}万円`;
-}
-
-/**
- * Make or Buy 総合評価を計算するメイン関数（v3.1）
- */
-function calcMakeOrBuy(selected: SelectedCards) {
-  const { kuraiCard, personaCards, partnerCards, makeCards } = selected;
-
-  // ── 1. 課題グレード → 販売単価 ──
-  const kuraiGrade = rankToGrade(kuraiCard.rank);
-  const unitPrice = UNIT_PRICE_BY_GRADE[kuraiGrade] ?? 8_000;
-
-  // ── 2. 月間販売数の基準値（ペルソナランク × 転換率70%） ──
-  const monthlyVolumeBase = personaCards.reduce((sum, c) => {
-    const g = rankToGrade(c.rank);
-    return sum + (MARKET_SIZE_BY_GRADE[g] ?? 25);
-  }, 0);
-  const monthlyVolumeRaw = Math.round(monthlyVolumeBase * CONVERSION_RATE);
-
-  // ── 3. 業務領域カバレッジ計算（v3.1 新機能） ──
-  // パートナー（Buy）+ Makeカード、どちらのカードでもカバーできる
-  const allOpCards = [...partnerCards, ...makeCards];
-  const coveredDepts = new Set<string>();
-  for (const card of allOpCards) {
-    for (const fn of card.businessFunctions) {
-      coveredDepts.add(fn);
-    }
-  }
-
-  // カバーされている領域の重みを合算してカバレッジ乗数を計算
-  // 全領域カバー → 1.0 / 現場・配送のみ → 0.70 / 未カバー → 0.0（売上なし）
-  let coverageMultiplier = 0;
-  for (const [dept, weight] of Object.entries(DEPARTMENT_WEIGHTS)) {
-    if (coveredDepts.has(dept)) {
-      coverageMultiplier += weight;
-    }
-  }
-  // 浮動小数点誤差を丸める（0.99999... → 1.0 など）
-  coverageMultiplier = Math.round(coverageMultiplier * 100) / 100;
-
-  // ── 4. 月次売上（カバレッジ乗数を適用） ──
-  // 未カバー領域がある場合、その重み分だけ売上が減少する
-  const monthlyVolume = Math.round(monthlyVolumeRaw * coverageMultiplier);
-  const monthlySales = unitPrice * monthlyVolume;
-
-  // ── 5. 変動費率（10% + パートナーBuyカードのグレード別追加分） ──
-  const varCostAddTotal = partnerCards.reduce((sum, c) => {
-    const g = rankToGrade(c.rank);
-    return sum + (VAR_COST_ADD_BY_GRADE[g] ?? 20);
-  }, 0);
-  const varCostRate = BASE_VAR_COST_RATE + varCostAddTotal; // %
-
-  // ── 6. 月次変動費・月次粗利 ──
-  const monthlyVarCost = monthlySales * (varCostRate / 100);
-  const monthlyProfit = monthlySales - monthlyVarCost;
-
-  // ── 7. 初期費用（Makeカードのグレード別合計） ──
-  const initialCost = makeCards.reduce((sum, c) => {
-    const g = rankToGrade(c.rank);
-    return sum + (INITIAL_COST_BY_GRADE[g] ?? 5_000_000);
-  }, 0);
-
-  // ── 8. 回収月数・利益率 ──
-  const recoveryMonths =
-    monthlyProfit > 0 ? initialCost / monthlyProfit : Infinity;
-  const profitRate =
-    monthlySales > 0 ? (monthlyProfit / monthlySales) * 100 : 0;
-
-  // ── 9. 総合ランク判定（v3.1 強化版） ──
-  // Sランク: 回収3ヶ月未満 + 利益率50%以上 + 全業務領域カバー（100%）
-  // Aランク: 回収6ヶ月未満 + 利益率40%以上 + 85%以上カバー
-  // Bランク: 回収12ヶ月未満 + 利益率30%以上 + 70%以上カバー
-  // Cランク: 黒字 かつ 回収24ヶ月未満
-  // Dランク: 赤字 または 回収24ヶ月以上
-  let finalGrade: "S" | "A" | "B" | "C" | "D";
-  if (recoveryMonths < 3 && profitRate >= 50 && coverageMultiplier >= 1.0) {
-    finalGrade = "S";
-  } else if (recoveryMonths < 6 && profitRate >= 40 && coverageMultiplier >= 0.85) {
-    finalGrade = "A";
-  } else if (recoveryMonths < 12 && profitRate >= 30 && coverageMultiplier >= 0.70) {
-    finalGrade = "B";
-  } else if (monthlyProfit > 0 && recoveryMonths < 24) {
-    finalGrade = "C";
-  } else {
-    finalGrade = "D";
-  }
-
-  return {
-    kuraiGrade,
-    unitPrice,
-    monthlyVolumeBase,     // ペルソナ市場規模合計（人/月）
-    monthlyVolumeRaw,      // カバレッジ適用前の月間販売数（件/月）
-    coverageMultiplier,    // 業務領域カバレッジ乗数（0.0〜1.0）
-    coveredDepts,          // カバーされた業務領域のSet
-    monthlyVolume,         // カバレッジ適用後の月間販売数（件/月）
-    monthlySales,
-    varCostRate,
-    monthlyVarCost,
-    monthlyProfit,
-    initialCost,
-    recoveryMonths,
-    profitRate,
-    finalGrade,
-  };
+  return `${sign}${abs.toLocaleString("ja-JP")}万円`;
 }
 
 // ─── グレード別 表示設定 ────────────────────────────────
 
 const GRADE_CONFIG: Record<
   string,
-  { label: string; color: string; bgColor: string; emoji: string; comment: string }
+  { label: string; color: string; emoji: string; comment: string }
 > = {
   S: {
     label: "S ランク",
     color: "text-yellow-400",
-    bgColor: "bg-yellow-400",
-    emoji: "🏆",
+    emoji: "⭐",
     comment:
-      "素晴らしい！全業務領域をカバーし、素早い回収と高い利益率を両立した最高の事業計画です。",
+      "卓越したビジネスプラン！3年間で2億円以上の利益。持続的な成長が期待できます。",
   },
   A: {
     label: "A ランク",
     color: "text-orange-400",
-    bgColor: "bg-orange-400",
-    emoji: "⭐",
+    emoji: "🥇",
     comment:
-      "優秀！半年以内の回収と高い収益性が見込める優良事業計画です。",
+      "優秀なプラン。3年間で1〜2億円の利益。しっかり黒字を出せる戦略です。",
   },
   B: {
     label: "B ランク",
     color: "text-blue-400",
-    bgColor: "bg-blue-400",
-    emoji: "👍",
+    emoji: "🥈",
     comment:
-      "良好。1年以内に回収でき、安定した利益が期待できる事業計画です。",
+      "良いプラン。3年間で5,000万〜1億円の利益。小さいながら確実に利益を出せます。",
   },
   C: {
     label: "C ランク",
     color: "text-green-400",
-    bgColor: "bg-green-500",
-    emoji: "📈",
+    emoji: "🥉",
     comment:
-      "可能性あり。2年以内の回収が見込めます。カバレッジやBuy/Makeのバランスで改善を狙えます。",
+      "黒字ですが薄利。もう一工夫で大きく伸ばせます。カードの組み合わせを見直しましょう。",
   },
   D: {
     label: "D ランク",
     color: "text-gray-400",
-    bgColor: "bg-gray-500",
-    emoji: "⚠️",
+    emoji: "😰",
     comment:
-      "要改善。赤字または回収に2年以上かかります。業務領域カバレッジとカード選択を見直しましょう。",
+      "3年以内に回収できません。戦略の見直しが必要です。高ランクカードの活用を検討してください。",
   },
 };
 
@@ -315,17 +203,20 @@ export default function ResultPage() {
   const router = useRouter();
   const [selected, setSelected] = useState<SelectedCards | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [aiEvaluation, setAiEvaluation] = useState<string | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
 
   // localStorage からカード選択結果を読み込む
   useEffect(() => {
     try {
-      const raw = localStorage.getItem("logi_selectedCards");
+      const raw = localStorage.getItem("logi_selectedCards_v42");
       if (!raw) {
+        // 旧バージョンのデータが残っている場合の互換対応
         setError("カード選択データが見つかりません。最初からやり直してください。");
         return;
       }
       const data: SelectedCards = JSON.parse(raw);
-      if (!data.kuraiCard || !data.personaCards || !data.partnerCards) {
+      if (!data.problemCard || !data.personaCards) {
         setError("カードデータが不完全です。最初からやり直してください。");
         return;
       }
@@ -334,6 +225,33 @@ export default function ResultPage() {
       setError("データの読み込みに失敗しました。最初からやり直してください。");
     }
   }, []);
+
+  // カードデータ読み込み後に AI評価を取得
+  useEffect(() => {
+    if (!selected) return;
+    const calc = calcV42(selected);
+    fetchAiEvaluation(selected, calc);
+  }, [selected]);
+
+  // AI評価APIを呼び出す関数
+  async function fetchAiEvaluation(cards: SelectedCards, calc: CalcResult) {
+    setAiLoading(true);
+    try {
+      const res = await fetch("/api/card-game/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ selected: cards, calcResult: calc }),
+      });
+      if (!res.ok) throw new Error("AI評価の取得に失敗しました");
+      const data = await res.json();
+      setAiEvaluation(data.evaluation ?? data.plan ?? null);
+    } catch {
+      // AI評価が失敗してもゲームは続行（評価欄は空のまま）
+      setAiEvaluation("AI評価を取得できませんでした。");
+    } finally {
+      setAiLoading(false);
+    }
+  }
 
   // エラー表示
   if (error) {
@@ -351,7 +269,7 @@ export default function ResultPage() {
     );
   }
 
-  // ローディング
+  // ローディング（localStorageの読み込みが終わるまで）
   if (!selected) {
     return (
       <div className="min-h-screen bg-slate-900 text-white flex items-center justify-center">
@@ -361,19 +279,19 @@ export default function ResultPage() {
   }
 
   // ── 計算実行 ──
-  const calc = calcMakeOrBuy(selected);
-  const gradeConfig = GRADE_CONFIG[calc.finalGrade];
-  const kuraiGrade = rankToGrade(selected.kuraiCard.rank);
+  const calc = calcV42(selected);
+  const gradeConfig = GRADE_CONFIG[calc.grade];
 
   return (
     <div className="min-h-screen bg-slate-900 text-white pb-12">
+
       {/* ヘッダー */}
       <div className="bg-slate-800 border-b border-slate-700 px-4 py-4">
         <h1 className="text-xl font-bold text-center text-cyan-400">
           🏭 Mission in LOGI-TECH
         </h1>
         <p className="text-center text-slate-400 text-sm mt-1">
-          Make or Buy 評価結果
+          ビジネスプラン評価結果 v4.2
         </p>
       </div>
 
@@ -385,354 +303,141 @@ export default function ResultPage() {
           <div className={`text-5xl font-black mb-2 ${gradeConfig.color}`}>
             {gradeConfig.label}
           </div>
+          {/* 3年間累計利益（メインスコア） */}
+          <div className="text-3xl font-bold text-white mt-3">
+            {formatManYen(calc.profit3years)}
+          </div>
+          <div className="text-slate-400 text-sm">3年間累計利益</div>
           <p className="text-slate-300 text-sm leading-relaxed mt-3">
             {gradeConfig.comment}
           </p>
-          {/* ランク条件のヒント */}
-          <div className="mt-3 text-xs text-slate-500">
-            S獲得条件: 回収3ヶ月未満 + 利益率50%↑ + 全領域カバー（100%）
-          </div>
         </div>
 
-        {/* ════ 業務領域カバレッジ（v3.1 新機能） ════ */}
+        {/* ════ 財務計算サマリー（v4.2） ════ */}
         <div className="bg-slate-800 rounded-xl border border-slate-600 p-4">
           <h2 className="text-sm font-bold text-slate-400 mb-3 uppercase tracking-wide">
-            🗺️ 業務領域カバレッジ
+            📊 財務計算サマリー
           </h2>
 
-          {/* カバレッジ全体スコア */}
-          <div className="flex items-center gap-3 mb-3">
-            <div className="flex-1">
-              <div className="w-full bg-slate-700 rounded-full h-3 overflow-hidden">
-                <div
-                  className={`h-3 rounded-full transition-all ${
-                    calc.coverageMultiplier >= 1.0
-                      ? "bg-gradient-to-r from-yellow-400 to-green-400"
-                      : calc.coverageMultiplier >= 0.85
-                      ? "bg-gradient-to-r from-cyan-500 to-green-400"
-                      : "bg-gradient-to-r from-orange-500 to-yellow-400"
-                  }`}
-                  style={{ width: `${Math.round(calc.coverageMultiplier * 100)}%` }}
-                />
+          <div className="space-y-2">
+
+            {/* 事業成功率 */}
+            <div className="flex justify-between items-center">
+              <span className="text-slate-400 text-sm">事業成功率</span>
+              <span className="text-cyan-400 font-bold text-lg">
+                {calc.successRate}%
+              </span>
+            </div>
+
+            {/* 成功率の内訳 */}
+            <div className="text-xs text-slate-500 ml-4 space-y-0.5">
+              <div>基本: 5%</div>
+              <div>
+                パートナー貢献:{" "}
+                +{selected.partnerCards.reduce((s, c) => s + c.successContribution, 0)}%
+              </div>
+              <div>
+                ジョブ貢献:{" "}
+                +{selected.jobCards.reduce((s, c) => s + c.successContribution, 0)}%
+                {5 +
+                  selected.partnerCards.reduce((s, c) => s + c.successContribution, 0) +
+                  selected.jobCards.reduce((s, c) => s + c.successContribution, 0) >
+                  70 && " → 上限70%に丸め"}
               </div>
             </div>
-            <span
-              className={`text-lg font-bold ${
-                calc.coverageMultiplier >= 1.0
-                  ? "text-yellow-400"
-                  : calc.coverageMultiplier >= 0.85
-                  ? "text-cyan-400"
-                  : "text-orange-400"
-              }`}
-            >
-              {Math.round(calc.coverageMultiplier * 100)}%
-            </span>
-          </div>
 
-          {/* 各領域のカバー状況 */}
-          <div className="space-y-2">
-            {Object.entries(DEPARTMENT_WEIGHTS).map(([dept, weight]) => {
-              const covered = calc.coveredDepts.has(dept);
-              return (
-                <div key={dept} className="flex items-center gap-2">
-                  <span className={`text-sm ${covered ? "text-green-400" : "text-slate-500"}`}>
-                    {covered ? "✓" : "✗"}
-                  </span>
-                  <span className={`text-xs flex-1 ${covered ? "text-white" : "text-slate-500"}`}>
-                    {dept}
-                  </span>
-                  <span className="text-xs text-slate-500">
-                    寄与率 {Math.round(weight * 100)}%
-                  </span>
-                  <span
-                    className={`text-xs px-1.5 py-0.5 rounded ${
-                      covered ? "bg-green-800 text-green-200" : "bg-red-900 text-red-300"
-                    }`}
-                  >
-                    {covered ? "カバー済" : "未カバー"}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
+            <div className="border-t border-slate-700 my-2" />
 
-          {/* カバレッジペナルティの説明 */}
-          {calc.coverageMultiplier < 1.0 && (
-            <div className="mt-3 p-2 bg-amber-900/50 border border-amber-700 rounded-lg">
-              <p className="text-amber-300 text-xs">
-                ⚠️ 未カバー領域により売上が{" "}
-                <span className="font-bold">
-                  {Math.round(calc.coverageMultiplier * 100)}%
-                </span>
-                {" "}に減少しています。
-                全領域カバーでSランク挑戦権が得られます。
-              </p>
-            </div>
-          )}
-        </div>
-
-        {/* ════ 月次損益サマリー ════ */}
-        <div className="bg-slate-800 rounded-xl border border-slate-600 p-4">
-          <h2 className="text-sm font-bold text-slate-400 mb-3 uppercase tracking-wide">
-            📊 月次損益サマリー
-          </h2>
-
-          <div className="space-y-2">
             {/* 市場規模 */}
             <div className="flex justify-between items-center">
               <span className="text-slate-400 text-sm">
-                ペルソナ市場規模（合計）
+                市場規模（潜在顧客合計）
               </span>
               <span className="text-white font-semibold">
-                {calc.monthlyVolumeBase.toLocaleString()} 人/月
+                {calc.marketSize.toLocaleString()} 社
               </span>
             </div>
 
-            {/* 転換率 */}
+            {/* 単価 */}
             <div className="flex justify-between items-center">
               <span className="text-slate-400 text-sm">
-                　× 転換率（70%）
+                単価（課題カード）
               </span>
               <span className="text-white font-semibold">
-                = {calc.monthlyVolumeRaw.toLocaleString()} 件/月
+                {selected.problemCard.unitPrice.toLocaleString()} 万円/社/年
               </span>
             </div>
 
-            {/* カバレッジ乗数 */}
-            <div className="flex justify-between items-center">
-              <span
-                className={`text-sm ${
-                  calc.coverageMultiplier < 1.0 ? "text-amber-400" : "text-slate-400"
-                }`}
-              >
-                　× カバレッジ（{Math.round(calc.coverageMultiplier * 100)}%）
-              </span>
-              <span
-                className={`font-semibold ${
-                  calc.coverageMultiplier < 1.0 ? "text-amber-400" : "text-white"
-                }`}
-              >
-                = {calc.monthlyVolume.toLocaleString()} 件/月
-              </span>
-            </div>
-
-            {/* 販売単価 */}
-            <div className="flex justify-between items-center">
-              <span className="text-slate-400 text-sm">
-                販売単価（課題グレード {kuraiGrade}）
-              </span>
-              <span className="text-white font-semibold">
-                {formatYen(calc.unitPrice)}/件
-              </span>
-            </div>
-
-            {/* 区切り線 */}
-            <div className="border-t border-slate-700 my-2" />
-
-            {/* 月次売上 */}
-            <div className="flex justify-between items-center">
-              <span className="text-slate-400 text-sm">月次売上</span>
+            {/* 年間売上 */}
+            <div className="flex justify-between items-center border-t border-slate-700 pt-2">
+              <span className="text-slate-300 text-sm font-semibold">年間売上</span>
               <span className="text-cyan-400 font-bold text-lg">
-                {formatManYen(calc.monthlySales)}
+                {formatManYen(calc.annualRevenue)}
               </span>
             </div>
 
-            {/* 変動費率 */}
-            <div className="flex justify-between items-center">
-              <span className="text-slate-400 text-sm">
-                変動費率（基準10% + Buy追加 {calc.varCostRate - BASE_VAR_COST_RATE}%）
-              </span>
-              <span className="text-red-400 font-semibold">
-                {calc.varCostRate.toFixed(0)}%
-              </span>
-            </div>
-
-            {/* 月次変動費 */}
-            <div className="flex justify-between items-center">
-              <span className="text-slate-400 text-sm">月次変動費</span>
-              <span className="text-red-400 font-semibold">
-                − {formatManYen(calc.monthlyVarCost)}
-              </span>
-            </div>
-
-            {/* 区切り線 */}
             <div className="border-t border-slate-700 my-2" />
 
-            {/* 月次粗利 */}
+            {/* コスト変動比率 */}
             <div className="flex justify-between items-center">
-              <span className="text-slate-300 text-sm font-semibold">月次粗利</span>
-              <span
-                className={`font-bold text-xl ${
-                  calc.monthlyProfit >= 0 ? "text-green-400" : "text-red-400"
-                }`}
-              >
-                {calc.monthlyProfit < 0 && "▲ "}
-                {formatManYen(Math.abs(calc.monthlyProfit))}
+              <span className="text-slate-400 text-sm">
+                コスト変動比率（30%固定 + パートナー{" "}
+                {selected.partnerCards.reduce((s, c) => s + c.costVarianceRate, 0)}%）
+              </span>
+              <span className="text-red-400 font-semibold">
+                {calc.totalCostRate}%
               </span>
             </div>
 
-            {/* 粗利率 */}
+            {/* 年間コスト */}
             <div className="flex justify-between items-center">
-              <span className="text-slate-400 text-sm">粗利率</span>
+              <span className="text-slate-400 text-sm">年間コスト</span>
+              <span className="text-red-400 font-semibold">
+                − {formatManYen(calc.annualCost)}
+              </span>
+            </div>
+
+            {/* 年間利益 */}
+            <div className="flex justify-between items-center border-t border-slate-700 pt-2">
+              <span className="text-slate-300 text-sm font-semibold">年間利益</span>
               <span
-                className={`font-semibold ${
-                  calc.profitRate >= 50
-                    ? "text-yellow-400"
-                    : calc.profitRate >= 40
-                    ? "text-green-400"
-                    : calc.profitRate >= 30
-                    ? "text-cyan-400"
-                    : calc.profitRate >= 0
-                    ? "text-yellow-600"
-                    : "text-red-400"
+                className={`font-bold text-lg ${
+                  calc.annualProfit >= 0 ? "text-green-400" : "text-red-400"
                 }`}
               >
-                {calc.profitRate.toFixed(1)}%
+                {formatManYen(calc.annualProfit)}
+              </span>
+            </div>
+
+            <div className="border-t border-slate-700 my-2" />
+
+            {/* 初期費 */}
+            <div className="flex justify-between items-center">
+              <span className="text-slate-400 text-sm">
+                初期費（ジョブタイプ合計）
+              </span>
+              <span className="text-red-400 font-semibold">
+                − {formatManYen(calc.initialCost)}
+              </span>
+            </div>
+
+            {/* 3年間累計利益 */}
+            <div className="flex justify-between items-center border-t border-slate-700 pt-2 mt-2">
+              <span className="text-white text-sm font-bold">
+                3年間累計利益
+                <span className="text-xs text-slate-500 ml-1">
+                  （年間利益×3 - 初期費）
+                </span>
+              </span>
+              <span
+                className={`font-black text-xl ${
+                  calc.profit3years >= 0 ? "text-green-400" : "text-red-400"
+                }`}
+              >
+                {formatManYen(calc.profit3years)}
               </span>
             </div>
           </div>
-        </div>
-
-        {/* ════ Make / Buy コスト内訳 ════ */}
-        <div className="grid grid-cols-2 gap-3">
-          {/* Make（自社開発）コスト */}
-          <div className="bg-slate-800 rounded-xl border border-blue-800 p-4">
-            <div className="text-xs font-bold text-blue-400 mb-2 uppercase">
-              🔨 Make（自社開発）
-            </div>
-            <div className="text-white font-bold text-lg">
-              {formatManYen(calc.initialCost)}
-            </div>
-            <div className="text-slate-500 text-xs mt-1">初期開発費用</div>
-            {selected.makeCards.length > 0 ? (
-              <div className="mt-2 space-y-1">
-                {selected.makeCards.map((c) => {
-                  const g = rankToGrade(c.rank);
-                  return (
-                    <div key={c.id} className="text-xs text-slate-400">
-                      {c.title} ({g}):{" "}
-                      {formatManYen(INITIAL_COST_BY_GRADE[g] ?? 5_000_000)}
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="mt-2 text-xs text-green-400">
-                Makeなし（コストゼロ）
-              </div>
-            )}
-          </div>
-
-          {/* Buy（外部委託）コスト */}
-          <div className="bg-slate-800 rounded-xl border border-orange-800 p-4">
-            <div className="text-xs font-bold text-orange-400 mb-2 uppercase">
-              🤝 Buy（外部委託）
-            </div>
-            <div className="text-white font-bold text-lg">
-              +{(calc.varCostRate - BASE_VAR_COST_RATE).toFixed(0)}%
-            </div>
-            <div className="text-slate-500 text-xs mt-1">変動費率追加分</div>
-            {selected.partnerCards.length > 0 ? (
-              <div className="mt-2 space-y-1">
-                {selected.partnerCards.map((c) => {
-                  const g = rankToGrade(c.rank);
-                  return (
-                    <div key={c.id} className="text-xs text-slate-400">
-                      {c.title} ({g}): +{VAR_COST_ADD_BY_GRADE[g] ?? 20}%
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="mt-2 text-xs text-green-400">
-                Buyなし（追加コストゼロ）
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* ════ 投資回収分析 ════ */}
-        <div className="bg-slate-800 rounded-xl border border-slate-600 p-4">
-          <h2 className="text-sm font-bold text-slate-400 mb-3 uppercase tracking-wide">
-            💰 投資回収分析
-          </h2>
-
-          <div className="space-y-3">
-            {/* 初期投資額 */}
-            <div className="flex justify-between items-center">
-              <span className="text-slate-400 text-sm">初期投資額（Make合計）</span>
-              <span className="text-white font-semibold">
-                {formatManYen(calc.initialCost)}
-              </span>
-            </div>
-
-            {/* 月次粗利 */}
-            <div className="flex justify-between items-center">
-              <span className="text-slate-400 text-sm">月次粗利（回収原資）</span>
-              <span
-                className={`font-semibold ${
-                  calc.monthlyProfit >= 0 ? "text-green-400" : "text-red-400"
-                }`}
-              >
-                {formatManYen(calc.monthlyProfit)}/月
-              </span>
-            </div>
-
-            {/* 回収月数 */}
-            <div className="flex justify-between items-center">
-              <span className="text-slate-300 text-sm font-semibold">
-                投資回収期間
-              </span>
-              <span
-                className={`font-bold text-xl ${
-                  calc.recoveryMonths === Infinity
-                    ? "text-red-400"
-                    : calc.recoveryMonths < 3
-                    ? "text-yellow-400"
-                    : calc.recoveryMonths < 6
-                    ? "text-green-400"
-                    : calc.recoveryMonths < 12
-                    ? "text-cyan-400"
-                    : "text-orange-400"
-                }`}
-              >
-                {calc.recoveryMonths === Infinity
-                  ? "回収不能"
-                  : calc.recoveryMonths < 1
-                  ? "1ヶ月未満"
-                  : `約 ${Math.ceil(calc.recoveryMonths)} ヶ月`}
-              </span>
-            </div>
-
-            {/* 年間換算粗利 */}
-            {calc.initialCost > 0 && calc.monthlyProfit > 0 && (
-              <div className="flex justify-between items-center text-slate-500 text-xs">
-                <span>年間粗利（回収後）</span>
-                <span>{formatManYen(calc.monthlyProfit * 12)}/年</span>
-              </div>
-            )}
-          </div>
-
-          {/* 回収プログレスバー */}
-          {calc.initialCost > 0 && calc.recoveryMonths !== Infinity && (
-            <div className="mt-4">
-              <div className="text-xs text-slate-500 mb-1">回収進捗（24ヶ月基準）</div>
-              <div className="w-full bg-slate-700 rounded-full h-3 overflow-hidden">
-                <div
-                  className="h-3 rounded-full bg-gradient-to-r from-cyan-500 to-green-400 transition-all"
-                  style={{
-                    width: `${Math.min(
-                      (Math.ceil(calc.recoveryMonths) / 24) * 100,
-                      100
-                    )}%`,
-                  }}
-                />
-              </div>
-              <div className="text-xs text-slate-400 mt-1 text-right">
-                {Math.ceil(calc.recoveryMonths)} / 24 ヶ月
-              </div>
-            </div>
-          )}
         </div>
 
         {/* ════ 選択カードサマリー ════ */}
@@ -742,42 +447,84 @@ export default function ResultPage() {
           </h2>
 
           <div className="space-y-3">
+            {/* 課題カード */}
             <CardSummaryRow
-              label="♦ 課題"
-              cards={[selected.kuraiCard]}
-              color="text-red-300"
+              label="♦️ 課題"
+              cards={[selected.problemCard]}
+              color="text-amber-300"
+              paramLabel={`単価 ${selected.problemCard.unitPrice.toLocaleString()}万円/社/年`}
             />
+
+            {/* ペルソナカード */}
             <CardSummaryRow
-              label="♥ ペルソナ"
+              label="♥️ ペルソナ"
               cards={selected.personaCards}
               color="text-pink-300"
+              paramLabel={`合計 ${calc.marketSize}社`}
             />
+
+            {/* パートナーカード */}
             <CardSummaryRow
-              label="♣ パートナー（Buy）"
+              label="♣️ パートナー"
               cards={selected.partnerCards}
               color="text-green-300"
-              emptyLabel="なし（全部Make）"
+              emptyLabel="なし"
+              paramLabel={
+                selected.partnerCards.length > 0
+                  ? `コスト +${selected.partnerCards.reduce((s, c) => s + c.costVarianceRate, 0)}% / 成功率 +${selected.partnerCards.reduce((s, c) => s + c.successContribution, 0)}%`
+                  : ""
+              }
             />
+
+            {/* ジョブタイプカード */}
             <CardSummaryRow
-              label="♠ アクション（Make）"
-              cards={selected.makeCards}
+              label="♠️ ジョブタイプ"
+              cards={selected.jobCards}
               color="text-blue-300"
-              emptyLabel="なし（全部Buy）"
+              emptyLabel="なし"
+              paramLabel={
+                selected.jobCards.length > 0
+                  ? `初期費 ${formatManYen(calc.initialCost)} / 成功率 +${selected.jobCards.reduce((s, c) => s + c.successContribution, 0)}%`
+                  : ""
+              }
             />
           </div>
         </div>
 
+        {/* ════ Claude AI ビジネスプラン評価 ════ */}
+        <div className="bg-slate-800 rounded-xl border border-slate-600 p-4">
+          <h2 className="text-sm font-bold text-slate-400 mb-3 uppercase tracking-wide">
+            🤖 AI ビジネスプラン評価
+          </h2>
+
+          {aiLoading ? (
+            <div className="flex items-center gap-3 py-4 text-slate-400">
+              <div className="w-5 h-5 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin flex-shrink-0" />
+              <span className="text-sm">Claude AI が評価中...</span>
+            </div>
+          ) : aiEvaluation ? (
+            <div className="text-slate-300 text-sm leading-relaxed whitespace-pre-wrap">
+              {aiEvaluation}
+            </div>
+          ) : (
+            <p className="text-slate-500 text-sm">評価を取得できませんでした。</p>
+          )}
+        </div>
+
         {/* ════ アクションボタン ════ */}
         <div className="space-y-3 pt-2">
+          {/* もう一度プレイ */}
           <button
             onClick={() => {
-              localStorage.removeItem("logi_selectedCards");
+              localStorage.removeItem("logi_selectedCards_v42");
               router.push("/card-game/select");
             }}
             className="w-full py-3 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-black font-bold text-base transition-all duration-200"
           >
             🔄 もう一度プレイ
           </button>
+
+          {/* カード選択に戻る */}
           <button
             onClick={() => router.push("/card-game/select")}
             className="w-full py-3 rounded-xl bg-slate-700 hover:bg-slate-600 text-white font-bold transition-all"
@@ -800,35 +547,38 @@ function CardSummaryRow({
   cards,
   color,
   emptyLabel = "なし",
+  paramLabel = "",
 }: {
   label: string;
   cards: Card[];
   color: string;
   emptyLabel?: string;
+  paramLabel?: string;
 }) {
   return (
     <div className="flex items-start gap-2">
-      <span className={`text-xs font-semibold whitespace-nowrap mt-0.5 ${color}`}>
+      <span className={`text-xs font-semibold whitespace-nowrap mt-0.5 min-w-24 ${color}`}>
         {label}
       </span>
       <div className="flex-1">
         {cards.length === 0 ? (
           <span className="text-slate-500 text-xs">{emptyLabel}</span>
         ) : (
-          <div className="flex flex-wrap gap-1">
-            {cards.map((c) => {
-              const g = rankToGrade(c.rank);
-              return (
+          <>
+            <div className="flex flex-wrap gap-1">
+              {cards.map((c) => (
                 <span
                   key={c.id}
                   className="text-xs bg-slate-700 text-slate-200 px-2 py-0.5 rounded"
                 >
                   {c.title}
-                  <span className="ml-1 text-slate-500">({g})</span>
                 </span>
-              );
-            })}
-          </div>
+              ))}
+            </div>
+            {paramLabel && (
+              <div className="text-xs text-slate-500 mt-0.5">{paramLabel}</div>
+            )}
+          </>
         )}
       </div>
     </div>

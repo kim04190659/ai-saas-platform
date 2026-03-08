@@ -1,244 +1,157 @@
 /**
  * /api/card-game/generate
- * 選択されたカードと入力情報をもとに、Claude AIがビジネスプランを生成・評価するAPIルート
+ * Mission in LOGI-TECH — Claude AI によるビジネスプラン評価API（v4.2対応）
  *
  * POST /api/card-game/generate
  * Body: {
- *   teamName, members,
- *   heartCard, diamondCard, clubCard, spadeCard,  // 選択カードデータ
- *   solutionName, userBenefit, advantage, planRevision,  // ユーザー入力
- *   projection  // 5年間財務プロジェクション（任意）
+ *   selected: SelectedCards,  // 選択したカード情報
+ *   calcResult: CalcResult,   // v4.2 財務計算結果
  * }
  */
 
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 
-// Claude APIクライアントを初期化
+// Claude APIクライアントを初期化（環境変数からAPIキーを読み取る）
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
-// フロントエンドから送られてくるカードデータの型
-type CardData = {
+// カードの型定義（v4.2）
+type Card = {
   id: string;
   cardName: string;
   suit: string;
   rank: string;
+  role: string;
+  baseValue: number;
   title: string;
   description: string;
-  marketSize: number;
-  monthlySales: number;
   unitPrice: number;
-  variableCost: number;
-  feasibilityScore: number;
+  potentialCustomers: number;
+  costVarianceRate: number;
+  successContribution: number;
+  initialInvestment: number;
 };
 
-// 5年間プロジェクションの1行の型
-type YearResult = {
-  year: number;
-  monthlySales: number;
-  unitPrice: number;
-  variableCostPerUnit: number;
+// 選択カードの型
+type SelectedCards = {
+  problemCard: Card;
+  personaCards: Card[];
+  partnerCards: Card[];
+  jobCards: Card[];
+};
+
+// 財務計算結果の型
+type CalcResult = {
+  successRate: number;
+  marketSize: number;
   annualRevenue: number;
+  totalCostRate: number;
   annualCost: number;
   annualProfit: number;
-  profitMargin: number;
+  initialCost: number;
+  profit3years: number;
+  grade: string;
 };
 
-// リクエストボディの型
-type GenerateRequest = {
-  teamName: string;
-  members: string;
-  heartCard: CardData;   // ♥️ペルソナ
-  diamondCard: CardData; // ♦️問題・課題
-  clubCard: CardData;    // ♣️パートナー
-  spadeCard: CardData;   // ♠️ジョブタイプ
-  solutionName: string;
-  userBenefit: string;
-  advantage: string;
-  planRevision: string;
-  projection?: YearResult[]; // 5年間プロジェクション（任意）
-};
-
-// 金額を読みやすい日本語に変換
-function formatYenText(num: number): string {
-  const abs = Math.abs(num);
-  const sign = num < 0 ? "-" : "";
-  if (abs >= 100000000) return `${sign}${(abs / 100000000).toFixed(1)}億円`;
-  if (abs >= 10000) return `${sign}${(abs / 10000).toFixed(0)}万円`;
-  return `${sign}${abs.toLocaleString()}円`;
-}
-
+// POSTリクエストのハンドラー
 export async function POST(request: NextRequest) {
-  const body: GenerateRequest = await request.json();
+  const body = await request.json();
 
-  const {
-    heartCard, diamondCard, clubCard, spadeCard,
-    solutionName, userBenefit, advantage, planRevision,
-    projection,
-  } = body;
+  // v4.2形式のリクエスト（{ selected, calcResult }）かどうかチェック
+  if (body.selected && body.calcResult) {
+    return handleV42Request(body.selected as SelectedCards, body.calcResult as CalcResult);
+  }
 
-  // ビジネス指標を計算（変動費バグ修正済み：件数 × 変動費/件）
-  const monthlySales = heartCard.monthlySales;
-  const unitPrice = diamondCard.unitPrice;
-  const variableCostPerUnit = clubCard.variableCost; // Notionでは変動費/件として保存
-  const monthlyRevenue = monthlySales * unitPrice;
-  const monthlyCost = variableCostPerUnit * monthlySales;  // 修正: × 販売数
-  const monthlyProfit = monthlyRevenue - monthlyCost;
-  const profitMargin = monthlyRevenue > 0
-    ? Math.round((monthlyProfit / monthlyRevenue) * 100)
-    : 0;
-
-  // 5年プロジェクションのテキスト表現を生成
-  const projectionText = projection && projection.length > 0
-    ? `
-## 📈 5年間 財務プロジェクション（学生設定値）
-
-| 年次 | 月間販売数 | 販売単価 | 変動費/件 | 年間売上 | 年間変動費 | 年間利益 | 利益率 |
-|------|-----------|---------|---------|---------|---------|---------|------|
-${projection.map(r =>
-  `| ${r.year}年目 | ${r.monthlySales.toLocaleString()}件 | ${formatYenText(r.unitPrice)} | ${formatYenText(r.variableCostPerUnit)} | ${formatYenText(r.annualRevenue)} | ${formatYenText(r.annualCost)} | ${formatYenText(r.annualProfit)} | ${r.profitMargin}% |`
-).join("\n")}
-| **5年合計** | - | - | - | **${formatYenText(projection.reduce((s, r) => s + r.annualRevenue, 0))}** | **${formatYenText(projection.reduce((s, r) => s + r.annualCost, 0))}** | **${formatYenText(projection.reduce((s, r) => s + r.annualProfit, 0))}** | **${Math.round(projection.reduce((s, r) => s + r.annualProfit, 0) / Math.max(projection.reduce((s, r) => s + r.annualRevenue, 0), 1) * 100)}%** |
-`
-    : "";
-
-  // Claudeに送るプロンプトを作成
-  const prompt = `あなたは経験豊富なビジネスプランコンサルタントです。
-学生が作成したビジネスプランを、以下の情報をもとに「改善・強化」し、厳格に評価してください。
-
-## 📊 選択カード情報
-
-### ♥️ ペルソナ（誰のため）
-- カード: ${heartCard.rank} - ${heartCard.title}
-- 詳細: ${heartCard.description}
-- 市場規模: ${heartCard.marketSize.toLocaleString()}万人/社
-- 月間販売見込: ${heartCard.monthlySales.toLocaleString()}件/月
-
-### ♦️ 問題・課題（何を解決）
-- カード: ${diamondCard.rank} - ${diamondCard.title}
-- 詳細: ${diamondCard.description}
-- 想定販売単価: ¥${diamondCard.unitPrice.toLocaleString()}
-
-### ♣️ パートナー（誰と組む）
-- カード: ${clubCard.rank} - ${clubCard.title}
-- 詳細: ${clubCard.description}
-- 変動費/件: ¥${clubCard.variableCost.toLocaleString()}
-
-### ♠️ ジョブタイプ（どう実現）
-- カード: ${spadeCard.rank} - ${spadeCard.title}
-- 詳細: ${spadeCard.description}
-- 実現可能性スコア: ${spadeCard.feasibilityScore}/10
-
-## 💰 月次ビジネス指標（自動計算）
-- 月間売上試算: ¥${monthlyRevenue.toLocaleString()}（${monthlySales}件 × ¥${unitPrice.toLocaleString()}）
-- 月間変動費: ¥${monthlyCost.toLocaleString()}（${monthlySales}件 × ¥${variableCostPerUnit.toLocaleString()}/件）
-- 月間利益試算: ¥${monthlyProfit.toLocaleString()}
-- 利益率: ${profitMargin}%
-${projectionText}
-## 📝 学生のビジネスプラン入力
-
-### ソリューション名
-${solutionName}
-
-### ユーザーベネフィット（利用者への価値）
-${userBenefit}
-
-### 自社の強みと他社との差異化
-${advantage}
-
-### ビジネスプランの修正・補足
-${planRevision}
-
----
-
-## 📋 出力指示
-
-以下のJSON形式で回答してください（JSON以外のテキストは一切含めないこと）:
-
-{
-  "improvedPlan": "改善されたビジネスプラン全文（400文字程度）。具体的な施策、数値目標、主要リスク対策を含めること",
-  "executiveSummary": "エグゼクティブサマリー（200文字以内）。投資家に一言で魅力を伝える文章",
-  "targetCustomer": "ターゲット顧客の詳細な定義（150文字以内）",
-  "valueProposition": "バリュープロポジション（価値提案）を1文で（100文字以内）",
-  "revenueModel": "収益モデルの詳細説明（200文字以内）",
-  "score": 評価スコア（整数、0〜100）,
-  "scoreBreakdown": {
-    "marketPotential": 市場性スコア（0〜25）,
-    "feasibility": 実現可能性スコア（0〜25）,
-    "differentiation": 差別化スコア（0〜25）,
-    "planQuality": プラン品質スコア（0〜25）
-  },
-  "strengths": ["強み1", "強み2", "強み3"],
-  "issues": ["課題・リスク1", "課題・リスク2", "課題・リスク3"],
-  "nextActions": ["グループワークでの検討事項1", "検討事項2", "検討事項3"],
-  "mentorComment": "メンターからの総評コメント（300文字以内）。学生への励ましと厳しい指摘のバランスを取ること"
+  // 旧形式のリクエストへの後方互換（エラー返却）
+  return NextResponse.json(
+    { error: "v4.2形式のリクエストが必要です" },
+    { status: 400 }
+  );
 }
 
-評価基準（厳格に）:
-- 80点以上: 投資家に見せられる水準
-- 60-79点: 良いアイデアだが要改善
-- 40-59点: 方向性はあるが根本的な見直しが必要
-- 40点未満: 大幅な再設計が必要
+/**
+ * v4.2 ビジネスプラン評価を Claude AI に依頼する
+ */
+async function handleV42Request(selected: SelectedCards, calc: CalcResult) {
+  const { problemCard, personaCards, partnerCards, jobCards } = selected;
 
-学生の熱意は認めつつも、ビジネスとして成立するかどうかを客観的・厳格に評価すること。`;
+  // ランク判定のラベル
+  const gradeLabels: Record<string, string> = {
+    S: "S（2億円以上 ⭐）",
+    A: "A（1〜2億円 🥇）",
+    B: "B（5千万〜1億円 🥈）",
+    C: "C（黒字 🥉）",
+    D: "D（赤字 😰）",
+  };
+
+  // Claude に送るプロンプトを作成
+  const prompt = `あなたは物流業界のビジネスコンサルタントです。
+以下のカードゲームで選択されたビジネスプランを、専門的かつ学習者に分かりやすく評価してください。
+
+## 選択されたカード
+
+### ♦️ 解決する課題
+- ${problemCard.cardName}: ${problemCard.title}
+- ${problemCard.description}
+- 単価: ${problemCard.unitPrice.toLocaleString()}万円/社/年
+
+### ♥️ ペルソナ（市場）
+${personaCards.map(c => `- ${c.cardName}: ${c.title}（潜在顧客${c.potentialCustomers}社）`).join("\n")}
+
+### ♣️ パートナー
+${partnerCards.length > 0
+    ? partnerCards.map(c => `- ${c.cardName}: ${c.title}（コスト+${c.costVarianceRate}%, 成功率+${c.successContribution}%）`).join("\n")
+    : "- なし"}
+
+### ♠️ ジョブタイプ
+${jobCards.length > 0
+    ? jobCards.map(c => `- ${c.cardName}: ${c.title}（初期費${c.initialInvestment.toLocaleString()}万円, 成功率+${c.successContribution}%）`).join("\n")
+    : "- なし"}
+
+## 財務計算結果（v4.2）
+
+| 指標 | 値 |
+|------|-----|
+| 事業成功率 | ${calc.successRate}% |
+| 市場規模 | ${calc.marketSize.toLocaleString()}社 |
+| 年間売上 | ${Math.round(calc.annualRevenue).toLocaleString()}万円 |
+| コスト変動比率 | ${calc.totalCostRate}% |
+| 年間コスト | ${Math.round(calc.annualCost).toLocaleString()}万円 |
+| 年間利益 | ${Math.round(calc.annualProfit).toLocaleString()}万円 |
+| 初期費 | ${calc.initialCost.toLocaleString()}万円 |
+| **3年間累計利益** | **${Math.round(calc.profit3years).toLocaleString()}万円** |
+| **総合ランク** | **${gradeLabels[calc.grade] ?? calc.grade}** |
+
+## 評価の依頼
+
+以下の3点について、合計200文字程度で簡潔に日本語で評価してください：
+1. このビジネスプランの最大の強みは何ですか？
+2. リスクや改善すべき点があれば教えてください。
+3. このカードの組み合わせを選んだ学習者へのアドバイスをお願いします。
+
+学習者は物流業界について学ぶ中高生・大学生を想定しています。
+専門用語は分かりやすく説明しながら、前向きで励みになる評価をお願いします。`;
 
   try {
-    // Claude APIを呼び出す（haiku = コスト効率が良いモデル）
+    // Claude Haiku を使用（コスト効率が良い）
     const message = await anthropic.messages.create({
       model: "claude-haiku-4-5-20251001",
-      max_tokens: 4096,
+      max_tokens: 1024,
       messages: [{ role: "user", content: prompt }],
     });
 
     // レスポンスからテキストを取得
-    const rawText = message.content[0].type === "text" ? message.content[0].text : "";
+    const evaluation =
+      message.content[0].type === "text" ? message.content[0].text : "";
 
-    // JSONをパース（コードブロックがある場合は除去）
-    let jsonStr = rawText
-      .replace(/```json\n?/g, "")
-      .replace(/```\n?/g, "")
-      .trim();
-
-    // JSON部分だけを抽出（{ から最後の } まで）
-    const jsonStart = jsonStr.indexOf("{");
-    const jsonEnd = jsonStr.lastIndexOf("}");
-    if (jsonStart !== -1 && jsonEnd !== -1) {
-      jsonStr = jsonStr.slice(jsonStart, jsonEnd + 1);
-    }
-
-    let result;
-    try {
-      result = JSON.parse(jsonStr);
-    } catch (parseError) {
-      // JSONパース失敗時は生テキストをそのまま返す（フォールバック）
-      console.error("JSONパースエラー。生テキスト長:", rawText.length, parseError);
-      console.error("JSONプレビュー:", jsonStr.slice(0, 200));
-      return NextResponse.json(
-        { error: "AI応答のパースに失敗しました。再試行してください。", rawLength: rawText.length },
-        { status: 500 }
-      );
-    }
-
-    // 計算した指標と5年プロジェクションも一緒に返す
-    return NextResponse.json({
-      ...result,
-      metrics: {
-        monthlyRevenue,
-        monthlyProfit,
-        monthlyCost,
-        variableCostPerUnit,
-        profitMargin,
-        feasibilityScore: spadeCard.feasibilityScore,
-        marketSize: heartCard.marketSize,
-      },
-      projection: projection ?? [],
-    });
+    // フロントエンドには evaluation フィールドとして返す
+    return NextResponse.json({ evaluation });
   } catch (error) {
     console.error("Claude API エラー:", error);
     return NextResponse.json(
-      { error: "AI生成に失敗しました。しばらく待ってから再試行してください。" },
+      { error: "AI評価に失敗しました。しばらく待ってから再試行してください。" },
       { status: 500 }
     );
   }

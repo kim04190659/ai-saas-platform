@@ -1,267 +1,130 @@
 /**
  * /card-game/select
- * Make or Buy ゲーム v3 — カード選択ウィザード（4ステップ）
+ * Mission in LOGI-TECH — カード選択ウィザード（v4.2）
  *
- * STEP 0: 課題を選ぶ     (役割=問題・課題、1枚)
- * STEP 1: ペルソナを選ぶ  (役割=ペルソナ、複数可、課題テーマで絞り込み)
- * STEP 2: パートナーを選ぶ (役割=パートナー、複数可 → Buy決定)
- * STEP 3: アクション確認  (役割=ジョブタイプ、自動決定 → Make決定)
+ * STEP 0: 課題を選ぶ      (♦️ダイヤ、1枚固定)
+ * STEP 1: ペルソナを選ぶ  (♥️ハート、複数可)
+ * STEP 2: パートナーを選ぶ (♣️クラブ、複数可)
+ * STEP 3: ジョブタイプを選ぶ (♠️スペード、複数可・ユーザーが選択)
  *
- * 最後に logi_selectedCards を localStorage に保存して
+ * 選択後 logi_selectedCards_v42 を localStorage に保存して
  * /card-game/result へ遷移する
  */
 
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 // ─── 型定義 ────────────────────────────────────────────
 
-// APIから返ってくるカードの型（cards/route.ts と対応）
+// APIから返ってくるカードの型（v4.2: cards/route.ts と対応）
 type Card = {
   id: string;
-  cardName: string;       // "♦2" など
-  suit: string;           // "♦️ダイヤ" など（旧フィールド、互換用）
-  rank: string;           // "A" | "2" | ... | "K"
-  role: string;           // "問題・課題" | "ペルソナ" | "パートナー" | "ジョブタイプ"
-  theme: string;          // "配送業・物流人材不足" など
-  title: string;          // カードタイトル（短い名前）
-  description: string;    // 説明テキスト
-  flavorText: string;     // フレーバーテキスト（斜体で表示）
-  marketSize: number;     // マーケットサイズ（万人）
-  monthlyVolume: number;  // 月間販売見込数（件/月）
-  unitPrice: number;      // 販売単価（円/件）
-  variableCost: number;   // 変動費月額（円）
-  feasibilityScore: number; // 実現可能性スコア（1-10）
-  businessFunctions: string[]; // 業務機能タグ（例: ["現場・配送", "カスタマーサポート"]）
-  targetPersonas: string[];    // 対応ペルソナタグ
+  cardName: string;         // "♦A-PR01" など
+  suit: string;             // "♦️ダイヤ" など
+  rank: string;             // "A" | "K" | ... | "2"
+  role: string;             // "問題・課題" | "ペルソナ" | "パートナー" | "ジョブタイプ"
+  baseValue: number;        // A=13, K=12, ... 2=1
+  title: string;            // カードタイトル
+  description: string;      // 説明テキスト
+  // v4.2 財務パラメーター
+  unitPrice: number;        // ♦️ダイヤ専用: 万円/社/年
+  potentialCustomers: number; // ♥️ハート専用: 社
+  costVarianceRate: number;   // ♣️クラブ専用: %
+  successContribution: number; // ♣️♠️共通: %
+  initialInvestment: number;   // ♠️スペード専用: 万円
 };
 
-// localStorage に保存する選択結果の型
+// localStorageに保存する選択結果の型
 type SelectedCards = {
-  kuraiCard: Card;        // 選んだ課題カード（1枚）
-  personaCards: Card[];   // 選んだペルソナカード（複数）
-  partnerCards: Card[];   // 選んだパートナーカード（Buy、複数）
-  makeCards: Card[];      // 自動決定されたMakeカード（複数）
+  problemCard: Card;      // ♦️課題カード（1枚）
+  personaCards: Card[];   // ♥️ペルソナカード（複数）
+  partnerCards: Card[];   // ♣️パートナーカード（複数）
+  jobCards: Card[];       // ♠️ジョブタイプカード（複数）
 };
 
 // ─── 定数 ──────────────────────────────────────────────
 
-/**
- * 5つの業務領域（v3 新部門名）
- * ↑ result/page.tsx の DEPARTMENT_WEIGHTS と必ず揃えること
- *    現場・配送: 0.70
- *    倉庫・ロジスティクス: 0.15
- *    営業・マーケティング: 0.05
- *    カスタマーサポート: 0.05
- *    事務バックオフィス・IT: 0.05
- */
-const ALL_BUSINESS_FUNCTIONS = [
-  "現場・配送",
-  "倉庫・ロジスティクス",
-  "営業・マーケティング",
-  "カスタマーサポート",
-  "事務バックオフィス・IT",
-] as const;
-
-// ステップのラベル
+// ステップラベル
 const STEP_LABELS = [
-  "課題を選ぶ",
-  "ペルソナ",
-  "パートナー（Buy）",
-  "アクション確認",
+  "♦️ 課題",
+  "♥️ ペルソナ",
+  "♣️ パートナー",
+  "♠️ ジョブタイプ",
 ];
+
+// グレードバッジの色（Tailwindクラス名）
+const GRADE_COLORS: Record<string, string> = {
+  S: "bg-yellow-400 text-black",
+  A: "bg-orange-400 text-black",
+  B: "bg-blue-400 text-white",
+  C: "bg-green-500 text-white",
+  D: "bg-gray-500 text-white",
+};
 
 // ─── ヘルパー関数 ───────────────────────────────────────
 
 /**
- * カードの役割（role）からトランプスートの情報を返す
- * ♦=問題・課題（赤）  ♥=ペルソナ（ピンク）
- * ♣=パートナー（緑）  ♠=ジョブタイプ（黒）
+ * ランク（A, K, Q, ... 2）をグレード（S/A/B/C/D）に変換
  */
-function getSuitInfo(role: string) {
-  switch (role) {
-    case "問題・課題":
-      return {
-        symbol: "♦",
-        textColor: "text-red-500",
-        bgColor: "bg-white",
-        borderColor: "border-red-300",
-        tagBg: "bg-red-50 text-red-600",
-        selectedBorder: "border-red-500",
-        selectedRing: "ring-2 ring-red-400",
-      };
-    case "ペルソナ":
-      return {
-        symbol: "♥",
-        textColor: "text-rose-500",
-        bgColor: "bg-white",
-        borderColor: "border-rose-300",
-        tagBg: "bg-rose-50 text-rose-600",
-        selectedBorder: "border-rose-500",
-        selectedRing: "ring-2 ring-rose-400",
-      };
-    case "パートナー":
-      return {
-        symbol: "♣",
-        textColor: "text-emerald-700",
-        bgColor: "bg-white",
-        borderColor: "border-emerald-300",
-        tagBg: "bg-emerald-50 text-emerald-700",
-        selectedBorder: "border-emerald-500",
-        selectedRing: "ring-2 ring-emerald-400",
-      };
-    case "ジョブタイプ":
-      return {
-        symbol: "♠",
-        textColor: "text-slate-800",
-        bgColor: "bg-white",
-        borderColor: "border-slate-400",
-        tagBg: "bg-slate-100 text-slate-700",
-        selectedBorder: "border-slate-600",
-        selectedRing: "ring-2 ring-slate-500",
-      };
-    default:
-      return {
-        symbol: "★",
-        textColor: "text-gray-500",
-        bgColor: "bg-white",
-        borderColor: "border-gray-300",
-        tagBg: "bg-gray-100 text-gray-600",
-        selectedBorder: "border-gray-500",
-        selectedRing: "ring-2 ring-gray-400",
-      };
-  }
+function rankToGrade(rank: string): "S" | "A" | "B" | "C" | "D" {
+  if (rank === "A") return "S";
+  if (rank === "K" || rank === "Q") return "A";
+  if (rank === "J" || rank === "10" || rank === "9") return "B";
+  if (rank === "8" || rank === "7" || rank === "6" || rank === "5") return "C";
+  return "D";
+}
+
+/**
+ * v4.2 事業成功率の計算（プレビュー用）
+ * = 5% + Σ(パートナー成功率貢献) + Σ(ジョブタイプ成功率貢献)、上限70%
+ */
+function calcSuccessRate(partners: Card[], jobs: Card[]): number {
+  const partnerSum = partners.reduce((s, c) => s + c.successContribution, 0);
+  const jobSum = jobs.reduce((s, c) => s + c.successContribution, 0);
+  return Math.min(5 + partnerSum + jobSum, 70);
+}
+
+/**
+ * v4.2 3年間累計利益のプレビュー計算（選択中にリアルタイム表示）
+ */
+function calcProfit3yearsPreview(
+  problem: Card | null,
+  personas: Card[],
+  partners: Card[],
+  jobs: Card[]
+): number | null {
+  if (!problem || personas.length === 0) return null;
+
+  // 事業成功率（%）
+  const successRate = calcSuccessRate(partners, jobs) / 100;
+  // 市場規模（社）= ペルソナの潜在顧客数合計
+  const marketSize = personas.reduce((s, c) => s + c.potentialCustomers, 0);
+  // 年間売上（万円）= 単価 × 市場規模 × 成功率
+  const annualRevenue = problem.unitPrice * marketSize * successRate;
+  // コスト変動比率合計 = 30%固定 + パートナーのコスト変動比率合計
+  const costRate = (30 + partners.reduce((s, c) => s + c.costVarianceRate, 0)) / 100;
+  // 年間コスト（万円）
+  const annualCost = annualRevenue * costRate;
+  // 初期費（万円）= ジョブタイプの初期投資合計
+  const initialCost = jobs.reduce((s, c) => s + c.initialInvestment, 0);
+  // 3年間累計利益（万円）
+  return (annualRevenue - annualCost) * 3 - initialCost;
+}
+
+/**
+ * 万円 → 億円/万円の見やすい形式でフォーマット
+ */
+function formatManYen(amount: number | null): string {
+  if (amount === null) return "-";
+  if (amount >= 10000) return `${(amount / 10000).toFixed(1)}億円`;
+  if (amount <= -10000) return `▲${(Math.abs(amount) / 10000).toFixed(1)}億円`;
+  if (amount < 0) return `▲${Math.abs(Math.round(amount)).toLocaleString()}万円`;
+  return `${Math.round(amount).toLocaleString()}万円`;
 }
 
 // ─── サブコンポーネント ─────────────────────────────────
-
-/**
- * トランプ風カードコンポーネント（v3）
- *
- * デザイン仕様:
- * - 白背景（明るいカード）
- * - 左上・右下にスート記号（小さく）
- * - 中央背景に大きなスート記号（透かし・薄い）
- * - ランク（S/A/B/C/D）バッジは非表示
- * - 選択時: 枠色強調 + チェックマーク
- *
- * selected: 選択中かどうか
- * disabled: クリック不可（Makeカードの自動表示に使用）
- * showNumbers: 月間件数・単価を表示するか
- */
-function CardItem({
-  card,
-  selected = false,
-  onClick,
-  disabled = false,
-  showNumbers = false,
-}: {
-  card: Card;
-  selected?: boolean;
-  onClick?: () => void;
-  disabled?: boolean;
-  showNumbers?: boolean;
-}) {
-  const suit = getSuitInfo(card.role);
-
-  return (
-    <div
-      onClick={disabled ? undefined : onClick}
-      className={[
-        // トランプ風: 白背景・角丸・影
-        "relative rounded-xl border-2 p-4 transition-all duration-200 overflow-hidden",
-        suit.bgColor,
-        // 選択状態で枠色変化
-        selected
-          ? `${suit.selectedBorder} ${suit.selectedRing} shadow-lg`
-          : `${suit.borderColor}`,
-        !disabled && !selected ? "hover:shadow-md cursor-pointer hover:scale-[1.01]" : "",
-        disabled ? "opacity-80 cursor-default" : "",
-      ].join(" ")}
-    >
-      {/* ── 背景の大きな透かしスート記号 ── */}
-      <div
-        className={`absolute inset-0 flex items-center justify-center pointer-events-none select-none`}
-        aria-hidden="true"
-      >
-        <span
-          className={`text-8xl font-bold ${suit.textColor} opacity-[0.06]`}
-          style={{ lineHeight: 1 }}
-        >
-          {suit.symbol}
-        </span>
-      </div>
-
-      {/* ── 左上のスート記号（小） ── */}
-      <div className={`absolute top-2 left-3 ${suit.textColor} text-sm font-bold leading-none select-none`}>
-        {suit.symbol}
-      </div>
-
-      {/* ── 右下のスート記号（小・逆さ） ── */}
-      <div
-        className={`absolute bottom-2 right-3 ${suit.textColor} text-sm font-bold leading-none select-none`}
-        style={{ transform: "rotate(180deg)" }}
-      >
-        {suit.symbol}
-      </div>
-
-      {/* ── 選択チェックマーク（右上） ── */}
-      {selected && (
-        <div className="absolute top-2 right-2 w-6 h-6 bg-cyan-500 rounded-full flex items-center justify-center">
-          <span className="text-white text-xs font-bold">✓</span>
-        </div>
-      )}
-
-      {/* ── カード本文エリア（左右パディングで記号スペース確保） ── */}
-      <div className="relative z-10 px-4">
-        {/* カードタイトル（メイン） */}
-        <div className={`font-bold text-sm mb-1 leading-snug ${suit.textColor}`}>
-          {card.title}
-        </div>
-
-        {/* 説明テキスト */}
-        <div className="text-slate-600 text-xs leading-relaxed">
-          {card.description}
-        </div>
-
-        {/* フレーバーテキスト（斜体） */}
-        {card.flavorText && (
-          <div className="mt-2 text-slate-400 text-xs italic border-t border-slate-100 pt-2">
-            &ldquo;{card.flavorText}&rdquo;
-          </div>
-        )}
-
-        {/* 月間件数・単価（課題カードとペルソナカードで表示） */}
-        {showNumbers && (card.monthlyVolume > 0 || card.unitPrice > 0) && (
-          <div className="mt-2 flex gap-3 text-xs text-slate-500">
-            {card.monthlyVolume > 0 && (
-              <span>📦 月間 {card.monthlyVolume.toLocaleString()} 件</span>
-            )}
-            {card.unitPrice > 0 && (
-              <span>💰 単価 {card.unitPrice.toLocaleString()} 円</span>
-            )}
-          </div>
-        )}
-
-        {/* 業務機能タグ（パートナー・ジョブタイプで表示） */}
-        {card.businessFunctions.length > 0 && (
-          <div className="mt-2 flex flex-wrap gap-1">
-            {card.businessFunctions.map((fn) => (
-              <span
-                key={fn}
-                className={`text-xs px-1.5 py-0.5 rounded font-medium ${suit.tagBg}`}
-              >
-                {fn}
-              </span>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
 
 /**
  * ステップインジケーター（上部のナビゲーション）
@@ -308,163 +171,214 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
   );
 }
 
+/**
+ * カード1枚を表示するコンポーネント
+ * - selected: 選択中（ハイライト）
+ * - disabled: クリック不可（グレーアウト）
+ * - showFinancial: 財務パラメーター（単価・潜在顧客数など）を表示するか
+ */
+function CardItem({
+  card,
+  selected = false,
+  onClick,
+  disabled = false,
+  showFinancial = false,
+}: {
+  card: Card;
+  selected?: boolean;
+  onClick?: () => void;
+  disabled?: boolean;
+  showFinancial?: boolean;
+}) {
+  const grade = rankToGrade(card.rank);
+
+  return (
+    <div
+      onClick={disabled ? undefined : onClick}
+      className={[
+        "relative rounded-xl border-2 p-4 transition-all duration-200",
+        selected
+          ? "border-cyan-400 bg-slate-700 shadow-lg shadow-cyan-400/20"
+          : "border-slate-600 bg-slate-800",
+        !disabled && !selected ? "hover:border-slate-400 cursor-pointer" : "",
+        disabled ? "opacity-70 cursor-default" : "",
+      ].join(" ")}
+    >
+      {/* グレードバッジ（右上） */}
+      <span
+        className={`absolute top-3 right-3 text-xs font-bold px-2 py-0.5 rounded-full ${GRADE_COLORS[grade]}`}
+      >
+        {grade}
+      </span>
+
+      {/* 選択チェックマーク（左上） */}
+      {selected && (
+        <span className="absolute top-3 left-3 text-cyan-400 text-lg font-bold">✓</span>
+      )}
+
+      {/* カード識別名（小さく、グレー） */}
+      <div className="text-xs text-slate-500 mb-1 pr-10">{card.cardName}</div>
+
+      {/* カードタイトル（メイン） */}
+      <div className={`text-white font-semibold text-sm mb-2 ${selected ? "pl-5" : ""}`}>
+        {card.title}
+      </div>
+
+      {/* 説明テキスト */}
+      <div className="text-slate-300 text-xs leading-relaxed">{card.description}</div>
+
+      {/* 財務パラメーター表示（v4.2） */}
+      {showFinancial && (
+        <div className="mt-2 flex flex-wrap gap-2 text-xs">
+          {/* ♦️ダイヤ: 単価 */}
+          {card.unitPrice > 0 && (
+            <span className="text-amber-400">💰 単価 {card.unitPrice.toLocaleString()}万円/社/年</span>
+          )}
+          {/* ♥️ハート: 潜在顧客数 */}
+          {card.potentialCustomers > 0 && (
+            <span className="text-pink-400">👥 潜在顧客 {card.potentialCustomers}社</span>
+          )}
+          {/* ♣️クラブ: コスト変動比率 + 成功率貢献 */}
+          {card.costVarianceRate > 0 && (
+            <span className="text-red-400">📉 コスト +{card.costVarianceRate}%</span>
+          )}
+          {card.successContribution > 0 && (
+            <span className="text-green-400">📈 成功率 +{card.successContribution}%</span>
+          )}
+          {/* ♠️スペード: 初期投資 + 成功率貢献 */}
+          {card.initialInvestment > 0 && (
+            <span className="text-blue-400">🏗 初期費 {card.initialInvestment.toLocaleString()}万円</span>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * リアルタイム利益プレビューバー（画面下部に固定表示）
+ */
+function ProfitPreviewBar({
+  profit,
+  successRate,
+}: {
+  profit: number | null;
+  successRate: number;
+}) {
+  if (profit === null) return null;
+
+  // ランク判定（v4.2）
+  let grade = "D";
+  let gradeColor = "text-gray-400";
+  if (profit >= 20000) { grade = "S"; gradeColor = "text-yellow-400"; }
+  else if (profit >= 10000) { grade = "A"; gradeColor = "text-orange-400"; }
+  else if (profit >= 5000) { grade = "B"; gradeColor = "text-blue-400"; }
+  else if (profit >= 0) { grade = "C"; gradeColor = "text-green-400"; }
+
+  return (
+    <div className="fixed bottom-0 left-0 right-0 bg-slate-900 border-t border-slate-700 px-4 py-2 z-10">
+      <div className="flex items-center justify-between">
+        <div className="text-xs text-slate-400">
+          成功率 <span className="text-cyan-400 font-bold">{successRate}%</span>
+        </div>
+        <div className="text-center">
+          <div className="text-xs text-slate-500">3年間累計利益（予測）</div>
+          <div className={`font-bold text-lg ${gradeColor}`}>
+            {formatManYen(profit)}
+          </div>
+        </div>
+        <div className={`text-2xl font-black ${gradeColor}`}>
+          {grade}ランク
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── メインコンポーネント ───────────────────────────────
 
 export default function SelectPage() {
   const router = useRouter();
 
   // ── State ──
-  const [step, setStep] = useState(0);    // 現在のステップ（0〜3）
+  const [step, setStep] = useState(0);         // 現在のステップ（0〜3）
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // APIから取得したカード一覧
-  const [kuraiCards, setKuraiCards] = useState<Card[]>([]);     // 問題・課題カード
-  const [personaCards, setPersonaCards] = useState<Card[]>([]); // ペルソナカード
-  const [partnerCards, setPartnerCards] = useState<Card[]>([]); // パートナーカード
+  // APIから取得したカード一覧（スートごとに保持）
+  const [problemCards, setProblemCards] = useState<Card[]>([]);   // ♦️課題カード
+  const [personaCards, setPersonaCards] = useState<Card[]>([]);   // ♥️ペルソナカード
+  const [partnerCards, setPartnerCards] = useState<Card[]>([]);   // ♣️パートナーカード
+  const [jobCards, setJobCards] = useState<Card[]>([]);           // ♠️ジョブタイプカード
 
   // ユーザーが選んだカード
-  const [selectedKurai, setSelectedKurai] = useState<Card | null>(null); // 課題（1枚）
-  const [selectedPersonas, setSelectedPersonas] = useState<Card[]>([]);  // ペルソナ（複数）
-  const [selectedPartners, setSelectedPartners] = useState<Card[]>([]);  // パートナーBuy（複数）
-  const [autoMakeCards, setAutoMakeCards] = useState<Card[]>([]);        // Makeカード（自動）
+  const [selectedProblem, setSelectedProblem] = useState<Card | null>(null); // 1枚固定
+  const [selectedPersonas, setSelectedPersonas] = useState<Card[]>([]);      // 複数可
+  const [selectedPartners, setSelectedPartners] = useState<Card[]>([]);      // 複数可
+  const [selectedJobs, setSelectedJobs] = useState<Card[]>([]);              // 複数可
 
-  // ── API取得: STEP 0 → 課題カード ──
+  // ── ローディングスピナー ──
+  function Spinner() {
+    return (
+      <div className="flex justify-center items-center py-16">
+        <div className="w-8 h-8 border-4 border-cyan-400 border-t-transparent rounded-full animate-spin" />
+        <span className="ml-3 text-slate-400 text-sm">カードを読み込み中...</span>
+      </div>
+    );
+  }
+
+  // ── API取得: マウント時に全カードを一括取得（キャッシュ活用） ──
   useEffect(() => {
-    async function fetchKuraiCards() {
+    async function fetchAllCards() {
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch("/api/card-game/cards?role=問題・課題");
-        if (!res.ok) throw new Error("課題カードの取得に失敗しました");
-        const data = await res.json();
-        setKuraiCards(data.cards ?? []);
-      } catch (e) {
-        setError(e instanceof Error ? e.message : "エラーが発生しました");
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchKuraiCards();
-  }, []); // マウント時に1回だけ
+        // 4スーツを並行して取得（Promise.all で高速化）
+        const [pRes, peRes, paRes, jRes] = await Promise.all([
+          fetch("/api/card-game/cards?role=問題・課題"),
+          fetch("/api/card-game/cards?role=ペルソナ"),
+          fetch("/api/card-game/cards?role=パートナー"),
+          fetch("/api/card-game/cards?role=ジョブタイプ"),
+        ]);
 
-  // ── API取得: STEP 1 → ペルソナカード（課題テーマで絞り込み） ──
-  useEffect(() => {
-    if (step !== 1 || !selectedKurai) return;
-
-    async function fetchPersonaCards() {
-      setLoading(true);
-      setError(null);
-      try {
-        // 課題カードのテーマでペルソナを絞り込む
-        const theme = encodeURIComponent(selectedKurai!.theme);
-        const res = await fetch(
-          `/api/card-game/cards?role=ペルソナ&theme=${theme}`
-        );
-        if (!res.ok) throw new Error("ペルソナカードの取得に失敗しました");
-        const data = await res.json();
-        setPersonaCards(data.cards ?? []);
-      } catch (e) {
-        setError(e instanceof Error ? e.message : "エラーが発生しました");
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchPersonaCards();
-  }, [step, selectedKurai]);
-
-  // ── API取得: STEP 2 → パートナーカード（全件） ──
-  useEffect(() => {
-    if (step !== 2) return;
-
-    async function fetchPartnerCards() {
-      setLoading(true);
-      setError(null);
-      try {
-        const res = await fetch("/api/card-game/cards?role=パートナー");
-        if (!res.ok) throw new Error("パートナーカードの取得に失敗しました");
-        const data = await res.json();
-        setPartnerCards(data.cards ?? []);
-      } catch (e) {
-        setError(e instanceof Error ? e.message : "エラーが発生しました");
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchPartnerCards();
-  }, [step]);
-
-  // ── API取得: STEP 3 → ジョブタイプカード取得 → Makeカード自動決定 ──
-  const determineMakeCards = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch("/api/card-game/cards?role=ジョブタイプ");
-      if (!res.ok) throw new Error("ジョブタイプカードの取得に失敗しました");
-      const data = await res.json();
-      const allJobTypeCards: Card[] = data.cards ?? [];
-
-      // パートナー（Buy）がカバーしている業務機能を収集
-      const coveredFunctions = new Set<string>();
-      for (const partner of selectedPartners) {
-        for (const fn of partner.businessFunctions) {
-          coveredFunctions.add(fn);
+        if (!pRes.ok || !peRes.ok || !paRes.ok || !jRes.ok) {
+          throw new Error("カードの取得に失敗しました");
         }
+
+        const [pData, peData, paData, jData] = await Promise.all([
+          pRes.json(),
+          peRes.json(),
+          paRes.json(),
+          jRes.json(),
+        ]);
+
+        setProblemCards(pData.cards ?? []);
+        setPersonaCards(peData.cards ?? []);
+        setPartnerCards(paData.cards ?? []);
+        setJobCards(jData.cards ?? []);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "エラーが発生しました");
+      } finally {
+        setLoading(false);
       }
-
-      // カバーされていない（＝Makeが必要な）業務機能を特定
-      const uncoveredFunctions = ALL_BUSINESS_FUNCTIONS.filter(
-        (fn) => !coveredFunctions.has(fn)
-      );
-
-      // 業務機能タグが設定されているカードが1枚でもあるか確認
-      const hasTags = allJobTypeCards.some((c) => c.businessFunctions.length > 0);
-
-      let makeCards: Card[];
-
-      if (hasTags && uncoveredFunctions.length > 0) {
-        // タグあり: カバーされていない業務機能に対応するカードを選ぶ
-        // 同じカードが複数の機能に対応する場合は重複排除（Mapで管理）
-        const makeMap = new Map<string, Card>(); // id → Card
-        for (const fn of uncoveredFunctions) {
-          const match = allJobTypeCards.find((c) =>
-            c.businessFunctions.includes(fn)
-          );
-          if (match) makeMap.set(match.id, match);
-        }
-        makeCards = Array.from(makeMap.values());
-      } else if (!hasTags) {
-        // フォールバック: 業務機能タグが未設定の場合
-        // → 課題と同テーマのジョブタイプカードを全部Makeとする
-        makeCards = allJobTypeCards.filter(
-          (c) => !selectedKurai || c.theme === selectedKurai.theme
-        );
-        // 同テーマも見つからなければ全件
-        if (makeCards.length === 0) makeCards = allJobTypeCards;
-      } else {
-        // パートナーが全業務機能をカバー → Makeなし（フルBuy）
-        makeCards = [];
-      }
-
-      setAutoMakeCards(makeCards);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "エラーが発生しました");
-    } finally {
-      setLoading(false);
     }
-  }, [selectedPartners, selectedKurai]);
+    fetchAllCards();
+  }, []); // マウント時に1回だけ実行
 
-  useEffect(() => {
-    if (step === 3) {
-      determineMakeCards();
-    }
-  }, [step, determineMakeCards]);
+  // ── リアルタイムプレビュー計算 ──
+  const previewProfit = calcProfit3yearsPreview(
+    selectedProblem,
+    selectedPersonas,
+    selectedPartners,
+    selectedJobs
+  );
+  const previewSuccessRate = calcSuccessRate(selectedPartners, selectedJobs);
 
   // ── イベントハンドラ ──
 
   // 課題カード選択（1枚のみ）
-  function selectKurai(card: Card) {
-    setSelectedKurai(card);
+  function selectProblem(card: Card) {
+    setSelectedProblem(card);
   }
 
   // ペルソナカードのトグル選択（複数可）
@@ -485,69 +399,42 @@ export default function SelectPage() {
     );
   }
 
-  // STEP 0 → STEP 1 へ
-  function goToStep1() {
-    if (!selectedKurai) return;
-    setSelectedPersonas([]);
-    setStep(1);
+  // ジョブタイプカードのトグル選択（複数可）
+  function toggleJob(card: Card) {
+    setSelectedJobs((prev) =>
+      prev.find((c) => c.id === card.id)
+        ? prev.filter((c) => c.id !== card.id)
+        : [...prev, card]
+    );
   }
 
-  // STEP 1 → STEP 2 へ
-  function goToStep2() {
-    if (selectedPersonas.length === 0) return;
-    setSelectedPartners([]);
-    setStep(2);
-  }
-
-  // STEP 2 → STEP 3 へ
-  function goToStep3() {
-    setStep(3);
-  }
-
-  // STEP 3 → 結果ページへ（localStorageに保存して遷移）
+  // 結果ページへ遷移（localStorageに保存してから遷移）
   function goToResult() {
-    if (!selectedKurai) return;
+    if (!selectedProblem) return;
 
+    // v4.2 専用キーで保存
     const payload: SelectedCards = {
-      kuraiCard: selectedKurai,
+      problemCard: selectedProblem,
       personaCards: selectedPersonas,
       partnerCards: selectedPartners,
-      makeCards: autoMakeCards,
+      jobCards: selectedJobs,
     };
 
-    // v3専用キーで保存
-    localStorage.setItem("logi_selectedCards", JSON.stringify(payload));
+    localStorage.setItem("logi_selectedCards_v42", JSON.stringify(payload));
     router.push("/card-game/result");
-  }
-
-  // ── パートナー業務機能カバレッジ計算（STEP 2表示用） ──
-  const coveredFunctionSet = new Set<string>();
-  for (const partner of selectedPartners) {
-    for (const fn of partner.businessFunctions) {
-      coveredFunctionSet.add(fn);
-    }
-  }
-
-  // ── ローディングスピナー ──
-  function Spinner() {
-    return (
-      <div className="flex justify-center items-center py-16">
-        <div className="w-8 h-8 border-4 border-cyan-400 border-t-transparent rounded-full animate-spin" />
-        <span className="ml-3 text-slate-400 text-sm">カードを読み込み中...</span>
-      </div>
-    );
   }
 
   // ── レンダリング ──
   return (
-    <div className="min-h-screen bg-slate-900 text-white">
+    <div className="min-h-screen bg-slate-900 text-white pb-20">
+
       {/* ヘッダー */}
       <div className="bg-slate-800 border-b border-slate-700 px-4 py-4">
         <h1 className="text-xl font-bold text-center text-cyan-400">
           🏭 Mission in LOGI-TECH
         </h1>
         <p className="text-center text-slate-400 text-sm mt-1">
-          Make or Buy カードゲーム v3
+          ビジネスプランを立案せよ！ v4.2
         </p>
       </div>
 
@@ -561,34 +448,35 @@ export default function SelectPage() {
         </div>
       )}
 
-      {/* ════ STEP 0: 課題を選ぶ ════ */}
-      {step === 0 && (
+      {/* 全ステップ共通ローディング */}
+      {loading && step === 0 && <Spinner />}
+
+      {/* ════ STEP 0: ♦️課題を選ぶ ════ */}
+      {!loading && step === 0 && (
         <div className="p-4">
           <div className="mb-4">
             <h2 className="text-lg font-bold text-cyan-400">
-              STEP 1 / 解決する課題を選ぶ
+              STEP 1 / ♦️ 解決する課題を選ぶ（1枚）
             </h2>
             <p className="text-slate-400 text-sm mt-1">
-              取り組みたい社会課題カードを1枚選んでください。
-              このカードがサービスの土台になります。
+              取り組む物流課題を1枚選んでください。
+              高ランクほど深刻な課題で、単価が高くなります。
             </p>
           </div>
 
-          {loading ? (
-            <Spinner />
-          ) : kuraiCards.length === 0 ? (
+          {problemCards.length === 0 ? (
             <p className="text-slate-400 text-center py-8">
               課題カードが見つかりませんでした
             </p>
           ) : (
             <div className="grid grid-cols-1 gap-3">
-              {kuraiCards.map((card) => (
+              {problemCards.map((card) => (
                 <CardItem
                   key={card.id}
                   card={card}
-                  selected={selectedKurai?.id === card.id}
-                  onClick={() => selectKurai(card)}
-                  showNumbers={true}
+                  selected={selectedProblem?.id === card.id}
+                  onClick={() => selectProblem(card)}
+                  showFinancial={true}
                 />
               ))}
             </div>
@@ -596,44 +484,37 @@ export default function SelectPage() {
 
           <div className="mt-6">
             <button
-              onClick={goToStep1}
-              disabled={!selectedKurai}
+              onClick={() => setStep(1)}
+              disabled={!selectedProblem}
               className={[
                 "w-full py-3 rounded-xl font-bold text-base transition-all duration-200",
-                selectedKurai
+                selectedProblem
                   ? "bg-cyan-500 hover:bg-cyan-400 text-black"
                   : "bg-slate-700 text-slate-500 cursor-not-allowed",
               ].join(" ")}
             >
-              次へ：ペルソナを選ぶ →
+              次へ：♥️ ペルソナを選ぶ →
             </button>
           </div>
         </div>
       )}
 
-      {/* ════ STEP 1: ペルソナを選ぶ ════ */}
+      {/* ════ STEP 1: ♥️ペルソナを選ぶ ════ */}
       {step === 1 && (
         <div className="p-4">
           <div className="mb-4">
             <h2 className="text-lg font-bold text-cyan-400">
-              STEP 2 / ペルソナを選ぶ
+              STEP 2 / ♥️ ペルソナを選ぶ（複数可）
             </h2>
             <p className="text-slate-400 text-sm mt-1">
-              サービスを届けたい相手（ペルソナ）を選んでください。
-              複数選択可。多いほど市場規模が広がります。
+              サービスを届けたい相手を選んでください。
+              複数選ぶほど市場規模が広がります。
             </p>
-            {selectedKurai && (
-              <div className="mt-2 inline-block bg-slate-700 rounded px-2 py-1 text-xs text-slate-400">
-                テーマ：{selectedKurai.theme}
-              </div>
-            )}
           </div>
 
-          {loading ? (
-            <Spinner />
-          ) : personaCards.length === 0 ? (
+          {personaCards.length === 0 ? (
             <p className="text-slate-400 text-center py-8">
-              このテーマのペルソナカードが見つかりませんでした
+              ペルソナカードが見つかりませんでした
             </p>
           ) : (
             <div className="grid grid-cols-1 gap-3">
@@ -643,7 +524,7 @@ export default function SelectPage() {
                   card={card}
                   selected={selectedPersonas.some((c) => c.id === card.id)}
                   onClick={() => togglePersona(card)}
-                  showNumbers={true}
+                  showFinancial={true}
                 />
               ))}
             </div>
@@ -652,16 +533,15 @@ export default function SelectPage() {
           {/* 選択中ペルソナのサマリー */}
           {selectedPersonas.length > 0 && (
             <div className="mt-3 p-3 bg-slate-800 rounded-xl border border-slate-600">
-              <div className="text-xs text-slate-400 mb-1">選択中のペルソナ</div>
-              <div className="text-white text-sm">
-                {selectedPersonas.map((c) => c.title).join("、")}
+              <div className="text-xs text-slate-400 mb-1">
+                選択中（市場規模合計）
               </div>
-              <div className="text-cyan-400 text-xs mt-1">
-                合計月間販売見込：
-                {selectedPersonas
-                  .reduce((sum, c) => sum + c.monthlyVolume, 0)
-                  .toLocaleString()}{" "}
-                件/月
+              <div className="text-cyan-400 text-sm font-bold">
+                潜在顧客:{" "}
+                {selectedPersonas.reduce((s, c) => s + c.potentialCustomers, 0).toLocaleString()} 社
+              </div>
+              <div className="text-white text-xs mt-1">
+                {selectedPersonas.map((c) => c.title).join("、")}
               </div>
             </div>
           )}
@@ -674,7 +554,7 @@ export default function SelectPage() {
               ← 戻る
             </button>
             <button
-              onClick={goToStep2}
+              onClick={() => setStep(2)}
               disabled={selectedPersonas.length === 0}
               className={[
                 "flex-1 py-3 rounded-xl font-bold text-base transition-all duration-200",
@@ -683,29 +563,26 @@ export default function SelectPage() {
                   : "bg-slate-700 text-slate-500 cursor-not-allowed",
               ].join(" ")}
             >
-              次へ：パートナー →
+              次へ：♣️ パートナー →
             </button>
           </div>
         </div>
       )}
 
-      {/* ════ STEP 2: パートナーを選ぶ（Buy） ════ */}
+      {/* ════ STEP 2: ♣️パートナーを選ぶ ════ */}
       {step === 2 && (
         <div className="p-4">
           <div className="mb-4">
             <h2 className="text-lg font-bold text-cyan-400">
-              STEP 3 / パートナーを選ぶ（Buy）
+              STEP 3 / ♣️ パートナーを選ぶ（複数可）
             </h2>
             <p className="text-slate-400 text-sm mt-1">
-              外部パートナーに委託する機能を選んでください（Buy決定）。
-              <br />
-              選ばなかった機能は自社で開発します（Make）。
+              外部パートナーを選んでください。
+              高ランクほど成功率への貢献は大きいですが、コストも上がります。
             </p>
           </div>
 
-          {loading ? (
-            <Spinner />
-          ) : partnerCards.length === 0 ? (
+          {partnerCards.length === 0 ? (
             <p className="text-slate-400 text-center py-8">
               パートナーカードが見つかりませんでした
             </p>
@@ -717,44 +594,26 @@ export default function SelectPage() {
                   card={card}
                   selected={selectedPartners.some((c) => c.id === card.id)}
                   onClick={() => togglePartner(card)}
+                  showFinancial={true}
                 />
               ))}
             </div>
           )}
 
-          {/* 業務機能カバレッジ表示 */}
-          <div className="mt-4 p-3 bg-slate-800 rounded-xl border border-slate-600">
-            <div className="text-xs text-slate-400 mb-2">
-              業務領域カバレッジ（Buy ✓ ／ Make予定 ✗）
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {ALL_BUSINESS_FUNCTIONS.map((fn) => {
-                const covered = coveredFunctionSet.has(fn);
-                return (
-                  <span
-                    key={fn}
-                    className={[
-                      "text-xs px-2 py-1 rounded-full font-medium",
-                      covered
-                        ? "bg-green-700 text-green-100"
-                        : "bg-slate-700 text-slate-400",
-                    ].join(" ")}
-                  >
-                    {covered ? "✓ " : "✗ "}
-                    {fn}
-                  </span>
-                );
-              })}
-            </div>
-            <div className="text-xs text-amber-400 mt-2">
-              ⚠️ カバーできていない領域は売上が下がります
-            </div>
-            {selectedPartners.length > 0 && (
-              <div className="text-xs text-slate-500 mt-1">
-                ✗ の機能は次のステップで自社Make（開発）になります
+          {/* 選択中パートナーのサマリー */}
+          {selectedPartners.length > 0 && (
+            <div className="mt-3 p-3 bg-slate-800 rounded-xl border border-slate-600">
+              <div className="text-xs text-slate-400 mb-1">選択中パートナーの合計</div>
+              <div className="flex gap-4 text-xs">
+                <span className="text-red-400">
+                  コスト +{selectedPartners.reduce((s, c) => s + c.costVarianceRate, 0)}%
+                </span>
+                <span className="text-green-400">
+                  成功率 +{selectedPartners.reduce((s, c) => s + c.successContribution, 0)}%
+                </span>
               </div>
-            )}
-          </div>
+            </div>
+          )}
 
           <div className="mt-6 flex gap-3">
             <button
@@ -764,88 +623,95 @@ export default function SelectPage() {
               ← 戻る
             </button>
             <button
-              onClick={goToStep3}
+              onClick={() => setStep(3)}
               className="flex-1 py-3 rounded-xl font-bold text-base bg-cyan-500 hover:bg-cyan-400 text-black transition-all duration-200"
             >
-              次へ：確認 →
+              次へ：♠️ ジョブタイプ →
             </button>
           </div>
         </div>
       )}
 
-      {/* ════ STEP 3: アクション確認（Make自動決定） ════ */}
+      {/* ════ STEP 3: ♠️ジョブタイプを選ぶ ════ */}
       {step === 3 && (
         <div className="p-4">
           <div className="mb-4">
             <h2 className="text-lg font-bold text-cyan-400">
-              STEP 4 / アクション確認（Make）
+              STEP 4 / ♠️ ジョブタイプを選ぶ（複数可）
             </h2>
             <p className="text-slate-400 text-sm mt-1">
-              パートナー未カバーの機能は自社で開発します（Make）。
-              以下のアクションカードが自動的に適用されました。
+              自社で採用・育成する職種を選んでください。
+              高ランクほど初期費用が高いですが、成功率が上がります。
             </p>
           </div>
 
-          {loading ? (
-            <Spinner />
-          ) : autoMakeCards.length === 0 ? (
-            <div className="p-4 bg-green-900 border border-green-600 rounded-xl text-green-200 text-sm">
-              🎉 すべての業務領域がパートナーでカバーされました！
-              <br />
-              自社開発（Make）コストはゼロです。
-            </div>
+          {jobCards.length === 0 ? (
+            <p className="text-slate-400 text-center py-8">
+              ジョブタイプカードが見つかりませんでした
+            </p>
           ) : (
-            <>
-              <div className="mb-3 text-xs text-slate-500">
-                以下のカードは自動適用されます（変更不可）
+            <div className="grid grid-cols-1 gap-3">
+              {jobCards.map((card) => (
+                <CardItem
+                  key={card.id}
+                  card={card}
+                  selected={selectedJobs.some((c) => c.id === card.id)}
+                  onClick={() => toggleJob(card)}
+                  showFinancial={true}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* 選択中ジョブのサマリー */}
+          {selectedJobs.length > 0 && (
+            <div className="mt-3 p-3 bg-slate-800 rounded-xl border border-slate-600">
+              <div className="text-xs text-slate-400 mb-1">選択中ジョブタイプの合計</div>
+              <div className="flex gap-4 text-xs">
+                <span className="text-blue-400">
+                  初期費 {selectedJobs.reduce((s, c) => s + c.initialInvestment, 0).toLocaleString()}万円
+                </span>
+                <span className="text-green-400">
+                  成功率 +{selectedJobs.reduce((s, c) => s + c.successContribution, 0)}%
+                </span>
               </div>
-              <div className="grid grid-cols-1 gap-3">
-                {autoMakeCards.map((card) => (
-                  <CardItem
-                    key={card.id}
-                    card={card}
-                    selected={true}
-                    disabled={true}
-                  />
-                ))}
-              </div>
-            </>
+            </div>
           )}
 
           {/* 全体の選択サマリー */}
-          <div className="mt-5 p-4 bg-slate-800 rounded-xl border border-slate-600">
+          <div className="mt-4 p-4 bg-slate-800 rounded-xl border border-slate-600">
             <div className="text-sm font-bold text-slate-300 mb-3">
               📋 カード選択サマリー
             </div>
             <div className="space-y-2 text-xs">
               <div>
-                <span className="text-red-400">♦ 課題：</span>
+                <span className="text-slate-500">♦️ 課題：</span>
                 <span className="text-white ml-2">
-                  {selectedKurai?.title ?? "-"}
+                  {selectedProblem?.title ?? "-"}
                 </span>
               </div>
               <div>
-                <span className="text-rose-400">♥ ペルソナ：</span>
+                <span className="text-slate-500">♥️ ペルソナ：</span>
                 <span className="text-white ml-2">
                   {selectedPersonas.length > 0
                     ? selectedPersonas.map((c) => c.title).join("、")
+                    : "未選択"}
+                </span>
+              </div>
+              <div>
+                <span className="text-slate-500">♣️ パートナー：</span>
+                <span className="text-white ml-2">
+                  {selectedPartners.length > 0
+                    ? selectedPartners.map((c) => c.title).join("、")
                     : "なし"}
                 </span>
               </div>
               <div>
-                <span className="text-emerald-400">♣ パートナー（Buy）：</span>
+                <span className="text-slate-500">♠️ ジョブタイプ：</span>
                 <span className="text-white ml-2">
-                  {selectedPartners.length > 0
-                    ? selectedPartners.map((c) => c.title).join("、")
-                    : "なし（全部Make）"}
-                </span>
-              </div>
-              <div>
-                <span className="text-slate-400">♠ アクション（Make）：</span>
-                <span className="text-white ml-2">
-                  {autoMakeCards.length > 0
-                    ? autoMakeCards.map((c) => c.title).join("、")
-                    : "なし（全部Buy）"}
+                  {selectedJobs.length > 0
+                    ? selectedJobs.map((c) => c.title).join("、")
+                    : "なし"}
                 </span>
               </div>
             </div>
@@ -867,6 +733,12 @@ export default function SelectPage() {
           </div>
         </div>
       )}
+
+      {/* リアルタイム利益プレビューバー（課題＋ペルソナが選択済みの場合に表示） */}
+      <ProfitPreviewBar
+        profit={previewProfit}
+        successRate={previewSuccessRate}
+      />
     </div>
   );
 }

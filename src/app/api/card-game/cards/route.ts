@@ -1,12 +1,13 @@
 /**
  * /api/card-game/cards
- * LOGIカードゲーム マスターDB からカード一覧を取得するAPI（v3）
+ * LOGIカードゲーム マスターDB からカード一覧を取得するAPI（v4.2対応）
  *
  * --- 使い方 ---
  * GET /api/card-game/cards?role=問題・課題   → 役割でフィルタ
- * GET /api/card-game/cards?role=ペルソナ&theme=配送業・物流人材不足
- *                                            → 役割 + テーマで絞り込み
- * GET /api/card-game/cards?suit=♠️スペード   → 旧API互換（スートで絞り込み）
+ * GET /api/card-game/cards?role=ペルソナ     → ペルソナカード全件
+ * GET /api/card-game/cards?role=パートナー   → パートナーカード全件
+ * GET /api/card-game/cards?role=ジョブタイプ → ジョブタイプカード全件
+ * GET /api/card-game/cards                   → 全件取得
  *
  * --- Vercel環境変数（要設定） ---
  * NOTION_API_KEY       : Notion integration token
@@ -18,31 +19,37 @@ import { NextRequest, NextResponse } from "next/server";
 
 // 環境変数から取得
 const NOTION_API_KEY = process.env.NOTION_API_KEY!;
-// ⚠️ Vercel環境変数 NOTION_WB_CARD_DB_ID を以下に設定すること
-//    6b7b85557869432580a24f685e02263e（LOGIカードゲーム マスターDB）
 const NOTION_CARD_DB_ID =
   process.env.NOTION_WB_CARD_DB_ID ?? "6b7b85557869432580a24f685e02263e";
 
-// Notion API v2022-06-28 が返すカードデータの型定義
+// Notion API v2022-06-28 が返すカードデータの型定義（v4.2プロパティ名）
 type NotionCard = {
   id: string;
   properties: {
+    // タイトル（カード名: "♦A-PR01" など）
     "カード名": { title: Array<{ plain_text: string }> };
+    // スート選択（例: "♦️ダイヤ"）
     "スート": { select: { name: string } | null };
+    // ランク選択（例: "A", "K", "2"）
     "ランク": { select: { name: string } | null };
+    // 役割選択（例: "問題・課題", "ペルソナ", "パートナー", "ジョブタイプ"）
     "役割": { select: { name: string } | null };
-    "社会課題テーマ": { select: { name: string } | null };
+    // 基本値（ランクに対応する数値: A=13, K=12, ... 2=1）
+    "基本値": { number: number | null };
+    // カードタイトル（短い名前）
     "カードタイトル": { rich_text: Array<{ plain_text: string }> };
+    // 説明テキスト（詳細説明）
     "説明テキスト": { rich_text: Array<{ plain_text: string }> };
-    "フレーバーテキスト": { rich_text: Array<{ plain_text: string }> };
-    "マーケットサイズ（万人）": { number: number | null };
-    "月間販売見込数（件）": { number: number | null };
-    "販売単価（円）": { number: number | null };
-    "変動費月額（円）": { number: number | null };
-    "実現可能性スコア": { number: number | null };
-    // v3で追加した新フィールド（未設定の場合はnullの可能性あり）
-    "業務機能": { multi_select: Array<{ name: string }> } | null;
-    "対応ペルソナ": { multi_select: Array<{ name: string }> } | null;
+    // ♦️ダイヤ専用: 単価（万円/社/年）= 基本値 × 100
+    "単価_万円": { number: number | null };
+    // ♥️ハート専用: 潜在顧客数（社）= 基本値 × 2
+    "潜在顧客数_社": { number: number | null };
+    // ♣️クラブ専用: コスト変動比率（%）
+    "コスト変動比率_pct": { number: number | null };
+    // ♣️クラブ・♠️スペード共通: 成功率貢献（%）
+    "成功率貢献_pct": { number: number | null };
+    // ♠️スペード専用: 初期投資（万円）
+    "初期投資_万円": { number: number | null };
   };
 };
 
@@ -50,34 +57,16 @@ type NotionCard = {
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
 
-  // v3: 役割でフィルタ（"問題・課題" | "ペルソナ" | "パートナー" | "ジョブタイプ"）
+  // 役割でフィルタ（"問題・課題" | "ペルソナ" | "パートナー" | "ジョブタイプ"）
   const role = searchParams.get("role");
-  // v3: テーマでも絞り込み（例: "配送業・物流人材不足"）
-  const theme = searchParams.get("theme");
-  // 旧API互換: スートでフィルタ
-  const suit = searchParams.get("suit");
 
   try {
     // Notion API のフィルタ条件を構築
     let filter: object | undefined;
 
     if (role) {
-      // 役割フィルタ（v3メイン）
-      const conditions: object[] = [
-        { property: "役割", select: { equals: role } },
-      ];
-      // テーマフィルタ（ペルソナを課題と同じテーマに絞るときに使用）
-      if (theme) {
-        conditions.push({
-          property: "社会課題テーマ",
-          select: { equals: theme },
-        });
-      }
-      // 条件が1つなら単体フィルタ、複数ならAND結合
-      filter = conditions.length === 1 ? conditions[0] : { and: conditions };
-    } else if (suit) {
-      // 旧API互換: スートで絞り込み
-      filter = { property: "スート", select: { equals: suit } };
+      // 役割フィルタ
+      filter = { property: "役割", select: { equals: role } };
     }
     // filterがundefinedの場合は全件取得
 
@@ -93,10 +82,12 @@ export async function GET(request: NextRequest) {
         },
         body: JSON.stringify({
           filter,
-          // ランクの昇順で並べる（A → 2 → 3 → ... → K）
+          // ランクの並び順（Notionのランク順: A → K → Q → ... → 2）
           sorts: [{ property: "ランク", direction: "ascending" }],
           page_size: 100, // 最大100件（52枚なので余裕あり）
         }),
+        // Next.js のキャッシュ設定: 60秒間キャッシュ（Notion APIのレート制限対策）
+        next: { revalidate: 60 },
       }
     );
 
@@ -131,30 +122,19 @@ export async function GET(request: NextRequest) {
       suit: page.properties["スート"]?.select?.name ?? "",
       rank: page.properties["ランク"]?.select?.name ?? "",
       role: page.properties["役割"]?.select?.name ?? "",
-      theme: page.properties["社会課題テーマ"]?.select?.name ?? "",
+      baseValue: page.properties["基本値"]?.number ?? 0,
 
       // 表示テキスト
       title: page.properties["カードタイトル"]?.rich_text?.[0]?.plain_text ?? "",
       description:
         page.properties["説明テキスト"]?.rich_text?.[0]?.plain_text ?? "",
-      flavorText:
-        page.properties["フレーバーテキスト"]?.rich_text?.[0]?.plain_text ?? "",
 
-      // Make or Buy 計算用の数値
-      marketSize: page.properties["マーケットサイズ（万人）"]?.number ?? 0,    // 万人
-      monthlyVolume: page.properties["月間販売見込数（件）"]?.number ?? 0,      // 件/月
-      unitPrice: page.properties["販売単価（円）"]?.number ?? 0,               // 円/件
-      variableCost: page.properties["変動費月額（円）"]?.number ?? 0,          // 円/月
-      feasibilityScore: page.properties["実現可能性スコア"]?.number ?? 0,       // 1-10
-
-      // v3新フィールド（未設定の場合は空配列で返す）
-      businessFunctions: (
-        page.properties["業務機能"]?.multi_select ?? []
-      ).map((s: { name: string }) => s.name),
-
-      targetPersonas: (
-        page.properties["対応ペルソナ"]?.multi_select ?? []
-      ).map((s: { name: string }) => s.name),
+      // v4.2 財務パラメーター（スートによって意味が異なる）
+      unitPrice: page.properties["単価_万円"]?.number ?? 0,         // ♦️ダイヤ: 万円/社/年
+      potentialCustomers: page.properties["潜在顧客数_社"]?.number ?? 0, // ♥️ハート: 社
+      costVarianceRate: page.properties["コスト変動比率_pct"]?.number ?? 0, // ♣️クラブ: %
+      successContribution: page.properties["成功率貢献_pct"]?.number ?? 0,  // ♣️♠️: %
+      initialInvestment: page.properties["初期投資_万円"]?.number ?? 0,     // ♠️スペード: 万円
     }));
 
     return NextResponse.json({ cards });
