@@ -180,9 +180,12 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
  * "-" 以降の文字列を取り出して "/images/card_PR01.png" 形式に変換する
  */
 function getCardImagePath(cardName: string): string {
-  const parts = cardName.split("-");
-  if (parts.length < 2) return "";
-  return `/images/card_${parts[1]}.png`;
+  // cardName の実際のフォーマット例: "♦A-PR01 2030年ドライバー35%構造的不足"
+  // "-" で分割 → 後半 "PR01 2030年..." → さらにスペースで分割 → "PR01" だけ取得
+  const afterDash = cardName.split("-")[1];
+  if (!afterDash) return "";
+  const code = afterDash.split(" ")[0].trim(); // "PR01", "PE03" など4文字
+  return `/images/card_${code}.png`;
 }
 
 /**
