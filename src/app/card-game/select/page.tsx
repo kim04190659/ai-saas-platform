@@ -9,12 +9,17 @@
  *
  * 選択後 logi_selectedCards_v42 を localStorage に保存して
  * /card-game/result へ遷移する
+ *
+ * v4.2 Sprint#2 追加: カードイメージ表示対応
+ * - public/images/card_PR01.png 形式の画像をカードに表示
+ * - cardName（例: "♦A-PR01"）の "-" 以降を画像IDとして使用
  */
 
 "use client";
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 // ─── 型定義 ────────────────────────────────────────────
 
@@ -172,8 +177,27 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
 }
 
 /**
- * カード1枚を表示するコンポーネント
- * - selected: 選択中（ハイライト）
+ * cardName（例: "♦A-PR01"）から画像ファイル名を取得するヘルパー
+ * "-" 以降の文字列を取り出して "card_PR01" 形式に変換する
+ * 例: "♦A-PR01" → "/images/card_PR01.png"
+ *     "♥K-PE03" → "/images/card_PE03.png"
+ */
+function getCardImagePath(cardName: string): string {
+  // "-" で分割して後半（例: "PR01"）を取得
+  const parts = cardName.split("-");
+  if (parts.length < 2) return "";
+  const code = parts[1]; // "PR01", "PE03" など
+  return `/images/card_${code}.png`;
+}
+
+/**
+ * カード1枚を表示するコンポーネント（v4.2 画像対応版）
+ *
+ * レイアウト:
+ *   [カード画像（上半分）]
+ *   [タイトル・説明・財務パラメーター（下半分）]
+ *
+ * - selected: 選択中（シアンの枠でハイライト）
  * - disabled: クリック不可（グレーアウト）
  * - showFinancial: 財務パラメーター（単価・潜在顧客数など）を表示するか
  */
@@ -191,66 +215,109 @@ function CardItem({
   showFinancial?: boolean;
 }) {
   const grade = rankToGrade(card.rank);
+  const imagePath = getCardImagePath(card.cardName);
 
   return (
     <div
       onClick={disabled ? undefined : onClick}
       className={[
-        "relative rounded-xl border-2 p-4 transition-all duration-200",
+        "relative rounded-xl border-2 overflow-hidden transition-all duration-200",
         selected
-          ? "border-cyan-400 bg-slate-700 shadow-lg shadow-cyan-400/20"
+          ? "border-cyan-400 bg-slate-700 shadow-lg shadow-cyan-400/20 scale-[1.01]"
           : "border-slate-600 bg-slate-800",
-        !disabled && !selected ? "hover:border-slate-400 cursor-pointer" : "",
+        !disabled && !selected ? "hover:border-slate-400 hover:scale-[1.01] cursor-pointer" : "",
         disabled ? "opacity-70 cursor-default" : "",
       ].join(" ")}
     >
-      {/* グレードバッジ（右上） */}
-      <span
-        className={`absolute top-3 right-3 text-xs font-bold px-2 py-0.5 rounded-full ${GRADE_COLORS[grade]}`}
-      >
-        {grade}
-      </span>
+      {/* ── カード画像エリア ── */}
+      {imagePath && (
+        <div className="relative w-full aspect-[3/4] bg-slate-900">
+          <Image
+            src={imagePath}
+            alt={card.title}
+            fill
+            className="object-cover"
+            sizes="(max-width: 640px) 100vw, 50vw"
+            priority={false}
+          />
 
-      {/* 選択チェックマーク（左上） */}
-      {selected && (
-        <span className="absolute top-3 left-3 text-cyan-400 text-lg font-bold">✓</span>
-      )}
+          {/* 選択済みオーバーレイ（半透明のシアン） */}
+          {selected && (
+            <div className="absolute inset-0 bg-cyan-400/20 flex items-center justify-center">
+              <span className="text-5xl font-black text-cyan-300 drop-shadow-lg">✓</span>
+            </div>
+          )}
 
-      {/* カード識別名（小さく、グレー） */}
-      <div className="text-xs text-slate-500 mb-1 pr-10">{card.cardName}</div>
+          {/* グレードバッジ（画像右上に重ねて表示） */}
+          <span
+            className={`absolute top-2 right-2 text-xs font-bold px-2 py-0.5 rounded-full shadow-md ${GRADE_COLORS[grade]}`}
+          >
+            {grade}
+          </span>
 
-      {/* カードタイトル（メイン） */}
-      <div className={`text-white font-semibold text-sm mb-2 ${selected ? "pl-5" : ""}`}>
-        {card.title}
-      </div>
-
-      {/* 説明テキスト */}
-      <div className="text-slate-300 text-xs leading-relaxed">{card.description}</div>
-
-      {/* 財務パラメーター表示（v4.2） */}
-      {showFinancial && (
-        <div className="mt-2 flex flex-wrap gap-2 text-xs">
-          {/* ♦️ダイヤ: 単価 */}
-          {card.unitPrice > 0 && (
-            <span className="text-amber-400">💰 単価 {card.unitPrice.toLocaleString()}万円/社/年</span>
-          )}
-          {/* ♥️ハート: 潜在顧客数 */}
-          {card.potentialCustomers > 0 && (
-            <span className="text-pink-400">👥 潜在顧客 {card.potentialCustomers}社</span>
-          )}
-          {/* ♣️クラブ: コスト変動比率 + 成功率貢献 */}
-          {card.costVarianceRate > 0 && (
-            <span className="text-red-400">📉 コスト +{card.costVarianceRate}%</span>
-          )}
-          {card.successContribution > 0 && (
-            <span className="text-green-400">📈 成功率 +{card.successContribution}%</span>
-          )}
-          {/* ♠️スペード: 初期投資 + 成功率貢献 */}
-          {card.initialInvestment > 0 && (
-            <span className="text-blue-400">🏗 初期費 {card.initialInvestment.toLocaleString()}万円</span>
-          )}
+          {/* カード識別名（画像左上） */}
+          <span className="absolute top-2 left-2 text-xs text-white bg-black/50 px-1.5 py-0.5 rounded font-mono">
+            {card.cardName}
+          </span>
         </div>
       )}
+
+      {/* 画像がない場合のフォールバック表示 */}
+      {!imagePath && (
+        <div className="relative p-1">
+          {/* グレードバッジ（右上） */}
+          <span
+            className={`absolute top-3 right-3 text-xs font-bold px-2 py-0.5 rounded-full ${GRADE_COLORS[grade]}`}
+          >
+            {grade}
+          </span>
+          {/* 選択チェックマーク（左上） */}
+          {selected && (
+            <span className="absolute top-3 left-3 text-cyan-400 text-lg font-bold">✓</span>
+          )}
+          {/* カード識別名 */}
+          <div className="text-xs text-slate-500 mb-1 pr-10">{card.cardName}</div>
+        </div>
+      )}
+
+      {/* ── テキストエリア（画像下） ── */}
+      <div className="p-3">
+        {/* カードタイトル */}
+        <div className="text-white font-semibold text-sm mb-1 leading-tight">
+          {card.title}
+        </div>
+
+        {/* 説明テキスト */}
+        <div className="text-slate-400 text-xs leading-relaxed mb-2">
+          {card.description}
+        </div>
+
+        {/* 財務パラメーター表示（v4.2） */}
+        {showFinancial && (
+          <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs border-t border-slate-700 pt-2">
+            {/* ♦️ダイヤ: 単価 */}
+            {card.unitPrice > 0 && (
+              <span className="text-amber-400">💰 {card.unitPrice.toLocaleString()}万円/社/年</span>
+            )}
+            {/* ♥️ハート: 潜在顧客数 */}
+            {card.potentialCustomers > 0 && (
+              <span className="text-pink-400">👥 {card.potentialCustomers}社</span>
+            )}
+            {/* ♣️クラブ: コスト変動比率 */}
+            {card.costVarianceRate > 0 && (
+              <span className="text-red-400">📉 コスト+{card.costVarianceRate}%</span>
+            )}
+            {/* 成功率貢献（♣️♠️共通） */}
+            {card.successContribution > 0 && (
+              <span className="text-green-400">📈 成功率+{card.successContribution}%</span>
+            )}
+            {/* ♠️スペード: 初期投資 */}
+            {card.initialInvestment > 0 && (
+              <span className="text-blue-400">🏗 初期{card.initialInvestment.toLocaleString()}万円</span>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -469,7 +536,7 @@ export default function SelectPage() {
               課題カードが見つかりませんでした
             </p>
           ) : (
-            <div className="grid grid-cols-1 gap-3">
+            <div className="grid grid-cols-2 gap-3">
               {problemCards.map((card) => (
                 <CardItem
                   key={card.id}
@@ -517,7 +584,7 @@ export default function SelectPage() {
               ペルソナカードが見つかりませんでした
             </p>
           ) : (
-            <div className="grid grid-cols-1 gap-3">
+            <div className="grid grid-cols-2 gap-3">
               {personaCards.map((card) => (
                 <CardItem
                   key={card.id}
@@ -587,7 +654,7 @@ export default function SelectPage() {
               パートナーカードが見つかりませんでした
             </p>
           ) : (
-            <div className="grid grid-cols-1 gap-3">
+            <div className="grid grid-cols-2 gap-3">
               {partnerCards.map((card) => (
                 <CardItem
                   key={card.id}
@@ -650,7 +717,7 @@ export default function SelectPage() {
               ジョブタイプカードが見つかりませんでした
             </p>
           ) : (
-            <div className="grid grid-cols-1 gap-3">
+            <div className="grid grid-cols-2 gap-3">
               {jobCards.map((card) => (
                 <CardItem
                   key={card.id}
