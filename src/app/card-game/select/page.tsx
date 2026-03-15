@@ -19,7 +19,6 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 
 // ─── 型定義 ────────────────────────────────────────────
 
@@ -178,41 +177,34 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
 
 /**
  * cardName（例: "♦A-PR01"）から画像ファイル名を取得するヘルパー
- * "-" 以降の文字列を取り出して "card_PR01" 形式に変換する
- * 例: "♦A-PR01" → "/images/card_PR01.png"
- *     "♥K-PE03" → "/images/card_PE03.png"
+ * "-" 以降の文字列を取り出して "/images/card_PR01.png" 形式に変換する
  */
 function getCardImagePath(cardName: string): string {
-  // "-" で分割して後半（例: "PR01"）を取得
   const parts = cardName.split("-");
   if (parts.length < 2) return "";
-  const code = parts[1]; // "PR01", "PE03" など
-  return `/images/card_${code}.png`;
+  return `/images/card_${parts[1]}.png`;
 }
 
 /**
- * カード1枚を表示するコンポーネント（v4.2 画像対応版）
+ * カード1枚を表示するコンポーネント（コンパクト版・5列対応）
  *
  * レイアウト:
- *   [カード画像（上半分）]
- *   [タイトル・説明・財務パラメーター（下半分）]
- *
- * - selected: 選択中（シアンの枠でハイライト）
- * - disabled: クリック不可（グレーアウト）
- * - showFinancial: 財務パラメーター（単価・潜在顧客数など）を表示するか
+ *   [カード画像（クリック領域全体）]
+ *   [グレードバッジ・カードID：画像に重ねて表示]
+ *   [選択済み：シアンのオーバーレイ＋✓マーク]
+ *   [タイトル：画像の下に小さく]
  */
 function CardItem({
   card,
   selected = false,
   onClick,
   disabled = false,
-  showFinancial = false,
 }: {
   card: Card;
   selected?: boolean;
   onClick?: () => void;
   disabled?: boolean;
-  showFinancial?: boolean;
+  showFinancial?: boolean; // 5列コンパクト表示では使用しない（互換性のため残す）
 }) {
   const grade = rankToGrade(card.rank);
   const imagePath = getCardImagePath(card.cardName);
@@ -221,102 +213,56 @@ function CardItem({
     <div
       onClick={disabled ? undefined : onClick}
       className={[
-        "relative rounded-xl border-2 overflow-hidden transition-all duration-200",
+        "relative rounded-lg border-2 overflow-hidden transition-all duration-150 select-none",
         selected
-          ? "border-cyan-400 bg-slate-700 shadow-lg shadow-cyan-400/20 scale-[1.01]"
+          ? "border-cyan-400 shadow-md shadow-cyan-400/30 scale-[1.03]"
           : "border-slate-600 bg-slate-800",
-        !disabled && !selected ? "hover:border-slate-400 hover:scale-[1.01] cursor-pointer" : "",
-        disabled ? "opacity-70 cursor-default" : "",
+        !disabled && !selected ? "hover:border-slate-400 hover:scale-[1.02] cursor-pointer" : "",
+        disabled ? "opacity-60 cursor-default" : "",
       ].join(" ")}
     >
-      {/* ── カード画像エリア ── */}
-      {imagePath && (
-        <div className="relative w-full aspect-[3/4] bg-slate-900">
-          <Image
+      {/* ── カード画像 ── */}
+      {/* img タグを使用（Next.js Image より確実に表示される） */}
+      <div className="relative w-full aspect-[2/3] bg-slate-700 overflow-hidden">
+        {imagePath ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
             src={imagePath}
             alt={card.title}
-            fill
-            className="object-cover"
-            sizes="(max-width: 640px) 100vw, 50vw"
-            priority={false}
+            className="w-full h-full object-cover"
           />
-
-          {/* 選択済みオーバーレイ（半透明のシアン） */}
-          {selected && (
-            <div className="absolute inset-0 bg-cyan-400/20 flex items-center justify-center">
-              <span className="text-5xl font-black text-cyan-300 drop-shadow-lg">✓</span>
-            </div>
-          )}
-
-          {/* グレードバッジ（画像右上に重ねて表示） */}
-          <span
-            className={`absolute top-2 right-2 text-xs font-bold px-2 py-0.5 rounded-full shadow-md ${GRADE_COLORS[grade]}`}
-          >
-            {grade}
-          </span>
-
-          {/* カード識別名（画像左上） */}
-          <span className="absolute top-2 left-2 text-xs text-white bg-black/50 px-1.5 py-0.5 rounded font-mono">
-            {card.cardName}
-          </span>
-        </div>
-      )}
-
-      {/* 画像がない場合のフォールバック表示 */}
-      {!imagePath && (
-        <div className="relative p-1">
-          {/* グレードバッジ（右上） */}
-          <span
-            className={`absolute top-3 right-3 text-xs font-bold px-2 py-0.5 rounded-full ${GRADE_COLORS[grade]}`}
-          >
-            {grade}
-          </span>
-          {/* 選択チェックマーク（左上） */}
-          {selected && (
-            <span className="absolute top-3 left-3 text-cyan-400 text-lg font-bold">✓</span>
-          )}
-          {/* カード識別名 */}
-          <div className="text-xs text-slate-500 mb-1 pr-10">{card.cardName}</div>
-        </div>
-      )}
-
-      {/* ── テキストエリア（画像下） ── */}
-      <div className="p-3">
-        {/* カードタイトル */}
-        <div className="text-white font-semibold text-sm mb-1 leading-tight">
-          {card.title}
-        </div>
-
-        {/* 説明テキスト */}
-        <div className="text-slate-400 text-xs leading-relaxed mb-2">
-          {card.description}
-        </div>
-
-        {/* 財務パラメーター表示（v4.2） */}
-        {showFinancial && (
-          <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs border-t border-slate-700 pt-2">
-            {/* ♦️ダイヤ: 単価 */}
-            {card.unitPrice > 0 && (
-              <span className="text-amber-400">💰 {card.unitPrice.toLocaleString()}万円/社/年</span>
-            )}
-            {/* ♥️ハート: 潜在顧客数 */}
-            {card.potentialCustomers > 0 && (
-              <span className="text-pink-400">👥 {card.potentialCustomers}社</span>
-            )}
-            {/* ♣️クラブ: コスト変動比率 */}
-            {card.costVarianceRate > 0 && (
-              <span className="text-red-400">📉 コスト+{card.costVarianceRate}%</span>
-            )}
-            {/* 成功率貢献（♣️♠️共通） */}
-            {card.successContribution > 0 && (
-              <span className="text-green-400">📈 成功率+{card.successContribution}%</span>
-            )}
-            {/* ♠️スペード: 初期投資 */}
-            {card.initialInvestment > 0 && (
-              <span className="text-blue-400">🏗 初期{card.initialInvestment.toLocaleString()}万円</span>
-            )}
+        ) : (
+          /* 画像がない場合のフォールバック */
+          <div className="w-full h-full flex items-center justify-center">
+            <span className="text-slate-500 text-xs">{card.cardName}</span>
           </div>
         )}
+
+        {/* 選択済みオーバーレイ（シアン半透明＋大きな✓） */}
+        {selected && (
+          <div className="absolute inset-0 bg-cyan-500/40 flex items-center justify-center">
+            <span className="text-4xl font-black text-white drop-shadow-lg">✓</span>
+          </div>
+        )}
+
+        {/* グレードバッジ（右上） */}
+        <span
+          className={`absolute top-1 right-1 text-xs font-black px-1.5 py-0.5 rounded-full shadow ${GRADE_COLORS[grade]}`}
+        >
+          {grade}
+        </span>
+      </div>
+
+      {/* ── タイトル（画像下・コンパクト） ── */}
+      <div
+        className={[
+          "px-1 py-1 text-center",
+          selected ? "bg-cyan-900/60" : "bg-slate-800",
+        ].join(" ")}
+      >
+        <div className="text-white text-xs font-semibold leading-tight line-clamp-2">
+          {card.title}
+        </div>
       </div>
     </div>
   );
@@ -536,7 +482,7 @@ export default function SelectPage() {
               課題カードが見つかりませんでした
             </p>
           ) : (
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-5 gap-2">
               {problemCards.map((card) => (
                 <CardItem
                   key={card.id}
@@ -584,7 +530,7 @@ export default function SelectPage() {
               ペルソナカードが見つかりませんでした
             </p>
           ) : (
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-5 gap-2">
               {personaCards.map((card) => (
                 <CardItem
                   key={card.id}
@@ -654,7 +600,7 @@ export default function SelectPage() {
               パートナーカードが見つかりませんでした
             </p>
           ) : (
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-5 gap-2">
               {partnerCards.map((card) => (
                 <CardItem
                   key={card.id}
@@ -717,7 +663,7 @@ export default function SelectPage() {
               ジョブタイプカードが見つかりませんでした
             </p>
           ) : (
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-5 gap-2">
               {jobCards.map((card) => (
                 <CardItem
                   key={card.id}
