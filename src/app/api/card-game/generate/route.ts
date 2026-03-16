@@ -86,6 +86,40 @@ async function handleV42Request(selected: SelectedCards, calc: CalcResult) {
     D: "D（赤字 😰）",
   };
 
+  // エネルギー自立ゲーム用の特定カード選択コメントを生成
+  const energySpecificComments: string[] = [];
+
+  // ♦Aカード（大規模太陽光+蓄電池）選択時の必須コメント
+  const hasDiamondAce = [
+    ...selected.personaCards,
+    ...selected.partnerCards,
+    ...selected.jobCards,
+  ].some((c) => c.suit === "♦" && c.rank === "A") ||
+    selected.problemCard.suit === "♦" && selected.problemCard.rank === "A";
+  if (hasDiamondAce) {
+    energySpecificComments.push(
+      "【♦Aカード選択】大規模太陽光+蓄電池を選択しています。山林を伐採して設置する場合、土砂崩れリスクと生態系の破壊が住民の信頼を損なう可能性があります。空倉町の山を削る必要があるのか、チームで説明できますか？屋根設置型との比較検討はしましたか？"
+    );
+  }
+
+  // ♦Kカード（行政OS）選択時の加点コメント
+  const hasDiamondKing = [
+    ...selected.personaCards,
+    ...selected.partnerCards,
+    ...selected.jobCards,
+  ].some((c) => c.suit === "♦" && c.rank === "K") ||
+    selected.problemCard.suit === "♦" && selected.problemCard.rank === "K";
+  if (hasDiamondKing) {
+    energySpecificComments.push(
+      "【♦Kカード選択・加点】行政OSを選択しています。情報連携基盤があることで危機時の住民への情報伝達速度が大幅に向上します。特に高齢者・障害者への個別連絡が可能になる点は住民視点で高く評価できます。"
+    );
+  }
+
+  // 全プランへのブリッジコメント（必ず追加）
+  energySpecificComments.push(
+    "【あなたの地元は？】あなたの地元の自治体は、今日この危機が来たら何日間住民生活を維持できると思いますか？実際のデータを調べてみましょう。"
+  );
+
   // Claude に送るプロンプトを作成
   const prompt = `あなたは物流業界のビジネスコンサルタントです。
 以下のカードゲームで選択されたビジネスプランを、専門的かつ学習者に分かりやすく評価してください。
@@ -132,7 +166,11 @@ ${jobCards.length > 0
 3. このカードの組み合わせを選んだ学習者へのアドバイスをお願いします。
 
 学習者は物流業界について学ぶ中高生・大学生を想定しています。
-専門用語は分かりやすく説明しながら、前向きで励みになる評価をお願いします。`;
+専門用語は分かりやすく説明しながら、前向きで励みになる評価をお願いします。${
+    energySpecificComments.length > 0
+      ? `\n\n## 追加フィードバック（必ず評価に含めてください）\n\n${energySpecificComments.join("\n\n")}`
+      : ""
+  }`;
 
   try {
     // Claude Haiku を使用（コスト効率が良い）

@@ -67,6 +67,92 @@ type CalcResult = {
   grade: "S" | "A" | "B" | "C" | "D"; // ランク
 };
 
+// ─── エネルギー自立ゲーム 維持日数計算 ────────────────
+
+/**
+ * エネルギー自立シミュレーション用カードの型
+ */
+type EnergyCard = {
+  cardId: string;
+  cardName: string;
+  suit: string;
+  cardNumber: string;
+  baseValue?: number;        // ♦カード：基礎貢献値
+  riskFlag?: boolean;        // ♦カード：リスクフラグ
+  riskPenalty?: number;      // ♦カード：リスクペナルティ
+  skillBonus?: number;       // ♥カード：スキルボーナス
+  compatibleDiamond?: string[]; // ♥カード：相性のある♦カード番号リスト
+  penaltyLevel?: "軽" | "中" | "重"; // ♠カード：危機レベル
+  crisisPenalty?: number;    // ♠カード：危機ペナルティ（負の値）
+  actionBonus?: number;      // ♣カード：アクションボーナス
+};
+
+/**
+ * 維持日数の計算結果型
+ */
+type EnergyCalcResult = {
+  diamondBaseTotal: number;  // ♦基礎貢献値合計
+  heartSkillBonus: number;   // ♥スキルボーナス合計
+  spadePenalty: number;      // ♠危機ペナルティ合計（負の値）
+  riskPenalty: number;       // ♦リスクペナルティ合計（負の値）
+  maintenanceDays: number;   // 維持日数（最低保証3日）
+};
+
+/**
+ * エネルギー自立シミュレーション用維持日数計算
+ *
+ * 維持日数 = ♦基礎貢献値
+ *          + ♥スキルボーナス（compatibleDiamond一致なら+5、不一致なら0）
+ *          - ♠危機ペナルティ（軽:0・中:-3・重:-7）
+ *          - ♦リスクペナルティ（riskFlag:trueのカードで-3）
+ *
+ * 最低保証：3日（計算結果が3日未満の場合は3日とする）
+ */
+function calcEnergyMaintenanceDays(
+  diamondCards: EnergyCard[],
+  heartCards: EnergyCard[],
+  spadeCards: EnergyCard[],
+): EnergyCalcResult {
+  // ♦基礎貢献値合計
+  const diamondBaseTotal = diamondCards.reduce(
+    (sum, c) => sum + (c.baseValue ?? 0),
+    0
+  );
+
+  // ♦リスクペナルティ合計（riskFlag:trueのカードで-3）
+  const riskPenalty = diamondCards.reduce(
+    (sum, c) => sum + (c.riskFlag ? -(c.riskPenalty ?? 3) : 0),
+    0
+  );
+
+  // ♥スキルボーナス（選択中の♦カード番号と compatibleDiamond が一致する場合のみ+5）
+  const selectedDiamondNumbers = diamondCards.map((c) => `♦${c.cardNumber}`);
+  const heartSkillBonus = heartCards.reduce((sum, c) => {
+    if (!c.compatibleDiamond) return sum;
+    const isCompatible = c.compatibleDiamond.some((d) =>
+      selectedDiamondNumbers.includes(d)
+    );
+    return sum + (isCompatible ? (c.skillBonus ?? 5) : 0);
+  }, 0);
+
+  // ♠危機ペナルティ合計（軽:0・中:-3・重:-7）
+  const spadePenalty = spadeCards.reduce((sum, c) => {
+    return sum + (c.crisisPenalty ?? 0);
+  }, 0);
+
+  // 維持日数計算（最低保証3日）
+  const rawDays = diamondBaseTotal + heartSkillBonus + riskPenalty + spadePenalty;
+  const maintenanceDays = Math.max(3, rawDays);
+
+  return {
+    diamondBaseTotal,
+    heartSkillBonus,
+    spadePenalty,
+    riskPenalty,
+    maintenanceDays,
+  };
+}
+
 // ─── v4.2 財務計算メイン関数 ───────────────────────────
 
 /**

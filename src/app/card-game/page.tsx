@@ -15,6 +15,7 @@ import {
   TrendingUp,
   Truck,
   Heart,
+  Zap,
   ChevronRight,
   BookOpen,
 } from 'lucide-react';
@@ -81,6 +82,21 @@ const games = [
     color: 'border-green-200 bg-green-50',
     headerColor: 'bg-green-600',
     badgeColor: 'bg-green-100 text-green-800',
+  },
+  {
+    id: 'energy-jiritsu',
+    version: 'v5',
+    icon: Zap,
+    title: 'エネルギー自立シミュレーション',
+    subtitle: '空倉町の30日・PBL授業版',
+    description:
+      'ホルムズ封鎖。あなたの地域は30日間生き残れるか？平時のエネルギー設計が危機時の命運を決める。カード52枚・AI評価付き。',
+    target: '高専・大学生（PBL授業）',
+    status: 'active' as const,
+    href: '/card-game/energy-jiritsu',
+    color: 'border-yellow-200 bg-yellow-50',
+    headerColor: 'bg-yellow-600',
+    badgeColor: 'bg-yellow-100 text-yellow-800',
   },
 ];
 
