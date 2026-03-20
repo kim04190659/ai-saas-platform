@@ -2,10 +2,10 @@
  * /card-game/select
  * Mission in LOGI-TECH — カード選択ウィザード（v4.2）
  *
- * STEP 0: 課題を選ぶ      (♦️ダイヤ、1枚固定)
- * STEP 1: ペルソナを選ぶ  (♥️ハート、複数可)
- * STEP 2: パートナーを選ぶ (♣️クラブ、複数可)
- * STEP 3: ジョブタイプを選ぶ (♠️スペード、複数可・ユーザーが選択)
+ * STEP 0: ミッション（課題）を選ぶ (♦️ダイヤ、1枚固定)
+ * STEP 1: ペルソナを選ぶ            (♥️ハート、複数可)
+ * STEP 2: パートナーを選ぶ          (♣️クラブ、複数可)
+ * STEP 3: ソリューションを選ぶ      (♠️スペード、複数可・ユーザーが選択)
  *
  * 選択後 logi_selectedCards_v42 を localStorage に保存して
  * /card-game/result へ遷移する
@@ -28,7 +28,7 @@ type Card = {
   cardName: string;         // "♦A-PR01" など
   suit: string;             // "♦️ダイヤ" など
   rank: string;             // "A" | "K" | ... | "2"
-  role: string;             // "問題・課題" | "ペルソナ" | "パートナー" | "ジョブタイプ"
+  role: string;             // "ミッション" | "ペルソナ" | "パートナー" | "ソリューション"
   baseValue: number;        // A=13, K=12, ... 2=1
   title: string;            // カードタイトル
   description: string;      // 説明テキスト
@@ -45,17 +45,17 @@ type SelectedCards = {
   problemCard: Card;      // ♦️課題カード（1枚）
   personaCards: Card[];   // ♥️ペルソナカード（複数）
   partnerCards: Card[];   // ♣️パートナーカード（複数）
-  jobCards: Card[];       // ♠️ジョブタイプカード（複数）
+  jobCards: Card[];       // ♠️ソリューションカード（複数）
 };
 
 // ─── 定数 ──────────────────────────────────────────────
 
 // ステップラベル
 const STEP_LABELS = [
-  "♦️ 課題",
+  "♦️ ミッション",
   "♥️ ペルソナ",
   "♣️ パートナー",
-  "♠️ ジョブタイプ",
+  "♠️ ソリューション",
 ];
 
 // グレードバッジの色（Tailwindクラス名）
@@ -81,8 +81,8 @@ function rankToGrade(rank: string): "S" | "A" | "B" | "C" | "D" {
 }
 
 /**
- * v4.2 事業成功率の計算（プレビュー用）
- * = 5% + Σ(パートナー成功率貢献) + Σ(ジョブタイプ成功率貢献)、上限70%
+ * v4.3 事業成功率の計算（プレビュー用）
+ * = 5% + Σ(パートナー成功率貢献) + Σ(ソリューション成功率貢献)、上限70%
  */
 function calcSuccessRate(partners: Card[], jobs: Card[]): number {
   const partnerSum = partners.reduce((s, c) => s + c.successContribution, 0);
@@ -111,7 +111,7 @@ function calcProfit3yearsPreview(
   const costRate = (30 + partners.reduce((s, c) => s + c.costVarianceRate, 0)) / 100;
   // 年間コスト（万円）
   const annualCost = annualRevenue * costRate;
-  // 初期費（万円）= ジョブタイプの初期投資合計
+  // 初期費（万円）= ソリューションの初期投資合計
   const initialCost = jobs.reduce((s, c) => s + c.initialInvestment, 0);
   // 3年間累計利益（万円）
   return (annualRevenue - annualCost) * 3 - initialCost;
@@ -325,7 +325,7 @@ export default function SelectPage() {
   const [problemCards, setProblemCards] = useState<Card[]>([]);   // ♦️課題カード
   const [personaCards, setPersonaCards] = useState<Card[]>([]);   // ♥️ペルソナカード
   const [partnerCards, setPartnerCards] = useState<Card[]>([]);   // ♣️パートナーカード
-  const [jobCards, setJobCards] = useState<Card[]>([]);           // ♠️ジョブタイプカード
+  const [jobCards, setJobCards] = useState<Card[]>([]);           // ♠️ソリューションカード
 
   // ユーザーが選んだカード
   const [selectedProblem, setSelectedProblem] = useState<Card | null>(null); // 1枚固定
@@ -351,10 +351,10 @@ export default function SelectPage() {
       try {
         // 4スーツを並行して取得（Promise.all で高速化）
         const [pRes, peRes, paRes, jRes] = await Promise.all([
-          fetch("/api/card-game/cards?role=問題・課題"),
+          fetch("/api/card-game/cards?role=ミッション"),
           fetch("/api/card-game/cards?role=ペルソナ"),
           fetch("/api/card-game/cards?role=パートナー"),
-          fetch("/api/card-game/cards?role=ジョブタイプ"),
+          fetch("/api/card-game/cards?role=ソリューション"),
         ]);
 
         if (!pRes.ok || !peRes.ok || !paRes.ok || !jRes.ok) {
@@ -415,7 +415,7 @@ export default function SelectPage() {
     );
   }
 
-  // ジョブタイプカードのトグル選択（複数可）
+  // ソリューションカードのトグル選択（複数可）
   function toggleJob(card: Card) {
     setSelectedJobs((prev) =>
       prev.find((c) => c.id === card.id)
@@ -450,7 +450,7 @@ export default function SelectPage() {
           🏭 Mission in LOGI-TECH
         </h1>
         <p className="text-center text-slate-400 text-sm mt-1">
-          ビジネスプランを立案せよ！ v4.2
+          ビジネスプランを立案せよ！ v4.3
         </p>
       </div>
 
@@ -472,7 +472,7 @@ export default function SelectPage() {
         <div className="p-4">
           <div className="mb-4">
             <h2 className="text-lg font-bold text-cyan-400">
-              STEP 1 / ♦️ 解決する課題を選ぶ（1枚）
+              STEP 1 / ♦️ ミッション（解決する課題）を選ぶ（1枚）
             </h2>
             <p className="text-slate-400 text-sm mt-1">
               取り組む物流課題を1枚選んでください。
@@ -482,7 +482,7 @@ export default function SelectPage() {
 
           {problemCards.length === 0 ? (
             <p className="text-slate-400 text-center py-8">
-              課題カードが見つかりませんでした
+              ミッションカードが見つかりませんでした
             </p>
           ) : (
             <div className="grid grid-cols-5 gap-2">
@@ -642,28 +642,28 @@ export default function SelectPage() {
               onClick={() => setStep(3)}
               className="flex-1 py-3 rounded-xl font-bold text-base bg-cyan-500 hover:bg-cyan-400 text-black transition-all duration-200"
             >
-              次へ：♠️ ジョブタイプ →
+              次へ：♠️ ソリューション →
             </button>
           </div>
         </div>
       )}
 
-      {/* ════ STEP 3: ♠️ジョブタイプを選ぶ ════ */}
+      {/* ════ STEP 3: ♠️ソリューションを選ぶ ════ */}
       {step === 3 && (
         <div className="p-4">
           <div className="mb-4">
             <h2 className="text-lg font-bold text-cyan-400">
-              STEP 4 / ♠️ ジョブタイプを選ぶ（複数可）
+              STEP 4 / ♠️ ソリューションを選ぶ（複数可）
             </h2>
             <p className="text-slate-400 text-sm mt-1">
-              自社で採用・育成する職種を選んでください。
+              活用する産業・技術を選んでください。
               高ランクほど初期費用が高いですが、成功率が上がります。
             </p>
           </div>
 
           {jobCards.length === 0 ? (
             <p className="text-slate-400 text-center py-8">
-              ジョブタイプカードが見つかりませんでした
+              ソリューションカードが見つかりませんでした
             </p>
           ) : (
             <div className="grid grid-cols-5 gap-2">
@@ -679,10 +679,10 @@ export default function SelectPage() {
             </div>
           )}
 
-          {/* 選択中ジョブのサマリー */}
+          {/* 選択中ソリューションのサマリー */}
           {selectedJobs.length > 0 && (
             <div className="mt-3 p-3 bg-slate-800 rounded-xl border border-slate-600">
-              <div className="text-xs text-slate-400 mb-1">選択中ジョブタイプの合計</div>
+              <div className="text-xs text-slate-400 mb-1">選択中ソリューションの合計</div>
               <div className="flex gap-4 text-xs">
                 <span className="text-blue-400">
                   初期費 {selectedJobs.reduce((s, c) => s + c.initialInvestment, 0).toLocaleString()}万円
@@ -723,7 +723,7 @@ export default function SelectPage() {
                 </span>
               </div>
               <div>
-                <span className="text-slate-500">♠️ ジョブタイプ：</span>
+                <span className="text-slate-500">♠️ ソリューション：</span>
                 <span className="text-white ml-2">
                   {selectedJobs.length > 0
                     ? selectedJobs.map((c) => c.title).join("、")

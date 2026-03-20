@@ -1,6 +1,6 @@
 /**
  * /api/card-game/generate
- * Mission in LOGI-TECH — Claude AI によるビジネスプラン評価API（v4.2対応）
+ * Mission in LOGI-TECH — Claude AI によるビジネスプラン評価API（v4.3対応）
  *
  * POST /api/card-game/generate
  * Body: {
@@ -39,7 +39,7 @@ type SelectedCards = {
   problemCard: Card;
   personaCards: Card[];
   partnerCards: Card[];
-  jobCards: Card[];
+  jobCards: Card[];        // v4.3ではソリューションカード（キー名はlocalStorage互換のため維持）
 };
 
 // 財務計算結果の型
@@ -105,7 +105,7 @@ ${partnerCards.length > 0
     ? partnerCards.map(c => `- ${c.cardName}: ${c.title}（コスト+${c.costVarianceRate}%, 成功率+${c.successContribution}%）`).join("\n")
     : "- なし"}
 
-### ♠️ ジョブタイプ
+### ♠️ ソリューション（活用する産業・技術）
 ${jobCards.length > 0
     ? jobCards.map(c => `- ${c.cardName}: ${c.title}（初期費${c.initialInvestment.toLocaleString()}万円, 成功率+${c.successContribution}%）`).join("\n")
     : "- なし"}
@@ -131,7 +131,7 @@ ${jobCards.length > 0
 2. リスクや改善すべき点があれば教えてください。
 3. このカードの組み合わせを選んだ学習者へのアドバイスをお願いします。
 
-学習者は物流業界について学ぶ中高生・大学生を想定しています。
+学習者は物流業界について学ぶ大学1年生を想定しています。
 専門用語は分かりやすく説明しながら、前向きで励みになる評価をお願いします。`;
 
   try {

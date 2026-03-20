@@ -35,7 +35,7 @@ const SUIT_CONFIG: Record<string, { color: string; symbol: string; bg: string; l
   "♥️ハート": { color: "text-red-500", symbol: "♥", bg: "from-red-50 to-red-100", label: "ペルソナ" },
   "♦️ダイヤ": { color: "text-red-600", symbol: "♦", bg: "from-orange-50 to-orange-100", label: "問題・課題" },
   "♣️クラブ": { color: "text-gray-800", symbol: "♣", bg: "from-green-50 to-green-100", label: "パートナー" },
-  "♠️スペード": { color: "text-gray-900", symbol: "♠", bg: "from-blue-50 to-blue-100", label: "ジョブタイプ" },
+  "♠️スペード": { color: "text-gray-900", symbol: "♠", bg: "from-blue-50 to-blue-100", label: "ソリューション" },
 };
 
 // 数値を見やすい形式にフォーマット（例: 1000000 → "100万"）

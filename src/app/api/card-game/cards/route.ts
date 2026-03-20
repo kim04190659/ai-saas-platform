@@ -1,12 +1,12 @@
 /**
  * /api/card-game/cards
- * LOGIカードゲーム マスターDB からカード一覧を取得するAPI（v4.2対応）
+ * LOGIカードゲーム マスターDB からカード一覧を取得するAPI（v4.3対応）
  *
  * --- 使い方 ---
- * GET /api/card-game/cards?role=問題・課題   → 役割でフィルタ
+ * GET /api/card-game/cards?role=ミッション   → 役割でフィルタ
  * GET /api/card-game/cards?role=ペルソナ     → ペルソナカード全件
  * GET /api/card-game/cards?role=パートナー   → パートナーカード全件
- * GET /api/card-game/cards?role=ジョブタイプ → ジョブタイプカード全件
+ * GET /api/card-game/cards?role=ソリューション → ソリューションカード全件
  * GET /api/card-game/cards                   → 全件取得
  *
  * --- Vercel環境変数（要設定） ---
@@ -32,7 +32,7 @@ type NotionCard = {
     "スート": { select: { name: string } | null };
     // ランク選択（例: "A", "K", "2"）
     "ランク": { select: { name: string } | null };
-    // 役割選択（例: "問題・課題", "ペルソナ", "パートナー", "ジョブタイプ"）
+    // 役割選択（例: "ミッション", "ペルソナ", "パートナー", "ソリューション"）
     "役割": { select: { name: string } | null };
     // 基本値（ランクに対応する数値: A=13, K=12, ... 2=1）
     "基本値": { number: number | null };
@@ -40,7 +40,7 @@ type NotionCard = {
     "カードタイトル": { rich_text: Array<{ plain_text: string }> };
     // 説明テキスト（詳細説明）
     "説明テキスト": { rich_text: Array<{ plain_text: string }> };
-    // ♦️ダイヤ専用: 単価（万円/社/年）= 基本値 × 100
+    // ♦️ダイヤ（ミッション）専用: 単価（万円/社/年）= 基本値 × 100
     "単価_万円": { number: number | null };
     // ♥️ハート専用: 潜在顧客数（社）= 基本値 × 2
     "潜在顧客数_社": { number: number | null };
@@ -57,7 +57,7 @@ type NotionCard = {
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
 
-  // 役割でフィルタ（"問題・課題" | "ペルソナ" | "パートナー" | "ジョブタイプ"）
+  // 役割でフィルタ（"ミッション" | "ペルソナ" | "パートナー" | "ソリューション"）
   const role = searchParams.get("role");
 
   try {

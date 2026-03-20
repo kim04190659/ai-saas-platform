@@ -267,9 +267,9 @@ export default function PlanPage() {
             <div className="space-y-3">
               {[
                 { label: "♥️ ペルソナ", card: heartCard, color: "border-red-500/50 bg-red-950/30" },
-                { label: "♦️ 問題・課題", card: diamondCard, color: "border-orange-500/50 bg-orange-950/30" },
+                { label: "♦️ ミッション（課題）", card: diamondCard, color: "border-orange-500/50 bg-orange-950/30" },
                 { label: "♣️ パートナー", card: clubCard, color: "border-green-500/50 bg-green-950/30" },
-                { label: "♠️ ジョブタイプ", card: spadeCard, color: "border-blue-500/50 bg-blue-950/30" },
+                { label: "♠️ ソリューション", card: spadeCard, color: "border-blue-500/50 bg-blue-950/30" },
               ].map(({ label, card, color }) => (
                 <div key={label} className={`border rounded-xl p-3 ${color}`}>
                   <p className="text-xs text-gray-400 mb-1">{label}</p>

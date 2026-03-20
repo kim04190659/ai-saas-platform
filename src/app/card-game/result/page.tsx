@@ -7,11 +7,11 @@
  * Claude AIによるビジネスプラン評価も行う。
  *
  * ── v4.2 計算ロジック ──
- * 1. 事業成功率 = 5% + Σパートナー成功率貢献 + Σジョブ成功率貢献（上限70%）
+ * 1. 事業成功率 = 5% + Σパートナー成功率貢献 + Σソリューション成功率貢献（上限70%）
  * 2. 市場規模（社）= Σペルソナの潜在顧客数
  * 3. 年間売上 = 単価（万円）× 市場規模（社）× 事業成功率
  * 4. 年間コスト = 年間売上 × (30% + Σパートナーコスト変動比率)
- * 5. 初期費 = Σジョブタイプ初期投資（万円）
+ * 5. 初期費 = Σソリューション初期投資（万円）
  * 6. 3年間累計利益 = (年間売上 - 年間コスト) × 3 - 初期費
  *
  * ── ランク判定 ──
@@ -51,7 +51,7 @@ type SelectedCards = {
   problemCard: Card;      // ♦️課題カード（1枚）
   personaCards: Card[];   // ♥️ペルソナカード（複数）
   partnerCards: Card[];   // ♣️パートナーカード（複数）
-  jobCards: Card[];       // ♠️ジョブタイプカード（複数）
+  jobCards: Card[];       // ♠️ソリューションカード（複数）
 };
 
 // v4.2 計算結果の型
@@ -106,7 +106,7 @@ function calcV42(selected: SelectedCards): CalcResult {
   // Step 5: 年間利益
   const annualProfit = annualRevenue - annualCost;
 
-  // Step 6: 初期費（万円）= Σジョブタイプ初期投資
+  // Step 6: 初期費（万円）= Σソリューション初期投資
   const initialCost = jobCards.reduce((sum, c) => sum + c.initialInvestment, 0);
 
   // Step 7: 3年間累計利益（万円）
@@ -291,7 +291,7 @@ export default function ResultPage() {
           🏭 Mission in LOGI-TECH
         </h1>
         <p className="text-center text-slate-400 text-sm mt-1">
-          ビジネスプラン評価結果 v4.2
+          ビジネスプラン評価結果 v4.3
         </p>
       </div>
 
@@ -337,7 +337,7 @@ export default function ResultPage() {
                 +{selected.partnerCards.reduce((s, c) => s + c.successContribution, 0)}%
               </div>
               <div>
-                ジョブ貢献:{" "}
+                ソリューション貢献:{" "}
                 +{selected.jobCards.reduce((s, c) => s + c.successContribution, 0)}%
                 {5 +
                   selected.partnerCards.reduce((s, c) => s + c.successContribution, 0) +
@@ -414,7 +414,7 @@ export default function ResultPage() {
             {/* 初期費 */}
             <div className="flex justify-between items-center">
               <span className="text-slate-400 text-sm">
-                初期費（ジョブタイプ合計）
+                初期費（ソリューション合計）
               </span>
               <span className="text-red-400 font-semibold">
                 − {formatManYen(calc.initialCost)}
@@ -476,9 +476,9 @@ export default function ResultPage() {
               }
             />
 
-            {/* ジョブタイプカード */}
+            {/* ソリューションカード */}
             <CardSummaryRow
-              label="♠️ ジョブタイプ"
+              label="♠️ ソリューション"
               cards={selected.jobCards}
               color="text-blue-300"
               emptyLabel="なし"
