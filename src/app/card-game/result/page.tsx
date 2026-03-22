@@ -207,9 +207,43 @@ export default function ResultPage() {
   const [error, setError] = useState<string | null>(null);
   const [aiEvaluation, setAiEvaluation] = useState<string | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
+  // Notion保存ステータス
+  const [notionSaveStatus, setNotionSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [notionPageUrl, setNotionPageUrl] = useState<string | null>(null);
 
   // Sprint #4: ScenarioContext にゲーム結果を保存する
   const { setModule, setGameResult } = useScenario();
+
+  // Sprint #6: Notion にゲーム結果を保存する
+  const saveGameResultToNotion = async () => {
+    if (!selected) return;
+    const calc = calcV42(selected);
+    setNotionSaveStatus("saving");
+    try {
+      const response = await fetch("/api/notion/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          saveType: "card-game",
+          data: {
+            grade: calc.grade,
+            totalProfit3Years: calc.profit3years,
+            successRate: calc.successRate,
+            missionTitle: selected.problemCard.title,
+            personaTitles: selected.personaCards.map((c) => c.title),
+            completedAt: new Date().toISOString(),
+          },
+        }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error);
+      setNotionSaveStatus("saved");
+      setNotionPageUrl(result.pageUrl);
+    } catch (err) {
+      console.error("Notion保存エラー:", err);
+      setNotionSaveStatus("error");
+    }
+  };
 
   // localStorage からカード選択結果を読み込む
   useEffect(() => {
@@ -534,6 +568,43 @@ export default function ResultPage() {
 
         {/* ════ アクションボタン ════ */}
         <div className="space-y-3 pt-2">
+          {/* Notion保存ボタン */}
+          <div className="bg-slate-800/60 rounded-xl p-4 border border-slate-700">
+            <p className="text-slate-300 text-xs font-semibold mb-2">📝 ゲーム結果をNotionに保存</p>
+            {notionSaveStatus === "idle" && (
+              <button
+                onClick={saveGameResultToNotion}
+                className="w-full py-2.5 rounded-lg bg-orange-600 hover:bg-orange-500 text-white font-bold text-sm transition-all"
+              >
+                📝 Notionに保存する
+              </button>
+            )}
+            {notionSaveStatus === "saving" && (
+              <div className="flex items-center justify-center gap-2 py-2.5 text-slate-400 text-sm">
+                <div className="w-4 h-4 border-2 border-orange-400 border-t-transparent rounded-full animate-spin" />
+                保存中...
+              </div>
+            )}
+            {notionSaveStatus === "saved" && notionPageUrl && (
+              <div className="space-y-2">
+                <p className="text-green-400 text-sm font-semibold text-center">✅ Notionに保存しました！</p>
+                <a href={notionPageUrl} target="_blank" rel="noopener noreferrer"
+                  className="block w-full py-2 rounded-lg border border-green-600 text-green-400 text-sm text-center hover:bg-green-950/50 transition-colors">
+                  🔗 Notionで開く
+                </a>
+              </div>
+            )}
+            {notionSaveStatus === "error" && (
+              <div className="space-y-2">
+                <p className="text-red-400 text-sm text-center">❌ 保存に失敗しました</p>
+                <button onClick={saveGameResultToNotion}
+                  className="w-full py-2 rounded-lg border border-red-600 text-red-400 text-sm hover:bg-red-950/50 transition-colors">
+                  再試行する
+                </button>
+              </div>
+            )}
+          </div>
+
           {/* もう一度プレイ */}
           <button
             onClick={() => {

@@ -13,6 +13,9 @@ import { useState, useEffect } from "react";
 import { useScenario } from "@/contexts/ScenarioContext";
 import Link from "next/link";
 
+// Notion保存ボタンの状態管理用の型
+type SaveStatus = "idle" | "saving" | "saved" | "error";
+
 // ─── 定数：成熟度レベルの定義 ────────────────────────────────
 
 const MATURITY_LEVELS = [
@@ -177,6 +180,9 @@ export default function MaturityPage() {
   // 回答: { 質問ID → 選択したスコア }
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [currentQ, setCurrentQ] = useState(0); // 現在の質問インデックス
+  // Notion保存ステータス
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
+  const [savedPageUrl, setSavedPageUrl] = useState<string | null>(null);
 
   // ── 回答選択処理 ──
   const selectAnswer = (questionId: string, score: number) => {
@@ -242,6 +248,36 @@ export default function MaturityPage() {
     });
 
     setPhase("result");
+  };
+
+  // ── Notionへ保存 ──
+  const saveToNotion = async () => {
+    setSaveStatus("saving");
+    try {
+      const response = await fetch("/api/notion/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          saveType: "runwith-maturity",
+          data: {
+            maturityLevel,
+            maturityLabel: levelInfo.label,
+            totalScore,
+            maxScore,
+            areaScores: areaAvgForResult,
+            weakAreas,
+            completedAt: new Date().toISOString(),
+          },
+        }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error);
+      setSaveStatus("saved");
+      setSavedPageUrl(result.pageUrl);
+    } catch (error) {
+      console.error("Notion保存エラー:", error);
+      setSaveStatus("error");
+    }
   };
 
   // ── 現在の質問が回答済みかチェック ──
@@ -516,6 +552,53 @@ export default function MaturityPage() {
                 💡 おすすめの質問例：
                 「{weakAreas[0]}をLv.{maturityLevel}から上げるには何から始めればいいですか？」
               </div>
+            </div>
+
+            {/* Notion保存ボタン */}
+            <div className="bg-slate-800/60 rounded-2xl p-5 border border-slate-700">
+              <p className="text-slate-300 text-sm font-semibold mb-3">
+                📝 診断結果をNotionに保存する
+              </p>
+              {saveStatus === "idle" && (
+                <button
+                  onClick={saveToNotion}
+                  className="w-full py-3 rounded-xl bg-orange-600 hover:bg-orange-500 text-white font-bold text-sm transition-all"
+                >
+                  📝 Notionに保存する
+                </button>
+              )}
+              {saveStatus === "saving" && (
+                <div className="flex items-center justify-center gap-2 py-3 text-slate-400 text-sm">
+                  <div className="w-4 h-4 border-2 border-orange-400 border-t-transparent rounded-full animate-spin" />
+                  保存中...
+                </div>
+              )}
+              {saveStatus === "saved" && savedPageUrl && (
+                <div className="space-y-2">
+                  <p className="text-green-400 text-sm font-semibold text-center">
+                    ✅ Notionに保存しました！
+                  </p>
+                  <a
+                    href={savedPageUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block w-full py-2 rounded-xl border border-green-600 text-green-400 text-sm text-center hover:bg-green-950/50 transition-colors"
+                  >
+                    🔗 Notionで開く
+                  </a>
+                </div>
+              )}
+              {saveStatus === "error" && (
+                <div className="space-y-2">
+                  <p className="text-red-400 text-sm text-center">❌ 保存に失敗しました</p>
+                  <button
+                    onClick={saveToNotion}
+                    className="w-full py-2 rounded-xl border border-red-600 text-red-400 text-sm hover:bg-red-950/50 transition-colors"
+                  >
+                    再試行する
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* もう一度診断・トップへ */}

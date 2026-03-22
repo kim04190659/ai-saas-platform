@@ -321,6 +321,9 @@ export default function GyoseiDashboard() {
   // AI診断の状態管理
   const [aiDiagnosis, setAiDiagnosis] = useState<string | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
+  // Sprint #6: Notion保存ステータス
+  const [notionSaveStatus, setNotionSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [notionPageUrl, setNotionPageUrl] = useState<string | null>(null);
 
   // Sprint #4: ScenarioContext にモジュールと屋久島データを登録
   // これにより ChatPanel が「行政OSモード」で動作し、屋久島データを把握して回答できる
@@ -336,6 +339,36 @@ export default function GyoseiDashboard() {
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  /**
+   * Sprint #6: 行政OSデータをNotionに保存する
+   */
+  async function saveGyoseiToNotion() {
+    setNotionSaveStatus("saving");
+    try {
+      const response = await fetch("/api/notion/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          saveType: "gyosei",
+          data: {
+            townName: yakushima.name,
+            population: yakushima.currentPopulation,
+            agingRate: yakushima.agingRate,
+            fiscalIndex: yakushima.fiscalIndex,
+            survivalRank: yakushima.survivalRank,
+          },
+        }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error);
+      setNotionSaveStatus("saved");
+      setNotionPageUrl(result.pageUrl);
+    } catch (err) {
+      console.error("Notion保存エラー:", err);
+      setNotionSaveStatus("error");
+    }
+  }
 
   /**
    * 「AI診断を依頼する」ボタンの処理
@@ -530,6 +563,42 @@ export default function GyoseiDashboard() {
             </>
           )}
         </button>
+
+        {/* Notion保存ボタン（Sprint #6） */}
+        <div className="mt-3 flex items-center gap-2">
+          {notionSaveStatus === "idle" && (
+            <button
+              onClick={saveGyoseiToNotion}
+              className="flex items-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-500 text-white rounded-lg text-sm font-semibold transition-colors"
+            >
+              📝 行政データをNotionに保存
+            </button>
+          )}
+          {notionSaveStatus === "saving" && (
+            <div className="flex items-center gap-2 text-slate-400 text-sm">
+              <div className="w-4 h-4 border-2 border-orange-400 border-t-transparent rounded-full animate-spin" />
+              保存中...
+            </div>
+          )}
+          {notionSaveStatus === "saved" && notionPageUrl && (
+            <div className="flex items-center gap-2">
+              <span className="text-green-400 text-sm font-semibold">✅ Notionに保存しました</span>
+              <a href={notionPageUrl} target="_blank" rel="noopener noreferrer"
+                className="text-green-400 text-sm underline hover:text-green-300">
+                🔗 開く
+              </a>
+            </div>
+          )}
+          {notionSaveStatus === "error" && (
+            <div className="flex items-center gap-2">
+              <span className="text-red-400 text-sm">❌ 保存失敗</span>
+              <button onClick={saveGyoseiToNotion}
+                className="text-red-400 text-sm underline hover:text-red-300">
+                再試行
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* ── RunWith への橋渡しバナー ── */}
