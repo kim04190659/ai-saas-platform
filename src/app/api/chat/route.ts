@@ -47,7 +47,7 @@ export async function POST(request: Request) {
     const systemContent = systemPrompt || DEFAULT_SYSTEM_PROMPT;
 
     const response = await anthropic.messages.create({
-      model: "claude-3-5-haiku-20241022",
+      model: "claude-haiku-4-5-20251001",
       max_tokens: 1024,
       // system パラメータでAIの役割・文脈を設定する
       system: systemContent,

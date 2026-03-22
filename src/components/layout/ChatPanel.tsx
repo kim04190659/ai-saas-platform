@@ -199,7 +199,13 @@ export default function ChatPanel({
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && !loading && sendMessage()}
+            onKeyDown={(e) => {
+              // IME変換中（日本語入力の文字確定Enter）は無視する
+              // isComposing が true = まだ変換中なので送信しない
+              if (e.key === "Enter" && !e.nativeEvent.isComposing && !loading) {
+                sendMessage();
+              }
+            }}
             placeholder="AIに質問する..."
             className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
