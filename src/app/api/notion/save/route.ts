@@ -13,8 +13,10 @@ import { NextRequest, NextResponse } from "next/server";
 
 // Notion APIの設定
 const NOTION_API_KEY = process.env.NOTION_API_KEY!;
-// 保存先の親ページ（🚀 RunWith プロジェクト）
-const PARENT_PAGE_ID = "30e960a9-1e23-81a3-942f-d46a70556f20";
+// 保存先の親ページID（環境変数 NOTION_RESULTS_PAGE_ID で上書き可能）
+// デフォルト: 🃏 PBL Card Game プロジェクト（インテグレーション接続済みのページ）
+const PARENT_PAGE_ID =
+  process.env.NOTION_RESULTS_PAGE_ID ?? "315960a9-1e23-81ee-8749-c475dbed6d9c";
 
 // Notion REST API でページを作成するヘルパー関数
 async function createNotionPage(pageData: object): Promise<{ id: string; url: string }> {
@@ -29,8 +31,16 @@ async function createNotionPage(pageData: object): Promise<{ id: string; url: st
   });
 
   if (!response.ok) {
-    const err = await response.text();
-    throw new Error(`Notion API エラー: ${err}`);
+    // Notion APIからのエラー詳細をフルで取得してログに出す
+    const errBody = await response.text();
+    console.error(`Notion API エラー (status=${response.status}):`, errBody);
+    // JSONなら見やすくパース
+    let errDetail = errBody;
+    try {
+      const parsed = JSON.parse(errBody);
+      errDetail = parsed.message ?? errBody;
+    } catch { /* JSONでなければそのまま */ }
+    throw new Error(`Notion APIエラー ${response.status}: ${errDetail}`);
   }
 
   return response.json();

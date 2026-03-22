@@ -183,6 +183,7 @@ export default function MaturityPage() {
   // Notion保存ステータス
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [savedPageUrl, setSavedPageUrl] = useState<string | null>(null);
+  const [saveErrorMsg, setSaveErrorMsg] = useState<string | null>(null);
 
   // ── 回答選択処理 ──
   const selectAnswer = (questionId: string, score: number) => {
@@ -253,6 +254,7 @@ export default function MaturityPage() {
   // ── Notionへ保存 ──
   const saveToNotion = async () => {
     setSaveStatus("saving");
+    setSaveErrorMsg(null);
     try {
       const response = await fetch("/api/notion/save", {
         method: "POST",
@@ -275,7 +277,9 @@ export default function MaturityPage() {
       setSaveStatus("saved");
       setSavedPageUrl(result.pageUrl);
     } catch (error) {
-      console.error("Notion保存エラー:", error);
+      const msg = error instanceof Error ? error.message : String(error);
+      console.error("Notion保存エラー:", msg);
+      setSaveErrorMsg(msg);
       setSaveStatus("error");
     }
   };
@@ -591,6 +595,11 @@ export default function MaturityPage() {
               {saveStatus === "error" && (
                 <div className="space-y-2">
                   <p className="text-red-400 text-sm text-center">❌ 保存に失敗しました</p>
+                  {saveErrorMsg && (
+                    <p className="text-red-300 text-xs bg-red-950/50 rounded px-2 py-1 break-all">
+                      {saveErrorMsg}
+                    </p>
+                  )}
                   <button
                     onClick={saveToNotion}
                     className="w-full py-2 rounded-xl border border-red-600 text-red-400 text-sm hover:bg-red-950/50 transition-colors"
