@@ -1,118 +1,91 @@
 'use client';
 
-import StatsCard from '@/components/dashboard/StatsCard';
-import NotificationCenter from '@/components/notifications/NotificationCenter';
-import SearchBar from '@/components/search/SearchBar';
-import LineChart from '@/components/charts/LineChart';
-import PieChart from '@/components/charts/PieChart';
-import { Users, TrendingUp, MessageSquare, Activity } from 'lucide-react';
+import Link from 'next/link';
+import { Gamepad2, Building2, Activity, ChevronRight } from 'lucide-react';
+
+// ─── ダッシュボードホーム ────────────────────────────────
+// サイドバーレイアウト配下のホームページ
+// モジュールへのショートカットと概要を表示する
+
+const shortcuts = [
+  {
+    icon: Gamepad2,
+    label: 'LOGI-TECH カードゲーム',
+    description: 'ビジネスプランを体験学習',
+    href: '/card-game',
+    accentBg: 'bg-sky-50',
+    accentBorder: 'border-sky-200',
+    accentIcon: 'bg-sky-100 text-sky-600',
+    accentText: 'text-sky-700',
+  },
+  {
+    icon: Building2,
+    label: '行政OS ダッシュボード',
+    description: '屋久島データで自治体診断',
+    href: '/gyosei/dashboard',
+    accentBg: 'bg-emerald-50',
+    accentBorder: 'border-emerald-200',
+    accentIcon: 'bg-emerald-100 text-emerald-600',
+    accentText: 'text-emerald-700',
+  },
+  {
+    icon: Activity,
+    label: 'RunWith 成熟度診断',
+    description: 'IT運用の現状レベルを把握',
+    href: '/runwith/maturity',
+    accentBg: 'bg-orange-50',
+    accentBorder: 'border-orange-200',
+    accentIcon: 'bg-orange-100 text-orange-600',
+    accentText: 'text-orange-700',
+  },
+];
 
 export default function Dashboard() {
   return (
-    <div>
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-600 mt-1">Welcome back! Here's your overview.</p>
-        </div>
-        <NotificationCenter />
-      </div>
+    <div className="p-6">
 
-      {/* Search Bar */}
-      <div className="mb-6">
-        <SearchBar />
-      </div>
-
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <StatsCard
-          title="Total Users"
-          value="2,847"
-          icon={Users}
-          color="blue"
-          trend={{ value: 12.5, isPositive: true }}
-        />
-        <StatsCard
-          title="Revenue"
-          value="¥324K"
-          icon={TrendingUp}
-          color="green"
-          trend={{ value: 8.2, isPositive: true }}
-        />
-        <StatsCard
-          title="Messages"
-          value="1,429"
-          icon={MessageSquare}
-          color="purple"
-          trend={{ value: 3.1, isPositive: false }}
-        />
-        <StatsCard
-          title="Active Now"
-          value="142"
-          icon={Activity}
-          color="orange"
-          trend={{ value: 5.4, isPositive: true }}
-        />
-      </div>
-
-      {/* Feature Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-        <div className="bg-white p-6 rounded-lg shadow hover:shadow-md transition-shadow">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-            <h3 className="text-lg font-semibold">AI Chat Assistant</h3>
-          </div>
-          <p className="text-gray-600 text-sm mb-4">
-            Intelligent responses powered by Claude AI
-          </p>
-          <div className="flex items-center text-sm text-blue-600 font-medium">
-            <span>Active</span>
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-lg shadow hover:shadow-md transition-shadow">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-            <h3 className="text-lg font-semibold">User Profiles</h3>
-          </div>
-          <p className="text-gray-600 text-sm mb-4">
-            Manage user information and preferences
-          </p>
-          <div className="flex items-center text-sm text-blue-600 font-medium">
-            <span>Recently Added</span>
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-lg shadow hover:shadow-md transition-shadow">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-            <h3 className="text-lg font-semibold">Analytics</h3>
-          </div>
-          <p className="text-gray-600 text-sm mb-4">
-            Track performance metrics and insights
-          </p>
-          <div className="flex items-center text-sm text-gray-500 font-medium">
-            <span>Coming Soon</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Quick Actions */}
-      <div className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg p-6 text-white">
-        <h2 className="text-2xl font-bold mb-2">🔔 Notification Center Added!</h2>
-        <p className="mb-4 opacity-90">
-          Stay updated with real-time notifications for system updates, messages, and alerts. Click the bell icon in the header to view your notifications.
+      {/* ── ページタイトル ── */}
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold text-slate-800">ホーム</h1>
+        <p className="text-slate-500 text-sm mt-1">
+          各モジュールへのショートカット
         </p>
-        <button className="bg-white text-blue-600 px-6 py-2 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
-          View Notifications
-        </button>
       </div>
 
-      {/* Analytics Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
-        <LineChart />
-        <PieChart />
+      {/* ── モジュールショートカット ── */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        {shortcuts.map((item) => (
+          <Link key={item.href} href={item.href}>
+            <div
+              className={`bg-white rounded-xl border shadow-sm p-5 hover:shadow-md transition-shadow cursor-pointer ${item.accentBorder}`}
+            >
+              <div className="flex items-center gap-3 mb-3">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${item.accentIcon}`}>
+                  <item.icon size={20} />
+                </div>
+                <div>
+                  <p className={`text-sm font-bold ${item.accentText}`}>{item.label}</p>
+                  <p className="text-xs text-slate-400 mt-0.5">{item.description}</p>
+                </div>
+              </div>
+              <div className={`flex items-center gap-1 text-xs font-medium ${item.accentText}`}>
+                <span>開く</span>
+                <ChevronRight size={12} />
+              </div>
+            </div>
+          </Link>
+        ))}
       </div>
+
+      {/* ── テーゼ ── */}
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5">
+        <p className="text-xs text-slate-400 font-semibold uppercase tracking-wide mb-1">📍 テーゼ</p>
+        <p className="text-sm text-slate-700 leading-relaxed">
+          生産人口が減っても、生産量は増やせる。
+          それは人の数の問題ではなく、<strong className="text-slate-900">設計の問題</strong>だ。
+        </p>
+      </div>
+
     </div>
   );
 }
