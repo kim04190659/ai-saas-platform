@@ -13,6 +13,87 @@ import { useState } from "react";
 import { Send, X, Bot } from "lucide-react";
 import { useScenario } from "@/contexts/ScenarioContext";
 
+/**
+ * シンプルなMarkdownレンダラー
+ * AIの応答に含まれる ## / ** / - などを読みやすく表示する
+ * 外部ライブラリ不要で動作する
+ */
+function renderMarkdown(text: string): React.ReactNode[] {
+  const lines = text.split("\n");
+  const result: React.ReactNode[] = [];
+  let listBuffer: string[] = [];
+  let key = 0;
+
+  // バッファに溜まったリスト項目を <ul> として出力
+  const flushList = () => {
+    if (listBuffer.length === 0) return;
+    result.push(
+      <ul key={key++} className="list-disc list-inside my-1 space-y-0.5">
+        {listBuffer.map((item, i) => (
+          <li key={i} className="text-sm leading-relaxed">
+            {renderInline(item)}
+          </li>
+        ))}
+      </ul>
+    );
+    listBuffer = [];
+  };
+
+  for (const line of lines) {
+    // ## 見出し
+    if (line.startsWith("## ")) {
+      flushList();
+      result.push(
+        <p key={key++} className="font-bold text-sm mt-3 mb-1 text-gray-900">
+          {renderInline(line.slice(3))}
+        </p>
+      );
+    }
+    // ### 見出し（小）
+    else if (line.startsWith("### ")) {
+      flushList();
+      result.push(
+        <p key={key++} className="font-semibold text-sm mt-2 mb-0.5 text-gray-800">
+          {renderInline(line.slice(4))}
+        </p>
+      );
+    }
+    // - リスト項目
+    else if (line.match(/^[-*]\s/)) {
+      listBuffer.push(line.slice(2));
+    }
+    // 空行
+    else if (line.trim() === "") {
+      flushList();
+      result.push(<div key={key++} className="my-1" />);
+    }
+    // 通常テキスト
+    else {
+      flushList();
+      result.push(
+        <p key={key++} className="text-sm leading-relaxed">
+          {renderInline(line)}
+        </p>
+      );
+    }
+  }
+  flushList();
+  return result;
+}
+
+/**
+ * インライン要素のレンダリング（**太字** のみ対応）
+ */
+function renderInline(text: string): React.ReactNode[] {
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith("**") && part.endsWith("**")) {
+      return <strong key={i} className="font-bold">{part.slice(2, -2)}</strong>;
+    }
+    return <span key={i}>{part}</span>;
+  });
+}
+
 // モジュールごとの表示設定（アイコンと色）
 const MODULE_DISPLAY: Record<
   string,
@@ -142,13 +223,16 @@ export default function ChatPanel({
         {messages.map((msg, idx) => (
           <div
             key={idx}
-            className={`p-3 rounded-xl text-sm leading-relaxed ${
+            className={`p-3 rounded-xl ${
               msg.role === "user"
-                ? "bg-blue-600 text-white ml-8"
+                ? "bg-blue-600 text-white text-sm leading-relaxed ml-8"
                 : "bg-gray-100 text-gray-800 mr-8"
             }`}
           >
-            {msg.content}
+            {msg.role === "user"
+              ? msg.content  // ユーザーメッセージはそのまま表示
+              : renderMarkdown(msg.content)  // AIの応答はMarkdownとして表示
+            }
           </div>
         ))}
 
