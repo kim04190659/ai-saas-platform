@@ -20,9 +20,28 @@ const DEFAULT_SYSTEM_PROMPT =
   "専門用語は避け、業務担当者が理解できる言葉で簡潔に回答してください。回答は日本語で行ってください。";
 
 export async function POST(request: Request) {
+  // ANTHROPIC_API_KEY が設定されているか事前チェック
+  if (!process.env.ANTHROPIC_API_KEY) {
+    console.error("Chat API error: ANTHROPIC_API_KEY is not set");
+    return NextResponse.json(
+      { error: "サーバー設定エラー: APIキーが未設定です" },
+      { status: 500 },
+    );
+  }
+
   try {
     // Sprint #4: message に加え、systemPrompt（任意）も受け取る
-    const { message, systemPrompt } = await request.json();
+    const body = await request.json();
+    const message: string = body.message;
+    const systemPrompt: string | undefined = body.systemPrompt;
+
+    // message が空の場合はエラー
+    if (!message || typeof message !== "string") {
+      return NextResponse.json(
+        { error: "メッセージが空です" },
+        { status: 400 },
+      );
+    }
 
     // systemPrompt が渡された場合はそれを使い、なければデフォルトを使用
     const systemContent = systemPrompt || DEFAULT_SYSTEM_PROMPT;
@@ -47,9 +66,11 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ reply });
   } catch (error) {
-    console.error("Chat API error:", error);
+    // 詳細なエラー情報をサーバーログに出力する
+    const errMsg = error instanceof Error ? error.message : String(error);
+    console.error("Chat API error:", errMsg);
     return NextResponse.json(
-      { error: "Failed to generate response" },
+      { error: `AIへの問い合わせに失敗しました: ${errMsg}` },
       { status: 500 },
     );
   }

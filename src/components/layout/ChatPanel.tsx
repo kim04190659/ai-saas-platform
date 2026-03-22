@@ -94,7 +94,7 @@ export default function ChatPanel({
         <div>
           <div className="flex items-center gap-2">
             <Bot size={18} className="text-blue-600" />
-            <h2 className="font-semibold text-sm">RunWith AI</h2>
+            <h2 className="font-semibold text-sm">AIアシスタント</h2>
           </div>
           {/* 現在のモジュール表示 — AIがどの文脈で動いているか可視化 */}
           <div className={`text-xs mt-0.5 flex items-center gap-1 ${moduleDisplay.color}`}>
