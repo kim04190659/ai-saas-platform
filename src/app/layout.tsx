@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { LanguageProvider } from "@/contexts/LanguageContext";
+import { ScenarioContextProvider } from "@/contexts/ScenarioContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,7 +29,10 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <LanguageProvider>{children}</LanguageProvider>
+        {/* ScenarioContextProvider: カードゲーム→行政OS→RunWith のシナリオ文脈をアプリ全体で共有 */}
+        <ScenarioContextProvider>
+          <LanguageProvider>{children}</LanguageProvider>
+        </ScenarioContextProvider>
       </body>
     </html>
   );

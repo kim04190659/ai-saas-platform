@@ -17,7 +17,8 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useScenario } from '@/contexts/ScenarioContext';
 import Link from 'next/link';
 import {
   Zap,
@@ -320,6 +321,21 @@ export default function GyoseiDashboard() {
   // AI診断の状態管理
   const [aiDiagnosis, setAiDiagnosis] = useState<string | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
+
+  // Sprint #4: ScenarioContext にモジュールと屋久島データを登録
+  // これにより ChatPanel が「行政OSモード」で動作し、屋久島データを把握して回答できる
+  const { setModule, setGyoseiData } = useScenario();
+  useEffect(() => {
+    setModule('gyosei');
+    setGyoseiData({
+      townName: yakushima.name,
+      population: yakushima.currentPopulation,
+      agingRate: yakushima.agingRate,
+      fiscalIndex: yakushima.fiscalIndex,
+      survivalRank: yakushima.survivalRank,
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   /**
    * 「AI診断を依頼する」ボタンの処理

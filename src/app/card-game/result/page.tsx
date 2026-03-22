@@ -27,6 +27,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useScenario } from "@/contexts/ScenarioContext";
 
 // ─── 型定義 ────────────────────────────────────────────
 
@@ -207,8 +208,14 @@ export default function ResultPage() {
   const [aiEvaluation, setAiEvaluation] = useState<string | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
 
+  // Sprint #4: ScenarioContext にゲーム結果を保存する
+  const { setModule, setGameResult } = useScenario();
+
   // localStorage からカード選択結果を読み込む
   useEffect(() => {
+    // このページはカードゲームモジュール
+    setModule('card-game');
+
     try {
       const raw = localStorage.getItem("logi_selectedCards_v42");
       if (!raw) {
@@ -222,9 +229,22 @@ export default function ResultPage() {
         return;
       }
       setSelected(data);
+
+      // Sprint #4: ゲーム結果を計算してScenarioContextに保存
+      // 行政OSに遷移したとき、ChatPanelがこの結果を把握して回答できる
+      const calc = calcV42(data);
+      setGameResult({
+        grade: calc.grade,
+        totalProfit3Years: calc.profit3years,
+        successRate: calc.successRate,
+        missionTitle: data.problemCard.title,
+        personaTitles: data.personaCards.map((c) => c.title),
+        completedAt: new Date().toISOString(),
+      });
     } catch {
       setError("データの読み込みに失敗しました。最初からやり直してください。");
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // カードデータ読み込み後に AI評価を取得
