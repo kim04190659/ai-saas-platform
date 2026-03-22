@@ -26,6 +26,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 // ─── 型定義 ────────────────────────────────────────────
 
@@ -531,6 +532,28 @@ export default function ResultPage() {
           >
             ← カード選択に戻る
           </button>
+        </div>
+
+        {/* ════ 行政OS への橋渡しバナー ════ */}
+        {/*
+          シナリオ連携 Sprint #3:
+          カードゲームで体験した地域課題（空倉町）を、
+          実在の屋久島データで本格診断できる行政OSへ誘導する。
+        */}
+        <div className="mt-4 rounded-xl border border-green-500/40 bg-green-950/50 p-4">
+          <p className="text-green-300 text-sm font-semibold mb-1">
+            🏛️ このゲームの課題は、現実の地域にも存在します
+          </p>
+          <p className="text-slate-400 text-xs leading-relaxed mb-3">
+            空倉町で体験した人口減少・財政難・エネルギー課題は、
+            日本全国の限界自治体が直面しているリアルな問題です。
+            行政OSで実際の地域データを使った本格診断をしてみましょう。
+          </p>
+          <Link href="/gyosei/dashboard">
+            <button className="w-full py-3 rounded-xl bg-green-600 hover:bg-green-500 text-white font-bold text-sm transition-all">
+              🏛️ 屋久島モデルで本格診断する（行政OS）
+            </button>
+          </Link>
         </div>
       </div>
     </div>

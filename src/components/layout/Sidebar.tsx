@@ -44,7 +44,7 @@ const menuStructure: MenuItem[] = [
     label: '🏛️ 行政OS',
     badge: '自治体',
     children: [
-      { label: 'Well-Being ダッシュボード', href: '/gyosei/dashboard', status: 'coming' },
+      { label: 'Well-Being ダッシュボード', href: '/gyosei/dashboard', status: 'active' },
       { label: '住民サービス状況', href: '/gyosei/services', status: 'coming' },
       { label: '職員業務支援', href: '/gyosei/staff', status: 'coming' },
     ],
