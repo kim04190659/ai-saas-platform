@@ -100,6 +100,13 @@ export const FEATURE_MODULES: FeatureModule[] = [
         description: '物流会社の経営課題をカードで解決するビジネスシミュレーション',
       },
       {
+        id: 'gyosei-dx',
+        label: '🏛️ 行政DXチャレンジ',
+        href: '/card-game/gyosei-dx',
+        status: 'active',
+        description: '新人IT職員として5つのDX課題に挑戦！高専生向け行政DX体験ゲーム',
+      },
+      {
         id: 'well-being-quest',
         label: '💚 Well-Being QUEST',
         href: '/well-being-quest',
