@@ -1,83 +1,87 @@
 'use client';
 
+/**
+ * src/app/(dashboard)/page.tsx — サイドバー配下のホーム
+ *
+ * FEATURE_MODULES を読み込んでショートカットカードを動的生成する。
+ */
+
 import Link from 'next/link';
-import { Gamepad2, Building2, Activity, ChevronRight } from 'lucide-react';
-
-// ─── ダッシュボードホーム ────────────────────────────────
-// サイドバーレイアウト配下のホームページ
-// モジュールへのショートカットと概要を表示する
-
-const shortcuts = [
-  {
-    icon: Gamepad2,
-    label: 'LOGI-TECH カードゲーム',
-    description: 'ビジネスプランを体験学習',
-    href: '/card-game',
-    accentBg: 'bg-sky-50',
-    accentBorder: 'border-sky-200',
-    accentIcon: 'bg-sky-100 text-sky-600',
-    accentText: 'text-sky-700',
-  },
-  {
-    icon: Building2,
-    label: '行政OS ダッシュボード',
-    description: '屋久島データで自治体診断',
-    href: '/gyosei/dashboard',
-    accentBg: 'bg-emerald-50',
-    accentBorder: 'border-emerald-200',
-    accentIcon: 'bg-emerald-100 text-emerald-600',
-    accentText: 'text-emerald-700',
-  },
-  {
-    icon: Activity,
-    label: 'RunWith 成熟度診断',
-    description: 'IT運用の現状レベルを把握',
-    href: '/runwith/maturity',
-    accentBg: 'bg-orange-50',
-    accentBorder: 'border-orange-200',
-    accentIcon: 'bg-orange-100 text-orange-600',
-    accentText: 'text-orange-700',
-  },
-];
+import { ChevronRight } from 'lucide-react';
+import { FEATURE_MODULES, getActivePages } from '@/config/features';
 
 export default function Dashboard() {
   return (
     <div className="p-6">
 
-      {/* ── ページタイトル ── */}
+      {/* ページタイトル */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-slate-800">ホーム</h1>
-        <p className="text-slate-500 text-sm mt-1">
-          各モジュールへのショートカット
-        </p>
+        <p className="text-slate-500 text-sm mt-1">各モジュールの稼働中機能へのショートカット</p>
       </div>
 
-      {/* ── モジュールショートカット ── */}
+      {/* モジュールショートカット（features.ts から動的生成） */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-        {shortcuts.map((item) => (
-          <Link key={item.href} href={item.href}>
+        {FEATURE_MODULES.map((mod) => {
+          const activePages = getActivePages(mod.id);
+          // 各モジュールの最初のactiveページへのリンク
+          const primaryPage = activePages[0];
+
+          return (
             <div
-              className={`bg-white rounded-xl border shadow-sm p-5 hover:shadow-md transition-shadow cursor-pointer ${item.accentBorder}`}
+              key={mod.id}
+              className={`bg-white rounded-xl border shadow-sm overflow-hidden ${mod.accent.border}`}
             >
-              <div className="flex items-center gap-3 mb-3">
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${item.accentIcon}`}>
-                  <item.icon size={20} />
-                </div>
-                <div>
-                  <p className={`text-sm font-bold ${item.accentText}`}>{item.label}</p>
-                  <p className="text-xs text-slate-400 mt-0.5">{item.description}</p>
+              {/* カードヘッダー */}
+              <div className={`${mod.accent.bg} px-4 py-4 border-b ${mod.accent.border}`}>
+                <div className="flex items-center gap-2.5">
+                  <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${mod.accent.icon}`}>
+                    <mod.icon size={18} />
+                  </div>
+                  <div>
+                    <p className={`text-sm font-bold ${mod.accent.text}`}>
+                      {mod.emoji} {mod.label}
+                    </p>
+                    <p className="text-xs text-slate-400 mt-0.5">{mod.badge}</p>
+                  </div>
                 </div>
               </div>
-              <div className={`flex items-center gap-1 text-xs font-medium ${item.accentText}`}>
-                <span>開く</span>
-                <ChevronRight size={12} />
+
+              {/* ページリスト */}
+              <div className="px-4 py-3 space-y-1">
+                {activePages.length > 0 ? (
+                  activePages.map((page) => (
+                    <Link key={page.id} href={page.href}>
+                      <div className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-slate-50 transition-colors cursor-pointer group">
+                        <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${mod.accent.sidebarDot}`} />
+                        <span className={`text-xs flex-1 ${mod.accent.text} group-hover:underline`}>
+                          {page.label}
+                        </span>
+                        <ChevronRight size={12} className="text-slate-300" />
+                      </div>
+                    </Link>
+                  ))
+                ) : (
+                  <p className="text-xs text-slate-400 px-2 py-1">準備中</p>
+                )}
               </div>
+
+              {/* プライマリCTA */}
+              {primaryPage && (
+                <div className="px-4 pb-4">
+                  <Link href={primaryPage.href}>
+                    <button className={`w-full py-2 rounded-lg text-xs font-medium transition-colors shadow-sm ${mod.accent.button}`}>
+                      開く → {primaryPage.label}
+                    </button>
+                  </Link>
+                </div>
+              )}
             </div>
-          </Link>
-        ))}
+          );
+        })}
       </div>
 
-      {/* ── テーゼ ── */}
+      {/* テーゼ */}
       <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5">
         <p className="text-xs text-slate-400 font-semibold uppercase tracking-wide mb-1">📍 テーゼ</p>
         <p className="text-sm text-slate-700 leading-relaxed">
