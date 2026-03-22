@@ -34,7 +34,7 @@ const menuStructure: MenuItem[] = [
     label: '🃏 カードゲーム',
     badge: '教育',
     children: [
-      { label: '🏭 Mission in LOGI-TECH', href: '/well-being-quest', status: 'active' },
+      { label: '🏭 Mission in LOGI-TECH', href: '/card-game/select', status: 'active' },
       { label: 'IT運用改善ゲーム', href: '/card-game/it-ops', status: 'coming' },
     ],
   },
