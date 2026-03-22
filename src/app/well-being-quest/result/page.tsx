@@ -20,6 +20,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 // ─── 型定義 ────────────────────────────────────────────
 
@@ -641,6 +642,23 @@ export default function ResultPage() {
           >
             ← カード選択に戻る
           </button>
+
+          {/* ════ 行政OS連携バナー（Sprint #3） ════ */}
+          {/* ゲーム結果をもとに、屋久島の実データで本格診断できるバナー */}
+          <div className="mt-4 rounded-xl border border-green-500/40 bg-green-950/50 p-4">
+            <p className="text-green-300 text-sm font-semibold mb-1">
+              🏛️ このゲームの課題は、現実の自治体にも存在します
+            </p>
+            <p className="text-green-500 text-xs mb-3 leading-relaxed">
+              屋久島町（人口1.2万人・高齢化率39%）の実データで本格診断してみましょう。
+              ゲームで学んだ直営 vs 委託の判断を、実際の行政課題に適用できます。
+            </p>
+            <Link href="/gyosei/dashboard">
+              <button className="w-full py-3 rounded-xl bg-green-600 hover:bg-green-500 text-white font-bold text-sm transition-all">
+                🏛️ 屋久島モデルで本格診断する（行政OS）
+              </button>
+            </Link>
+          </div>
         </div>
       </div>
     </div>
