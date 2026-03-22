@@ -53,7 +53,7 @@ const menuStructure: MenuItem[] = [
     label: '🔧 RunWith',
     badge: '運用管理',
     children: [
-      { label: '運用成熟度診断', href: '/runwith/maturity', status: 'coming' },
+      { label: '運用成熟度診断', href: '/runwith/maturity', status: 'active' },
       { label: 'インシデント管理', href: '/runwith/incidents', status: 'coming' },
       { label: '運用KPIダッシュボード', href: '/runwith/kpi', status: 'coming' },
     ],

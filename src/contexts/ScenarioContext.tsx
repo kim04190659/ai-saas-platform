@@ -36,17 +36,31 @@ export type GyoseiData = {
   survivalRank: string;   // 生存可能性ランク（S/A/B/C/D）
 };
 
+/** RunWith IT運用成熟度診断の結果 */
+export type RunwithData = {
+  maturityLevel: number;        // 成熟度レベル（1〜5）
+  maturityLabel: string;        // レベル名（初期/反復/定義/管理/最適化）
+  totalScore: number;           // 合計スコア
+  maxScore: number;             // 最大スコア
+  areaScores: Record<string, number>; // 領域別スコア（インシデント管理など）
+  weakAreas: string[];          // 特に改善が必要な領域
+  completedAt: string;          // 診断完了時刻（ISO文字列）
+};
+
 /** Context に格納するデータと操作関数 */
 type ScenarioContextType = {
   currentModule: Module;
   gameResult: GameResult | null;
   gyoseiData: GyoseiData | null;
+  runwithData: RunwithData | null;
   // 現在のモジュールを設定する（各ページのマウント時に呼ぶ）
   setModule: (module: Module) => void;
   // カードゲーム完了時に結果を保存する
   setGameResult: (result: GameResult) => void;
   // 行政OSのデータを保存する
   setGyoseiData: (data: GyoseiData) => void;
+  // RunWith 成熟度診断の結果を保存する
+  setRunwithData: (data: RunwithData) => void;
   // ChatPanel 用のシステムプロンプト文字列を生成する
   buildSystemPrompt: () => string;
 };
@@ -66,6 +80,7 @@ export function ScenarioContextProvider({ children }: { children: ReactNode }) {
   const [currentModule, setCurrentModule] = useState<Module>('home');
   const [gameResult, setGameResultState] = useState<GameResult | null>(null);
   const [gyoseiData, setGyoseiDataState] = useState<GyoseiData | null>(null);
+  const [runwithData, setRunwithDataState] = useState<RunwithData | null>(null);
 
   // ── セッター ──
 
@@ -79,6 +94,10 @@ export function ScenarioContextProvider({ children }: { children: ReactNode }) {
 
   function setGyoseiData(data: GyoseiData) {
     setGyoseiDataState(data);
+  }
+
+  function setRunwithData(data: RunwithData) {
+    setRunwithDataState(data);
   }
 
   // ── システムプロンプト生成 ──────────────────────────────
@@ -139,6 +158,19 @@ export function ScenarioContextProvider({ children }: { children: ReactNode }) {
       }
     } else if (currentModule === 'runwith') {
       lines.push('- IT運用管理、インシデント対応、成熟度向上について専門的に回答する');
+      // RunWith 成熟度診断の結果がある場合はその情報も加える
+      if (runwithData) {
+        lines.push('');
+        lines.push('【IT運用成熟度診断の結果（直近セッション）】');
+        lines.push(
+          `- 成熟度レベル: Lv.${runwithData.maturityLevel} ${runwithData.maturityLabel}` +
+          `（スコア: ${runwithData.totalScore} / ${runwithData.maxScore}点）`
+        );
+        if (runwithData.weakAreas.length > 0) {
+          lines.push(`- 改善が必要な領域: ${runwithData.weakAreas.join('、')}`);
+        }
+        lines.push('- ユーザーの成熟度レベルに合わせた具体的な改善提案を行う');
+      }
     } else {
       lines.push('- ユーザーの質問に対してITと業務の視点から回答する');
     }
@@ -155,9 +187,11 @@ export function ScenarioContextProvider({ children }: { children: ReactNode }) {
         currentModule,
         gameResult,
         gyoseiData,
+        runwithData,
         setModule,
         setGameResult,
         setGyoseiData,
+        setRunwithData,
         buildSystemPrompt,
       }}
     >
