@@ -13,10 +13,10 @@ import { NextRequest, NextResponse } from "next/server";
 
 // Notion APIの設定
 const NOTION_API_KEY = process.env.NOTION_API_KEY!;
-// 保存先の親ページID（環境変数 NOTION_RESULTS_PAGE_ID で上書き可能）
-// デフォルト: 🃏 PBL Card Game プロジェクト（インテグレーション接続済みのページ）
-const PARENT_PAGE_ID =
-  process.env.NOTION_RESULTS_PAGE_ID ?? "315960a9-1e23-81ee-8749-c475dbed6d9c";
+// 保存先の親ページID（環境変数 NOTION_RESULTS_PAGE_ID で設定する）
+// 設定方法: Vercel Dashboard → Settings → Environment Variables に追加
+// 推奨: 🚀 RunWith プロジェクトページのID
+const PARENT_PAGE_ID = process.env.NOTION_RESULTS_PAGE_ID!;
 
 // Notion REST API でページを作成するヘルパー関数
 async function createNotionPage(pageData: object): Promise<{ id: string; url: string }> {
@@ -237,10 +237,16 @@ function buildGyoseiPage(data: {
 // ─── メインAPIハンドラー ─────────────────────────────────────────
 
 export async function POST(request: NextRequest) {
-  // NOTION_API_KEY チェック
+  // 環境変数チェック
   if (!NOTION_API_KEY) {
     return NextResponse.json(
       { error: "NOTION_API_KEY が設定されていません" },
+      { status: 500 }
+    );
+  }
+  if (!PARENT_PAGE_ID) {
+    return NextResponse.json(
+      { error: "NOTION_RESULTS_PAGE_ID が設定されていません。Vercel環境変数に追加してください。" },
       { status: 500 }
     );
   }
