@@ -320,11 +320,11 @@ export default function ResultPage() {
     <div className="min-h-screen bg-slate-900 text-white pb-12">
       {/* ヘッダー */}
       <div className="bg-slate-800 border-b border-slate-700 px-4 py-4">
-        <h1 className="text-xl font-bold text-center text-cyan-400">
-          🏭 Mission in LOGI-TECH
+        <h1 className="text-xl font-bold text-center text-green-400">
+          🌿 Well-Being QUEST
         </h1>
         <p className="text-center text-slate-400 text-sm mt-1">
-          Make or Buy 評価結果
+          限界自治体 診断結果
         </p>
       </div>
 

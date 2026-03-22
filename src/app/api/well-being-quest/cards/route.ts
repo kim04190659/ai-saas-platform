@@ -46,6 +46,22 @@ type NotionCard = {
   };
 };
 
+// ────────────────────────────────────────────────────────────────────
+// Notion DBの「役割」プロパティ値とAPIクエリパラメータのマッピング
+//
+// select/page.tsx から渡される role 値   → Notion DB の実際の役割値
+//   "問題・課題"  → "ミッション"    （PRカード: 課題・社会問題）
+//   "ペルソナ"    → "ペルソナ"      （PEカード: 対象ユーザー）
+//   "パートナー"  → "パートナー"    （PAカード: Buy委託先）
+//   "ジョブタイプ"→ "ソリューション" （SLカード: Makeアクション）
+// ────────────────────────────────────────────────────────────────────
+const ROLE_MAP: Record<string, string> = {
+  "問題・課題": "ミッション",
+  "ペルソナ": "ペルソナ",
+  "パートナー": "パートナー",
+  "ジョブタイプ": "ソリューション",
+};
+
 // GETリクエストのハンドラー
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -62,9 +78,13 @@ export async function GET(request: NextRequest) {
     let filter: object | undefined;
 
     if (role) {
+      // 役割マッピング: コードの role 値 → Notion DB の実際の役割値に変換
+      // 例: "問題・課題" → "ミッション"、"ジョブタイプ" → "ソリューション"
+      const notionRole = ROLE_MAP[role] ?? role;
+
       // 役割フィルタ（v3メイン）
       const conditions: object[] = [
-        { property: "役割", select: { equals: role } },
+        { property: "役割", select: { equals: notionRole } },
       ];
       // テーマフィルタ（ペルソナを課題と同じテーマに絞るときに使用）
       if (theme) {

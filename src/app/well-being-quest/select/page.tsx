@@ -462,11 +462,11 @@ export default function SelectPage() {
     <div className="min-h-screen bg-slate-900 text-white">
       {/* ヘッダー */}
       <div className="bg-slate-800 border-b border-slate-700 px-4 py-4">
-        <h1 className="text-xl font-bold text-center text-cyan-400">
-          🏭 Mission in LOGI-TECH
+        <h1 className="text-xl font-bold text-center text-green-400">
+          🌿 Well-Being QUEST
         </h1>
         <p className="text-center text-slate-400 text-sm mt-1">
-          Make or Buy カードゲーム v3
+          限界自治体版 カードゲーム v4
         </p>
       </div>
 
