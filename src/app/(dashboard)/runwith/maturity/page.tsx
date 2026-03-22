@@ -314,19 +314,20 @@ export default function MaturityPage() {
   // ─── レンダリング ─────────────────────────────────────────
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-orange-950 p-6">
+    // ── ライトビジネストーン：白背景 + slate系テキスト ──
+    <div className="min-h-screen bg-slate-50 p-6">
       <div className="max-w-2xl mx-auto">
 
         {/* ── ヘッダー ── */}
         <div className="mb-6">
-          <div className="flex items-center gap-2 text-orange-300 text-sm mb-1">
+          <div className="flex items-center gap-2 text-orange-600 text-sm mb-1 font-medium">
             <span>🔧</span>
             <span>RunWith</span>
-            <span className="text-slate-500">/</span>
-            <span>IT運用成熟度診断</span>
+            <span className="text-slate-400">/</span>
+            <span className="text-slate-500">IT運用成熟度診断</span>
           </div>
-          <h1 className="text-2xl font-bold text-white">IT運用成熟度診断</h1>
-          <p className="text-slate-400 text-sm mt-1">
+          <h1 className="text-2xl font-bold text-slate-800">IT運用成熟度診断</h1>
+          <p className="text-slate-500 text-sm mt-1">
             自社のIT運用レベルを5段階で診断し、改善の優先課題を明らかにします
           </p>
         </div>
@@ -335,11 +336,11 @@ export default function MaturityPage() {
         {/* イントロ画面 */}
         {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
         {phase === "intro" && (
-          <div className="bg-slate-800/60 rounded-2xl p-6 border border-slate-700">
-            <h2 className="text-lg font-bold text-white mb-4">診断について</h2>
+          <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+            <h2 className="text-lg font-bold text-slate-800 mb-4">診断について</h2>
 
             {/* 5つの診断領域 */}
-            <div className="grid grid-cols-1 gap-3 mb-6">
+            <div className="grid grid-cols-1 gap-2 mb-6">
               {[
                 { icon: "🚨", label: "インシデント管理", desc: "障害対応・検知体制" },
                 { icon: "🔄", label: "変更管理",         desc: "更新・リリースの制御" },
@@ -349,19 +350,19 @@ export default function MaturityPage() {
               ].map((area) => (
                 <div
                   key={area.label}
-                  className="flex items-center gap-3 bg-slate-700/50 rounded-xl px-4 py-3"
+                  className="flex items-center gap-3 bg-slate-50 rounded-xl px-4 py-3 border border-slate-100"
                 >
-                  <span className="text-2xl">{area.icon}</span>
+                  <span className="text-xl">{area.icon}</span>
                   <div>
-                    <p className="text-white text-sm font-semibold">{area.label}</p>
+                    <p className="text-slate-700 text-sm font-semibold">{area.label}</p>
                     <p className="text-slate-400 text-xs">{area.desc}</p>
                   </div>
                 </div>
               ))}
             </div>
 
-            <div className="bg-orange-950/50 border border-orange-700/40 rounded-xl p-4 mb-6">
-              <p className="text-orange-300 text-sm">
+            <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 mb-6">
+              <p className="text-orange-700 text-sm">
                 📋 全 <strong>{QUESTIONS.length}問</strong>、所要時間は約5分です。
                 各質問で、現状に最も近い選択肢を選んでください。
               </p>
@@ -369,9 +370,9 @@ export default function MaturityPage() {
 
             <button
               onClick={() => setPhase("quiz")}
-              className="w-full py-4 rounded-xl bg-orange-600 hover:bg-orange-500 text-white font-bold text-base transition-all shadow-lg"
+              className="w-full py-3.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold text-base transition-all shadow-sm"
             >
-              🚀 診断を開始する
+              診断を開始する →
             </button>
           </div>
         )}
@@ -380,32 +381,30 @@ export default function MaturityPage() {
         {/* 質問画面 */}
         {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
         {phase === "quiz" && currentQuestion && (
-          <div className="bg-slate-800/60 rounded-2xl p-6 border border-slate-700">
+          <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
             {/* 進捗バー */}
             <div className="mb-5">
-              <div className="flex justify-between text-xs text-slate-400 mb-1">
-                <span>
+              <div className="flex justify-between text-xs text-slate-500 mb-1.5">
+                <span className="font-medium">
                   {currentQuestion.areaIcon} {currentQuestion.area}
                 </span>
-                <span>
-                  {currentQ + 1} / {QUESTIONS.length}
-                </span>
+                <span>{currentQ + 1} / {QUESTIONS.length}</span>
               </div>
-              <div className="w-full bg-slate-700 rounded-full h-2">
+              <div className="w-full bg-slate-100 rounded-full h-1.5">
                 <div
-                  className="bg-orange-500 h-2 rounded-full transition-all duration-300"
+                  className="bg-orange-500 h-1.5 rounded-full transition-all duration-300"
                   style={{ width: `${((currentQ + 1) / QUESTIONS.length) * 100}%` }}
                 />
               </div>
             </div>
 
             {/* 質問文 */}
-            <h2 className="text-white font-bold text-base mb-5 leading-relaxed">
+            <h2 className="text-slate-800 font-bold text-base mb-5 leading-relaxed">
               Q{currentQ + 1}. {currentQuestion.text}
             </h2>
 
             {/* 選択肢 */}
-            <div className="space-y-3 mb-6">
+            <div className="space-y-2 mb-6">
               {currentQuestion.options.map((opt) => {
                 const isSelected = answers[currentQuestion.id] === opt.score;
                 return (
@@ -414,11 +413,13 @@ export default function MaturityPage() {
                     onClick={() => selectAnswer(currentQuestion.id, opt.score)}
                     className={`w-full text-left px-4 py-3 rounded-xl border text-sm transition-all ${
                       isSelected
-                        ? "bg-orange-600 border-orange-400 text-white font-semibold"
-                        : "bg-slate-700/50 border-slate-600 text-slate-300 hover:border-orange-500 hover:bg-slate-700"
+                        ? "bg-orange-50 border-orange-400 text-orange-800 font-semibold"
+                        : "bg-white border-slate-200 text-slate-600 hover:border-orange-300 hover:bg-orange-50/50"
                     }`}
                   >
-                    <span className="text-xs text-slate-400 mr-2">Lv.{opt.score}</span>
+                    <span className={`text-xs mr-2 font-mono ${isSelected ? "text-orange-500" : "text-slate-400"}`}>
+                      Lv.{opt.score}
+                    </span>
                     {opt.label}
                   </button>
                 );
@@ -430,7 +431,7 @@ export default function MaturityPage() {
               {currentQ > 0 && (
                 <button
                   onClick={() => setCurrentQ((prev) => prev - 1)}
-                  className="flex-1 py-3 rounded-xl border border-slate-600 text-slate-300 hover:bg-slate-700 text-sm transition-colors"
+                  className="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50 text-sm transition-colors"
                 >
                   ← 前の質問
                 </button>
@@ -438,13 +439,13 @@ export default function MaturityPage() {
               <button
                 onClick={goNext}
                 disabled={!isAnswered}
-                className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all ${
+                className={`flex-1 py-2.5 rounded-xl font-bold text-sm transition-all ${
                   isAnswered
-                    ? "bg-orange-600 hover:bg-orange-500 text-white"
-                    : "bg-slate-700 text-slate-500 cursor-not-allowed"
+                    ? "bg-orange-600 hover:bg-orange-700 text-white shadow-sm"
+                    : "bg-slate-100 text-slate-400 cursor-not-allowed"
                 }`}
               >
-                {currentQ < QUESTIONS.length - 1 ? "次の質問 →" : "診断結果を見る 🎯"}
+                {currentQ < QUESTIONS.length - 1 ? "次の質問 →" : "診断結果を見る"}
               </button>
             </div>
           </div>
@@ -456,25 +457,25 @@ export default function MaturityPage() {
         {phase === "result" && (
           <div className="space-y-4">
             {/* 総合レベルカード */}
-            <div className="bg-slate-800/60 rounded-2xl p-6 border border-slate-700 text-center">
-              <p className="text-slate-400 text-sm mb-2">あなたのIT運用成熟度</p>
-              <div className="text-6xl font-black text-white mb-1">
+            <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm text-center">
+              <p className="text-slate-500 text-sm mb-2">あなたのIT運用成熟度</p>
+              <div className="text-5xl font-black text-slate-800 mb-1">
                 Lv.{maturityLevel}
               </div>
-              <div className={`text-2xl font-bold mb-3 ${levelInfo.textColor}`}>
+              <div className={`text-xl font-bold mb-2 ${levelInfo.textColor}`}>
                 {levelInfo.label}
               </div>
-              <p className="text-slate-300 text-sm">{levelInfo.desc}</p>
+              <p className="text-slate-500 text-sm">{levelInfo.desc}</p>
 
               {/* スコアバー */}
               <div className="mt-5">
-                <div className="flex justify-between text-xs text-slate-400 mb-1">
+                <div className="flex justify-between text-xs text-slate-400 mb-1.5">
                   <span>スコア</span>
-                  <span>{totalScore} / {maxScore}点</span>
+                  <span className="font-medium">{totalScore} / {maxScore}点</span>
                 </div>
-                <div className="w-full bg-slate-700 rounded-full h-3">
+                <div className="w-full bg-slate-100 rounded-full h-2.5">
                   <div
-                    className={`${levelInfo.color} h-3 rounded-full transition-all duration-700`}
+                    className={`${levelInfo.color} h-2.5 rounded-full transition-all duration-700`}
                     style={{ width: `${(totalScore / maxScore) * 100}%` }}
                   />
                 </div>
@@ -488,7 +489,7 @@ export default function MaturityPage() {
                     className={`flex-1 py-1.5 rounded text-xs font-bold ${
                       lv.level <= maturityLevel
                         ? `${lv.color} text-white`
-                        : "bg-slate-700 text-slate-500"
+                        : "bg-slate-100 text-slate-400"
                     }`}
                   >
                     {lv.level}
@@ -498,8 +499,8 @@ export default function MaturityPage() {
             </div>
 
             {/* 領域別スコア */}
-            <div className="bg-slate-800/60 rounded-2xl p-6 border border-slate-700">
-              <h3 className="text-white font-bold mb-4">📊 領域別スコア</h3>
+            <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+              <h3 className="text-slate-800 font-bold mb-4">📊 領域別スコア</h3>
               <div className="space-y-3">
                 {AREAS.map((area) => {
                   const areaQ = QUESTIONS.find((q) => q.area === area);
@@ -508,15 +509,19 @@ export default function MaturityPage() {
                   return (
                     <div key={area}>
                       <div className="flex justify-between text-sm mb-1">
-                        <span className={`flex items-center gap-1 ${isWeak ? "text-red-400" : "text-slate-300"}`}>
+                        <span className={`flex items-center gap-1.5 ${isWeak ? "text-red-600" : "text-slate-600"}`}>
                           {areaQ?.areaIcon} {area}
-                          {isWeak && <span className="text-xs bg-red-900 text-red-300 px-1.5 rounded">要改善</span>}
+                          {isWeak && (
+                            <span className="text-xs bg-red-50 text-red-600 border border-red-200 px-1.5 py-0.5 rounded font-medium">
+                              要改善
+                            </span>
+                          )}
                         </span>
-                        <span className="text-slate-400 text-xs">{avg} / 5.0</span>
+                        <span className="text-slate-400 text-xs font-mono">{avg} / 5.0</span>
                       </div>
-                      <div className="w-full bg-slate-700 rounded-full h-2">
+                      <div className="w-full bg-slate-100 rounded-full h-1.5">
                         <div
-                          className={`${isWeak ? "bg-red-500" : "bg-orange-500"} h-2 rounded-full transition-all`}
+                          className={`${isWeak ? "bg-red-400" : "bg-orange-400"} h-1.5 rounded-full transition-all`}
                           style={{ width: `${(avg / 5) * 100}%` }}
                         />
                       </div>
@@ -527,16 +532,16 @@ export default function MaturityPage() {
             </div>
 
             {/* 改善ポイント */}
-            <div className="bg-slate-800/60 rounded-2xl p-6 border border-orange-700/40">
-              <h3 className="text-white font-bold mb-3">🎯 優先的に改善すべき領域</h3>
+            <div className="bg-white rounded-2xl p-6 border border-orange-200 shadow-sm">
+              <h3 className="text-slate-800 font-bold mb-3">🎯 優先的に改善すべき領域</h3>
               <div className="space-y-2">
                 {weakAreas.map((area, i) => {
                   const areaQ = QUESTIONS.find((q) => q.area === area);
                   return (
-                    <div key={area} className="flex items-center gap-3 bg-orange-950/50 rounded-xl px-4 py-3">
-                      <span className="text-orange-400 font-bold text-sm">#{i + 1}</span>
+                    <div key={area} className="flex items-center gap-3 bg-orange-50 border border-orange-100 rounded-xl px-4 py-3">
+                      <span className="text-orange-600 font-bold text-sm w-6">#{i + 1}</span>
                       <span className="text-lg">{areaQ?.areaIcon}</span>
-                      <span className="text-white text-sm font-semibold">{area}</span>
+                      <span className="text-slate-700 text-sm font-semibold">{area}</span>
                     </div>
                   );
                 })}
@@ -544,49 +549,47 @@ export default function MaturityPage() {
             </div>
 
             {/* AIアシスタントへの誘導バナー */}
-            <div className="bg-blue-950/50 rounded-2xl p-5 border border-blue-700/40">
-              <p className="text-blue-300 text-sm font-semibold mb-1">
+            <div className="bg-white rounded-2xl p-5 border border-blue-200 shadow-sm">
+              <p className="text-slate-800 text-sm font-semibold mb-1">
                 🤖 AIアシスタントに詳しく聞いてみる
               </p>
-              <p className="text-slate-400 text-xs mb-3">
+              <p className="text-slate-500 text-xs mb-3">
                 Lv.{maturityLevel}「{levelInfo.label}」段階での具体的な改善方法を、
                 AIアシスタントが提案します。右側のチャットパネルを開いてください。
               </p>
-              <div className="bg-blue-900/30 rounded-lg px-3 py-2 text-xs text-blue-200 border border-blue-700/30">
+              <div className="bg-blue-50 rounded-lg px-3 py-2 text-xs text-blue-700 border border-blue-100">
                 💡 おすすめの質問例：
                 「{weakAreas[0]}をLv.{maturityLevel}から上げるには何から始めればいいですか？」
               </div>
             </div>
 
             {/* Notion保存ボタン */}
-            <div className="bg-slate-800/60 rounded-2xl p-5 border border-slate-700">
-              <p className="text-slate-300 text-sm font-semibold mb-3">
+            <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
+              <p className="text-slate-600 text-sm font-semibold mb-3">
                 📝 診断結果をNotionに保存する
               </p>
               {saveStatus === "idle" && (
                 <button
                   onClick={saveToNotion}
-                  className="w-full py-3 rounded-xl bg-orange-600 hover:bg-orange-500 text-white font-bold text-sm transition-all"
+                  className="w-full py-2.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold text-sm transition-all shadow-sm"
                 >
-                  📝 Notionに保存する
+                  Notionに保存する
                 </button>
               )}
               {saveStatus === "saving" && (
-                <div className="flex items-center justify-center gap-2 py-3 text-slate-400 text-sm">
+                <div className="flex items-center justify-center gap-2 py-2.5 text-slate-500 text-sm">
                   <div className="w-4 h-4 border-2 border-orange-400 border-t-transparent rounded-full animate-spin" />
                   保存中...
                 </div>
               )}
               {saveStatus === "saved" && savedPageUrl && (
                 <div className="space-y-2">
-                  <p className="text-green-400 text-sm font-semibold text-center">
-                    ✅ Notionに保存しました！
-                  </p>
+                  <p className="text-emerald-600 text-sm font-semibold text-center">✅ Notionに保存しました</p>
                   <a
                     href={savedPageUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="block w-full py-2 rounded-xl border border-green-600 text-green-400 text-sm text-center hover:bg-green-950/50 transition-colors"
+                    className="block w-full py-2 rounded-xl border border-emerald-300 text-emerald-600 text-sm text-center hover:bg-emerald-50 transition-colors"
                   >
                     🔗 Notionで開く
                   </a>
@@ -594,15 +597,15 @@ export default function MaturityPage() {
               )}
               {saveStatus === "error" && (
                 <div className="space-y-2">
-                  <p className="text-red-400 text-sm text-center">❌ 保存に失敗しました</p>
+                  <p className="text-red-500 text-sm text-center">❌ 保存に失敗しました</p>
                   {saveErrorMsg && (
-                    <p className="text-red-300 text-xs bg-red-950/50 rounded px-2 py-1 break-all">
+                    <p className="text-red-500 text-xs bg-red-50 border border-red-100 rounded px-2 py-1 break-all">
                       {saveErrorMsg}
                     </p>
                   )}
                   <button
                     onClick={saveToNotion}
-                    className="w-full py-2 rounded-xl border border-red-600 text-red-400 text-sm hover:bg-red-950/50 transition-colors"
+                    className="w-full py-2 rounded-xl border border-red-300 text-red-500 text-sm hover:bg-red-50 transition-colors"
                   >
                     再試行する
                   </button>
@@ -618,12 +621,12 @@ export default function MaturityPage() {
                   setCurrentQ(0);
                   setPhase("intro");
                 }}
-                className="flex-1 py-3 rounded-xl border border-slate-600 text-slate-300 hover:bg-slate-700 text-sm transition-colors"
+                className="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50 text-sm transition-colors"
               >
                 🔄 もう一度診断する
               </button>
               <Link href="/" className="flex-1">
-                <button className="w-full py-3 rounded-xl bg-slate-700 hover:bg-slate-600 text-white text-sm font-semibold transition-colors">
+                <button className="w-full py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 text-sm font-semibold transition-colors">
                   🏠 ホームへ
                 </button>
               </Link>

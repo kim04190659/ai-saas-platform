@@ -550,7 +550,7 @@ export default function GyoseiDashboard() {
         <button
           onClick={handleAiDiagnosis}
           disabled={aiLoading}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg text-sm font-semibold transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400 text-white rounded-lg text-sm font-semibold transition-colors"
         >
           {aiLoading ? (
             <>
@@ -582,18 +582,18 @@ export default function GyoseiDashboard() {
           )}
           {notionSaveStatus === "saved" && notionPageUrl && (
             <div className="flex items-center gap-2">
-              <span className="text-green-400 text-sm font-semibold">✅ Notionに保存しました</span>
+              <span className="text-emerald-700 text-sm font-semibold">✅ Notionに保存しました</span>
               <a href={notionPageUrl} target="_blank" rel="noopener noreferrer"
-                className="text-green-400 text-sm underline hover:text-green-300">
+                className="text-emerald-700 text-sm underline hover:text-emerald-600">
                 🔗 開く
               </a>
             </div>
           )}
           {notionSaveStatus === "error" && (
             <div className="flex items-center gap-2">
-              <span className="text-red-400 text-sm">❌ 保存失敗</span>
+              <span className="text-red-600 text-sm">❌ 保存失敗</span>
               <button onClick={saveGyoseiToNotion}
-                className="text-red-400 text-sm underline hover:text-red-300">
+                className="text-red-600 text-sm underline hover:text-red-500">
                 再試行
               </button>
             </div>
@@ -602,20 +602,20 @@ export default function GyoseiDashboard() {
       </div>
 
       {/* ── RunWith への橋渡しバナー ── */}
-      <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-xl p-5 text-white">
+      <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-5">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h3 className="font-bold text-lg mb-1">
+            <h3 className="font-bold text-lg mb-1 text-emerald-900">
               🔧 次のステップ：IT基盤を整える
             </h3>
-            <p className="text-blue-100 text-sm leading-relaxed">
+            <p className="text-emerald-700 text-sm leading-relaxed">
               人口減少が進んでも行政サービスを維持するには、IT運用の効率化が不可欠です。
               RunWith で屋久島町の IT 成熟度を診断し、具体的な改善計画を立てましょう。
             </p>
           </div>
           <Link
             href="/runwith/maturity"
-            className="flex-shrink-0 flex items-center gap-2 px-5 py-3 bg-white text-indigo-700 rounded-lg font-bold text-sm hover:bg-blue-50 transition-colors whitespace-nowrap"
+            className="flex-shrink-0 flex items-center gap-2 px-5 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-sm transition-colors whitespace-nowrap shadow-sm"
           >
             RunWith を開く
             <ChevronRight size={16} />

@@ -158,41 +158,47 @@ function formatManYen(amount: number): string {
 
 // ─── グレード別 表示設定 ────────────────────────────────
 
+// ライトテーマ用：濃い色を使用して白背景でも見やすくする
 const GRADE_CONFIG: Record<
   string,
-  { label: string; color: string; emoji: string; comment: string }
+  { label: string; color: string; bgColor: string; emoji: string; comment: string }
 > = {
   S: {
     label: "S ランク",
-    color: "text-yellow-400",
+    color: "text-yellow-600",
+    bgColor: "bg-yellow-50 border-yellow-200",
     emoji: "⭐",
     comment:
       "卓越したビジネスプラン！3年間で2億円以上の利益。持続的な成長が期待できます。",
   },
   A: {
     label: "A ランク",
-    color: "text-orange-400",
+    color: "text-orange-600",
+    bgColor: "bg-orange-50 border-orange-200",
     emoji: "🥇",
     comment:
       "優秀なプラン。3年間で1〜2億円の利益。しっかり黒字を出せる戦略です。",
   },
   B: {
     label: "B ランク",
-    color: "text-blue-400",
+    color: "text-sky-600",
+    bgColor: "bg-sky-50 border-sky-200",
     emoji: "🥈",
     comment:
       "良いプラン。3年間で5,000万〜1億円の利益。小さいながら確実に利益を出せます。",
   },
   C: {
     label: "C ランク",
-    color: "text-green-400",
+    color: "text-emerald-600",
+    bgColor: "bg-emerald-50 border-emerald-200",
     emoji: "🥉",
     comment:
       "黒字ですが薄利。もう一工夫で大きく伸ばせます。カードの組み合わせを見直しましょう。",
   },
   D: {
     label: "D ランク",
-    color: "text-gray-400",
+    color: "text-slate-500",
+    bgColor: "bg-slate-50 border-slate-200",
     emoji: "😰",
     comment:
       "3年以内に回収できません。戦略の見直しが必要です。高ランクカードの活用を検討してください。",
@@ -311,12 +317,12 @@ export default function ResultPage() {
   // エラー表示
   if (error) {
     return (
-      <div className="min-h-screen bg-slate-900 text-white flex flex-col items-center justify-center p-8">
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-8">
         <div className="text-4xl mb-4">😵</div>
-        <p className="text-red-400 text-center mb-6">{error}</p>
+        <p className="text-red-600 text-center mb-6">{error}</p>
         <button
           onClick={() => router.push("/card-game/select")}
-          className="px-6 py-3 bg-cyan-500 hover:bg-cyan-400 text-black font-bold rounded-xl"
+          className="px-6 py-3 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-xl"
         >
           カード選択に戻る
         </button>
@@ -327,8 +333,8 @@ export default function ResultPage() {
   // ローディング（localStorageの読み込みが終わるまで）
   if (!selected) {
     return (
-      <div className="min-h-screen bg-slate-900 text-white flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-cyan-400 border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-sky-500 border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -338,14 +344,14 @@ export default function ResultPage() {
   const gradeConfig = GRADE_CONFIG[calc.grade];
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white pb-12">
+    <div className="min-h-screen bg-slate-50 pb-12">
 
       {/* ヘッダー */}
-      <div className="bg-slate-800 border-b border-slate-700 px-4 py-4">
-        <h1 className="text-xl font-bold text-center text-cyan-400">
+      <div className="bg-white border-b border-slate-200 px-4 py-4">
+        <h1 className="text-xl font-bold text-center text-sky-600">
           🏭 Mission in LOGI-TECH
         </h1>
-        <p className="text-center text-slate-400 text-sm mt-1">
+        <p className="text-center text-slate-500 text-sm mt-1">
           ビジネスプラン評価結果 v4.3
         </p>
       </div>
@@ -353,24 +359,24 @@ export default function ResultPage() {
       <div className="p-4 space-y-4">
 
         {/* ════ 総合ランク ════ */}
-        <div className="bg-slate-800 rounded-2xl border border-slate-600 p-6 text-center">
+        <div className={`bg-white rounded-2xl border shadow-sm p-6 text-center ${gradeConfig.bgColor}`}>
           <div className="text-6xl mb-3">{gradeConfig.emoji}</div>
           <div className={`text-5xl font-black mb-2 ${gradeConfig.color}`}>
             {gradeConfig.label}
           </div>
           {/* 3年間累計利益（メインスコア） */}
-          <div className="text-3xl font-bold text-white mt-3">
+          <div className={`text-3xl font-bold mt-3 ${gradeConfig.color}`}>
             {formatManYen(calc.profit3years)}
           </div>
-          <div className="text-slate-400 text-sm">3年間累計利益</div>
-          <p className="text-slate-300 text-sm leading-relaxed mt-3">
+          <div className="text-slate-500 text-sm">3年間累計利益</div>
+          <p className="text-slate-600 text-sm leading-relaxed mt-3">
             {gradeConfig.comment}
           </p>
         </div>
 
         {/* ════ 財務計算サマリー（v4.2） ════ */}
-        <div className="bg-slate-800 rounded-xl border border-slate-600 p-4">
-          <h2 className="text-sm font-bold text-slate-400 mb-3 uppercase tracking-wide">
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
+          <h2 className="text-sm font-bold text-slate-500 mb-3 uppercase tracking-wide">
             📊 財務計算サマリー
           </h2>
 
@@ -378,14 +384,14 @@ export default function ResultPage() {
 
             {/* 事業成功率 */}
             <div className="flex justify-between items-center">
-              <span className="text-slate-400 text-sm">事業成功率</span>
-              <span className="text-cyan-400 font-bold text-lg">
+              <span className="text-slate-500 text-sm">事業成功率</span>
+              <span className="text-sky-600 font-bold text-lg">
                 {calc.successRate}%
               </span>
             </div>
 
             {/* 成功率の内訳 */}
-            <div className="text-xs text-slate-500 ml-4 space-y-0.5">
+            <div className="text-xs text-slate-400 ml-4 space-y-0.5">
               <div>基本: 5%</div>
               <div>
                 パートナー貢献:{" "}
@@ -401,92 +407,92 @@ export default function ResultPage() {
               </div>
             </div>
 
-            <div className="border-t border-slate-700 my-2" />
+            <div className="border-t border-slate-100 my-2" />
 
             {/* 市場規模 */}
             <div className="flex justify-between items-center">
-              <span className="text-slate-400 text-sm">
+              <span className="text-slate-500 text-sm">
                 市場規模（潜在顧客合計）
               </span>
-              <span className="text-white font-semibold">
+              <span className="text-slate-800 font-semibold">
                 {calc.marketSize.toLocaleString()} 社
               </span>
             </div>
 
             {/* 単価 */}
             <div className="flex justify-between items-center">
-              <span className="text-slate-400 text-sm">
+              <span className="text-slate-500 text-sm">
                 単価（課題カード）
               </span>
-              <span className="text-white font-semibold">
+              <span className="text-slate-800 font-semibold">
                 {selected.problemCard.unitPrice.toLocaleString()} 万円/社/年
               </span>
             </div>
 
             {/* 年間売上 */}
-            <div className="flex justify-between items-center border-t border-slate-700 pt-2">
-              <span className="text-slate-300 text-sm font-semibold">年間売上</span>
-              <span className="text-cyan-400 font-bold text-lg">
+            <div className="flex justify-between items-center border-t border-slate-100 pt-2">
+              <span className="text-slate-700 text-sm font-semibold">年間売上</span>
+              <span className="text-sky-600 font-bold text-lg">
                 {formatManYen(calc.annualRevenue)}
               </span>
             </div>
 
-            <div className="border-t border-slate-700 my-2" />
+            <div className="border-t border-slate-100 my-2" />
 
             {/* コスト変動比率 */}
             <div className="flex justify-between items-center">
-              <span className="text-slate-400 text-sm">
+              <span className="text-slate-500 text-sm">
                 コスト変動比率（30%固定 + パートナー{" "}
                 {selected.partnerCards.reduce((s, c) => s + c.costVarianceRate, 0)}%）
               </span>
-              <span className="text-red-400 font-semibold">
+              <span className="text-red-600 font-semibold">
                 {calc.totalCostRate}%
               </span>
             </div>
 
             {/* 年間コスト */}
             <div className="flex justify-between items-center">
-              <span className="text-slate-400 text-sm">年間コスト</span>
-              <span className="text-red-400 font-semibold">
+              <span className="text-slate-500 text-sm">年間コスト</span>
+              <span className="text-red-600 font-semibold">
                 − {formatManYen(calc.annualCost)}
               </span>
             </div>
 
             {/* 年間利益 */}
-            <div className="flex justify-between items-center border-t border-slate-700 pt-2">
-              <span className="text-slate-300 text-sm font-semibold">年間利益</span>
+            <div className="flex justify-between items-center border-t border-slate-100 pt-2">
+              <span className="text-slate-700 text-sm font-semibold">年間利益</span>
               <span
                 className={`font-bold text-lg ${
-                  calc.annualProfit >= 0 ? "text-green-400" : "text-red-400"
+                  calc.annualProfit >= 0 ? "text-emerald-600" : "text-red-600"
                 }`}
               >
                 {formatManYen(calc.annualProfit)}
               </span>
             </div>
 
-            <div className="border-t border-slate-700 my-2" />
+            <div className="border-t border-slate-100 my-2" />
 
             {/* 初期費 */}
             <div className="flex justify-between items-center">
-              <span className="text-slate-400 text-sm">
+              <span className="text-slate-500 text-sm">
                 初期費（ソリューション合計）
               </span>
-              <span className="text-red-400 font-semibold">
+              <span className="text-red-600 font-semibold">
                 − {formatManYen(calc.initialCost)}
               </span>
             </div>
 
             {/* 3年間累計利益 */}
-            <div className="flex justify-between items-center border-t border-slate-700 pt-2 mt-2">
-              <span className="text-white text-sm font-bold">
+            <div className="flex justify-between items-center border-t border-slate-200 pt-2 mt-2">
+              <span className="text-slate-800 text-sm font-bold">
                 3年間累計利益
-                <span className="text-xs text-slate-500 ml-1">
+                <span className="text-xs text-slate-400 ml-1">
                   （年間利益×3 - 初期費）
                 </span>
               </span>
               <span
                 className={`font-black text-xl ${
-                  calc.profit3years >= 0 ? "text-green-400" : "text-red-400"
+                  calc.profit3years >= 0 ? "text-emerald-600" : "text-red-600"
                 }`}
               >
                 {formatManYen(calc.profit3years)}
@@ -496,8 +502,8 @@ export default function ResultPage() {
         </div>
 
         {/* ════ 選択カードサマリー ════ */}
-        <div className="bg-slate-800 rounded-xl border border-slate-600 p-4">
-          <h2 className="text-sm font-bold text-slate-400 mb-3 uppercase tracking-wide">
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
+          <h2 className="text-sm font-bold text-slate-500 mb-3 uppercase tracking-wide">
             🃏 選択カードまとめ
           </h2>
 
@@ -506,7 +512,7 @@ export default function ResultPage() {
             <CardSummaryRow
               label="♦️ 課題"
               cards={[selected.problemCard]}
-              color="text-amber-300"
+              color="text-amber-600"
               paramLabel={`単価 ${selected.problemCard.unitPrice.toLocaleString()}万円/社/年`}
             />
 
@@ -514,7 +520,7 @@ export default function ResultPage() {
             <CardSummaryRow
               label="♥️ ペルソナ"
               cards={selected.personaCards}
-              color="text-pink-300"
+              color="text-pink-600"
               paramLabel={`合計 ${calc.marketSize}社`}
             />
 
@@ -522,7 +528,7 @@ export default function ResultPage() {
             <CardSummaryRow
               label="♣️ パートナー"
               cards={selected.partnerCards}
-              color="text-green-300"
+              color="text-emerald-600"
               emptyLabel="なし"
               paramLabel={
                 selected.partnerCards.length > 0
@@ -535,7 +541,7 @@ export default function ResultPage() {
             <CardSummaryRow
               label="♠️ ソリューション"
               cards={selected.jobCards}
-              color="text-blue-300"
+              color="text-sky-600"
               emptyLabel="なし"
               paramLabel={
                 selected.jobCards.length > 0
@@ -547,58 +553,58 @@ export default function ResultPage() {
         </div>
 
         {/* ════ Claude AI ビジネスプラン評価 ════ */}
-        <div className="bg-slate-800 rounded-xl border border-slate-600 p-4">
-          <h2 className="text-sm font-bold text-slate-400 mb-3 uppercase tracking-wide">
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
+          <h2 className="text-sm font-bold text-slate-500 mb-3 uppercase tracking-wide">
             🤖 AI ビジネスプラン評価
           </h2>
 
           {aiLoading ? (
-            <div className="flex items-center gap-3 py-4 text-slate-400">
-              <div className="w-5 h-5 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin flex-shrink-0" />
+            <div className="flex items-center gap-3 py-4 text-slate-500">
+              <div className="w-5 h-5 border-2 border-sky-500 border-t-transparent rounded-full animate-spin flex-shrink-0" />
               <span className="text-sm">Claude AI が評価中...</span>
             </div>
           ) : aiEvaluation ? (
-            <div className="text-slate-300 text-sm leading-relaxed whitespace-pre-wrap">
+            <div className="text-slate-700 text-sm leading-relaxed whitespace-pre-wrap">
               {aiEvaluation}
             </div>
           ) : (
-            <p className="text-slate-500 text-sm">評価を取得できませんでした。</p>
+            <p className="text-slate-400 text-sm">評価を取得できませんでした。</p>
           )}
         </div>
 
         {/* ════ アクションボタン ════ */}
         <div className="space-y-3 pt-2">
           {/* Notion保存ボタン */}
-          <div className="bg-slate-800/60 rounded-xl p-4 border border-slate-700">
-            <p className="text-slate-300 text-xs font-semibold mb-2">📝 ゲーム結果をNotionに保存</p>
+          <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
+            <p className="text-slate-600 text-xs font-semibold mb-2">📝 ゲーム結果をNotionに保存</p>
             {notionSaveStatus === "idle" && (
               <button
                 onClick={saveGameResultToNotion}
-                className="w-full py-2.5 rounded-lg bg-orange-600 hover:bg-orange-500 text-white font-bold text-sm transition-all"
+                className="w-full py-2.5 rounded-lg bg-slate-700 hover:bg-slate-800 text-white font-bold text-sm transition-all"
               >
                 📝 Notionに保存する
               </button>
             )}
             {notionSaveStatus === "saving" && (
-              <div className="flex items-center justify-center gap-2 py-2.5 text-slate-400 text-sm">
-                <div className="w-4 h-4 border-2 border-orange-400 border-t-transparent rounded-full animate-spin" />
+              <div className="flex items-center justify-center gap-2 py-2.5 text-slate-500 text-sm">
+                <div className="w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin" />
                 保存中...
               </div>
             )}
             {notionSaveStatus === "saved" && notionPageUrl && (
               <div className="space-y-2">
-                <p className="text-green-400 text-sm font-semibold text-center">✅ Notionに保存しました！</p>
+                <p className="text-emerald-700 text-sm font-semibold text-center">✅ Notionに保存しました！</p>
                 <a href={notionPageUrl} target="_blank" rel="noopener noreferrer"
-                  className="block w-full py-2 rounded-lg border border-green-600 text-green-400 text-sm text-center hover:bg-green-950/50 transition-colors">
+                  className="block w-full py-2 rounded-lg border border-emerald-300 text-emerald-700 text-sm text-center hover:bg-emerald-50 transition-colors">
                   🔗 Notionで開く
                 </a>
               </div>
             )}
             {notionSaveStatus === "error" && (
               <div className="space-y-2">
-                <p className="text-red-400 text-sm text-center">❌ 保存に失敗しました</p>
+                <p className="text-red-600 text-sm text-center">❌ 保存に失敗しました</p>
                 <button onClick={saveGameResultToNotion}
-                  className="w-full py-2 rounded-lg border border-red-600 text-red-400 text-sm hover:bg-red-950/50 transition-colors">
+                  className="w-full py-2 rounded-lg border border-red-300 text-red-600 text-sm hover:bg-red-50 transition-colors">
                   再試行する
                 </button>
               </div>
@@ -611,7 +617,7 @@ export default function ResultPage() {
               localStorage.removeItem("logi_selectedCards_v42");
               router.push("/card-game/select");
             }}
-            className="w-full py-3 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-black font-bold text-base transition-all duration-200"
+            className="w-full py-3 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-base transition-all duration-200 shadow-sm"
           >
             🔄 もう一度プレイ
           </button>
@@ -619,7 +625,7 @@ export default function ResultPage() {
           {/* カード選択に戻る */}
           <button
             onClick={() => router.push("/card-game/select")}
-            className="w-full py-3 rounded-xl bg-slate-700 hover:bg-slate-600 text-white font-bold transition-all"
+            className="w-full py-3 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold transition-all"
           >
             ← カード選択に戻る
           </button>
@@ -631,17 +637,17 @@ export default function ResultPage() {
           カードゲームで体験した地域課題（空倉町）を、
           実在の屋久島データで本格診断できる行政OSへ誘導する。
         */}
-        <div className="mt-4 rounded-xl border border-green-500/40 bg-green-950/50 p-4">
-          <p className="text-green-300 text-sm font-semibold mb-1">
+        <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+          <p className="text-emerald-800 text-sm font-semibold mb-1">
             🏛️ このゲームの課題は、現実の地域にも存在します
           </p>
-          <p className="text-slate-400 text-xs leading-relaxed mb-3">
+          <p className="text-emerald-700 text-xs leading-relaxed mb-3">
             空倉町で体験した人口減少・財政難・エネルギー課題は、
             日本全国の限界自治体が直面しているリアルな問題です。
             行政OSで実際の地域データを使った本格診断をしてみましょう。
           </p>
           <Link href="/gyosei/dashboard">
-            <button className="w-full py-3 rounded-xl bg-green-600 hover:bg-green-500 text-white font-bold text-sm transition-all">
+            <button className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm transition-all shadow-sm">
               🏛️ 屋久島モデルで本格診断する（行政OS）
             </button>
           </Link>
@@ -676,21 +682,21 @@ function CardSummaryRow({
       </span>
       <div className="flex-1">
         {cards.length === 0 ? (
-          <span className="text-slate-500 text-xs">{emptyLabel}</span>
+          <span className="text-slate-400 text-xs">{emptyLabel}</span>
         ) : (
           <>
             <div className="flex flex-wrap gap-1">
               {cards.map((c) => (
                 <span
                   key={c.id}
-                  className="text-xs bg-slate-700 text-slate-200 px-2 py-0.5 rounded"
+                  className="text-xs bg-slate-100 text-slate-700 px-2 py-0.5 rounded border border-slate-200"
                 >
                   {c.title}
                 </span>
               ))}
             </div>
             {paramLabel && (
-              <div className="text-xs text-slate-500 mt-0.5">{paramLabel}</div>
+              <div className="text-xs text-slate-400 mt-0.5">{paramLabel}</div>
             )}
           </>
         )}
