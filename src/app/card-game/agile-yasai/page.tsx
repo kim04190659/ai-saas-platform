@@ -1072,15 +1072,20 @@ export default function AgileYasaiPage() {
   const [selectedChoice, setSelectedChoice] = useState<Choice | null>(null);
   const [totalScore, setTotalScore] = useState<number>(0);
   const [scenarioScore, setScenarioScore] = useState<number>(0);
-  const [clearedScenarios, setClearedScenarios] = useState<number[]>([1]);
+  // 解放済みシナリオID一覧（プレイできる話）：初期は第1話=id:1のみ
+  const [unlockedScenarios, setUnlockedScenarios] = useState<number[]>([1]);
+  // クリア済みシナリオID一覧（完了した話）：初期は空
+  const [clearedScenarios, setClearedScenarios] = useState<number[]>([]);
   const [showHint, setShowHint] = useState<boolean>(false);
   const [highScores, setHighScores] = useState<Record<number, number>>({});
 
-  // ハイスコアをlocalStorageから読み込み（環境に応じてフォールバック）
+  // ハイスコアと解放状況をlocalStorageから読み込み
   useEffect(() => {
     try {
-      const saved = localStorage.getItem('agile-yasai-highscores');
-      if (saved) setHighScores(JSON.parse(saved));
+      const savedHighScores = localStorage.getItem('agile-yasai-highscores');
+      if (savedHighScores) setHighScores(JSON.parse(savedHighScores));
+      const savedUnlocked = localStorage.getItem('agile-yasai-unlocked');
+      if (savedUnlocked) setUnlockedScenarios(JSON.parse(savedUnlocked));
       const savedCleared = localStorage.getItem('agile-yasai-cleared');
       if (savedCleared) setClearedScenarios(JSON.parse(savedCleared));
     } catch {
@@ -1135,19 +1140,32 @@ export default function AgileYasaiPage() {
   // ----------------------------------------------------------
   const handleScenarioComplete = () => {
     const scenarioId = currentScenario.id;
-    // クリア済みに追加
+
+    // クリア済みリストに追加（まだ入っていない場合）
     const newCleared = clearedScenarios.includes(scenarioId)
       ? clearedScenarios
-      : [...clearedScenarios, scenarioId + 1];
+      : [...clearedScenarios, scenarioId];
+
+    // 次のシナリオを解放（次のIDをunlockedに追加）
+    const nextId = scenarioId + 1;
+    const newUnlocked = unlockedScenarios.includes(nextId)
+      ? unlockedScenarios
+      : [...unlockedScenarios, nextId];
+
     setClearedScenarios(newCleared);
+    setUnlockedScenarios(newUnlocked);
+
     // ハイスコア更新
     const newHighScores = {
       ...highScores,
       [scenarioId]: Math.max(highScores[scenarioId] || 0, scenarioScore),
     };
     setHighScores(newHighScores);
+
+    // localStorageに保存
     try {
       localStorage.setItem('agile-yasai-highscores', JSON.stringify(newHighScores));
+      localStorage.setItem('agile-yasai-unlocked', JSON.stringify(newUnlocked));
       localStorage.setItem('agile-yasai-cleared', JSON.stringify(newCleared));
     } catch {
       // スキップ
@@ -1234,9 +1252,10 @@ export default function AgileYasaiPage() {
           {/* シナリオ一覧 */}
           <div className="space-y-3">
             {SCENARIOS.map((scenario, index) => {
-              // 解放済みかどうか
-              const isUnlocked = clearedScenarios.includes(scenario.id);
-              const isCleared = highScores[scenario.id] !== undefined;
+              // 解放済みかどうか（unlockedScenariosで判定）
+              const isUnlocked = unlockedScenarios.includes(scenario.id);
+              // クリア済みかどうか（clearedScenariosで判定）
+              const isCleared = clearedScenarios.includes(scenario.id);
               const hs = highScores[scenario.id] || 0;
 
               return (
@@ -1547,8 +1566,8 @@ export default function AgileYasaiPage() {
 
           {/* ボタン群 */}
           <div className="space-y-3">
-            {/* 次のシナリオへ */}
-            {!isLastScenario && clearedScenarios.includes(SCENARIOS[nextScenarioIndex].id) && (
+            {/* 次のシナリオへ：最終話でなく、次が解放済みの場合に表示 */}
+            {!isLastScenario && unlockedScenarios.includes(SCENARIOS[nextScenarioIndex].id) && (
               <button
                 onClick={() => startScenario(nextScenarioIndex)}
                 className="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-4 rounded-xl transition-colors"
