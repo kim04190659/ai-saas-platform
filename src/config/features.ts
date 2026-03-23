@@ -100,6 +100,13 @@ export const FEATURE_MODULES: FeatureModule[] = [
         description: '物流会社の経営課題をカードで解決するビジネスシミュレーション',
       },
       {
+        id: 'agile-yasai',
+        label: '🥬 八百屋アジャイル道場',
+        href: '/card-game/agile-yasai',
+        status: 'active',
+        description: '八百屋のスムージー経営でアジャイルの5要素を体験！最上先生が導くカードゲーム。',
+      },
+      {
         id: 'gyosei-dx',
         label: '🏛️ 行政DXチャレンジ',
         href: '/card-game/gyosei-dx',
