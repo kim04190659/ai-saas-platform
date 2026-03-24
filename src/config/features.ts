@@ -206,6 +206,13 @@ export const FEATURE_MODULES: FeatureModule[] = [
         description: '5領域×9問のチェックで組織のIT成熟度レベルを診断',
       },
       {
+        id: 'monitoring',
+        label: '📡 サービス監視',
+        href: '/runwith/monitoring',
+        status: 'active',
+        description: 'AWS・Azure・GCP・SalesforceをAIがリアルタイム監視。Downdetector情報と公式ステータスを統合表示。',
+      },
+      {
         id: 'runwith-incidents',
         label: '🚨 インシデント管理',
         href: '/runwith/incidents',
