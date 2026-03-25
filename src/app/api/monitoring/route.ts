@@ -1,7 +1,7 @@
 // ============================================================
-// サービス監視 API Route
+// サービス監視 API Route（JSON解析エラー修正版）
 // サーバーサイドでAnthropicのAPIを呼び出す中継エンドポイント
-// フロントエンドから直接APIを叩くとCORSエラーになるためこの経由が必要
+// Web検索でニュース記事が混入してJSONパースが失敗する問題を修正
 // ============================================================
 
 import { NextResponse } from 'next/server';
@@ -37,61 +37,139 @@ const CLOUD_SERVICES = [
 ];
 
 // ============================================================
-// AIプロンプト生成関数
+// AIプロンプト生成関数（厳格化版）
+// JSONのみを返すよう強く指示する。ニュース記事の混入を防ぐ
 // ============================================================
 function buildMonitoringPrompt(): string {
   const serviceList = CLOUD_SERVICES.map(s =>
     `- ${s.fullName}（公式: ${s.officialUrl} / Downdetector: ${s.downdetectorUrl}）`
   ).join('\n');
 
-  return `
-あなたはITサービス監視の専門家です。
-以下のクラウドサービスについて、現在の稼働状況と過去24時間の障害情報を調査してください。
+  // 現在の日本時間を取得してプロンプトに埋め込む
+  const now = new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' });
 
-【調査対象サービス】
+  return `
+あなたはITサービス監視の専門家です。現在日時: ${now}
+
+以下のクラウドサービスについて、公式ステータスページとDowndetectorを調査し、
+結果をJSONで返してください。
+
+【調査対象】
 ${serviceList}
 
-【調査する情報】
-1. 各サービスの公式ステータスページの現在の状態
-2. Downdetector（downdetector.jp）での各サービスの障害報告状況
-3. 予定メンテナンス情報
-4. 過去24時間に発生した障害・インシデント
+【重要な制約】
+- 回答はJSON形式のみにしてください
+- ニュース記事・一般情報・前置き文・説明文は一切不要です
+- クラウドサービスの稼働状況のみを調査対象とします
+- JSONの外側にテキストを書いてはいけません
 
-【回答形式】
-必ず以下のJSON形式のみで回答してください。前置きや説明文は不要です。
+【回答形式】必ずこのJSONのみを返す:
 
 {
   "services": [
     {
-      "id": "サービスID（aws/azure/gcp/salesforce）",
-      "name": "サービス表示名",
-      "status": "normal または warning または incident または maintenance または unknown",
-      "officialSummary": "公式ステータスページの状況（50文字以内）",
-      "downdetectorSummary": "Downdetectorの障害報告状況（50文字以内）",
-      "maintenanceInfo": "予定メンテナンス情報。なければ「予定なし」",
-      "lastChecked": "現在時刻（HH:MM形式）"
-    }
-  ],
-  "overallAnalysis": "全体的な状況の分析コメント（100文字以内）",
-  "incidents24h": [
+      "id": "aws",
+      "name": "AWS",
+      "status": "normal",
+      "officialSummary": "全リージョン正常稼働中",
+      "downdetectorSummary": "障害報告なし",
+      "maintenanceInfo": "予定なし",
+      "lastChecked": "14:32"
+    },
     {
-      "time": "発生時刻（HH:MM形式）",
-      "service": "サービス名",
-      "summary": "障害概要（40文字以内）",
-      "status": "incident または warning または maintenance"
+      "id": "azure",
+      "name": "Azure",
+      "status": "normal",
+      "officialSummary": "正常",
+      "downdetectorSummary": "報告なし",
+      "maintenanceInfo": "予定なし",
+      "lastChecked": "14:32"
+    },
+    {
+      "id": "gcp",
+      "name": "Google Cloud",
+      "status": "normal",
+      "officialSummary": "正常",
+      "downdetectorSummary": "報告なし",
+      "maintenanceInfo": "予定なし",
+      "lastChecked": "14:32"
+    },
+    {
+      "id": "salesforce",
+      "name": "Salesforce",
+      "status": "normal",
+      "officialSummary": "正常",
+      "downdetectorSummary": "報告なし",
+      "maintenanceInfo": "予定なし",
+      "lastChecked": "14:32"
     }
   ],
-  "retrievedAt": "現在の日本時間（YYYY/MM/DD HH:MM形式）"
+  "overallAnalysis": "全サービス正常稼働中",
+  "incidents24h": [],
+  "retrievedAt": "2026/03/25 14:32"
 }
 
-incidents24hは過去24時間に障害・メンテナンスがあった場合のみ含める。何もなければ空配列にする。
-statusの値は必ず normal/warning/incident/maintenance/unknown のいずれかにする。
+上記の形式で、実際の調査結果に基づいて値を埋めて返してください。
+statusは normal/warning/incident/maintenance/unknown のいずれかのみ使用可。
 `;
 }
 
 // ============================================================
+// JSONを文字列から安全に抽出する関数
+// コードブロック・余分なテキストが混入しても対応できるように
+// ============================================================
+function extractJSON(text: string): string | null {
+  // パターン1: ```json ... ``` 形式のコードブロックを探す
+  const codeBlockMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+  if (codeBlockMatch) {
+    return codeBlockMatch[1].trim();
+  }
+
+  // パターン2: { から始まる最初のJSONオブジェクトを探す
+  // ネストされた {} を正しく数えて完全なJSONを抽出する
+  const startIndex = text.indexOf('{');
+  if (startIndex === -1) return null;
+
+  let depth = 0;
+  let inString = false;
+  let escape = false;
+
+  for (let i = startIndex; i < text.length; i++) {
+    const char = text[i];
+
+    // エスケープ文字の処理
+    if (escape) {
+      escape = false;
+      continue;
+    }
+    if (char === '\\' && inString) {
+      escape = true;
+      continue;
+    }
+
+    // 文字列内外の判定
+    if (char === '"') {
+      inString = !inString;
+      continue;
+    }
+    if (inString) continue;
+
+    // 括弧の深さをカウントする
+    if (char === '{') depth++;
+    if (char === '}') {
+      depth--;
+      // 深さが0になったら完全なJSONオブジェクトが終わった
+      if (depth === 0) {
+        return text.substring(startIndex, i + 1);
+      }
+    }
+  }
+
+  return null;
+}
+
+// ============================================================
 // POST ハンドラー
-// フロントエンドからのリクエストを受け取ってAnthropicに転送する
 // ============================================================
 export async function POST() {
   try {
@@ -99,7 +177,7 @@ export async function POST() {
     const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) {
       return NextResponse.json(
-        { error: 'APIキーが設定されていません' },
+        { error: 'APIキーが設定されていません（Vercelの環境変数を確認してください）' },
         { status: 500 }
       );
     }
@@ -142,7 +220,7 @@ export async function POST() {
 
     const data = await response.json();
 
-    // レスポンスからテキスト部分を抽出する
+    // レスポンスからテキスト部分をすべて結合する
     const textContent = data.content
       ?.filter((item: { type: string }) => item.type === 'text')
       ?.map((item: { text: string }) => item.text)
@@ -155,16 +233,28 @@ export async function POST() {
       );
     }
 
-    // JSON部分を抽出してパースする
-    const jsonMatch = textContent.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
+    // 堅牢なJSON抽出関数でJSONを取り出す
+    const jsonStr = extractJSON(textContent);
+    if (!jsonStr) {
       return NextResponse.json(
-        { error: 'JSON形式の応答を取得できませんでした', raw: textContent },
+        { error: 'JSON形式の応答を取得できませんでした', raw: textContent.slice(0, 200) },
         { status: 500 }
       );
     }
 
-    const parsed = JSON.parse(jsonMatch[0]);
+    // JSONパースを試みる
+    let parsed;
+    try {
+      parsed = JSON.parse(jsonStr);
+    } catch (parseError) {
+      return NextResponse.json(
+        {
+          error: `JSONパースエラー: ${parseError instanceof Error ? parseError.message : '不明'}`,
+          raw: jsonStr.slice(0, 200),
+        },
+        { status: 500 }
+      );
+    }
 
     // 正常なレスポンスをフロントエンドに返す
     return NextResponse.json(parsed);
