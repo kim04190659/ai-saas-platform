@@ -1,21 +1,32 @@
 // =====================================================
 //  src/app/api/ai-advisor/route.ts
-//  AI Well-Being顧問 APIルート
+//  AI Well-Being顧問 APIルート — Phase 2（Sprint #13）
 //
 //  ■ このファイルの役割
-//    - Notionの2つのDBから蓄積データを取得する
+//    - Notionの4つのDBから蓄積データを取得する（Phase 2強化）
 //    - 取得したデータをRAGコンテキストとしてClaude APIに渡す
 //    - SDL五軸・Well-Being視点の回答をフロントに返す
 //
-//  ■ 使用するNotionDB
-//    - エクセレントサービス学習ログDB（カードゲーム結果）
-//    - RunWithプラットフォーム記録DB（IT運用診断・監視ログ）
+//  ■ 使用するNotionDB（Phase 2: 4DB統合）
+//    1. エクセレントサービス学習ログDB（カードゲーム結果）
+//    2. RunWithプラットフォーム記録DB（IT運用診断・監視ログ）
+//    3. PopulationData DB（人口・高齢化・世帯データ）← Phase 2追加
+//    4. WellBeingKPI DB（住民サービス稼働・満足度スコア）← Phase 2追加
 // =====================================================
 
 import { NextRequest, NextResponse } from 'next/server'
 
+// Notion APIの共通ヘッダーを生成するヘルパー
+function notionHeaders(apiKey: string) {
+  return {
+    'Authorization': `Bearer ${apiKey}`,
+    'Notion-Version': '2022-06-28',
+    'Content-Type': 'application/json',
+  }
+}
+
 // =====================================================
-//  ヘルパー関数: Notionから学習ログを取得
+//  [Phase 1] ヘルパー関数: エクセレントサービス学習ログを取得
 // =====================================================
 
 async function fetchLearningLogs(): Promise<string> {
@@ -27,11 +38,7 @@ async function fetchLearningLogs(): Promise<string> {
   try {
     const res = await fetch(`https://api.notion.com/v1/databases/${dbId}/query`, {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${notionApiKey}`,
-        'Notion-Version': '2022-06-28',
-        'Content-Type': 'application/json',
-      },
+      headers: notionHeaders(notionApiKey ?? ''),
       // 直近20件を新しい順で取得
       body: JSON.stringify({
         page_size: 20,
@@ -75,7 +82,7 @@ async function fetchLearningLogs(): Promise<string> {
 }
 
 // =====================================================
-//  ヘルパー関数: Notionからプラットフォーム記録を取得
+//  [Phase 1] ヘルパー関数: Notionからプラットフォーム記録を取得
 // =====================================================
 
 async function fetchPlatformRecords(): Promise<string> {
@@ -87,11 +94,7 @@ async function fetchPlatformRecords(): Promise<string> {
   try {
     const res = await fetch(`https://api.notion.com/v1/databases/${dbId}/query`, {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${notionApiKey}`,
-        'Notion-Version': '2022-06-28',
-        'Content-Type': 'application/json',
-      },
+      headers: notionHeaders(notionApiKey ?? ''),
       // 直近20件を新しい順で取得
       body: JSON.stringify({
         page_size: 20,
@@ -130,6 +133,155 @@ async function fetchPlatformRecords(): Promise<string> {
 }
 
 // =====================================================
+//  [Phase 2] ヘルパー関数: 人口・地域データを取得
+//  Sprint #11 で蓄積した PopulationData DB から取得
+// =====================================================
+
+async function fetchPopulationData(): Promise<string> {
+  const notionApiKey = process.env.NOTION_API_KEY
+
+  // PopulationData DB のID（Sprint #11で作成）
+  const dbId = '91876a16eed64ee5badc72b1c697154d'
+
+  try {
+    const res = await fetch(`https://api.notion.com/v1/databases/${dbId}/query`, {
+      method: 'POST',
+      headers: notionHeaders(notionApiKey ?? ''),
+      // 直近30件を新しい順で取得（年度ごとの時系列データが入っているため多めに）
+      body: JSON.stringify({
+        page_size: 30,
+        sorts: [{ timestamp: 'created_time', direction: 'descending' }],
+      }),
+    })
+
+    if (!res.ok) return '（人口データ取得エラー）'
+
+    const data = await res.json()
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const rows = data.results?.map((r: any) => {
+      const p = r.properties
+
+      // 各種人口指標を取得（CSVからNotionに取り込んだフィールド）
+      const title        = p['名称']?.title?.[0]?.plain_text ?? ''
+      const population   = p['総人口']?.number ?? ''
+      const elderly      = p['65歳以上人口']?.number ?? ''
+      const elderlyRate  = p['高齢化率']?.number ?? ''
+      const births       = p['出生数']?.number ?? ''
+      const deaths       = p['死亡数']?.number ?? ''
+      const households   = p['世帯数']?.number ?? ''
+      const futureEst    = p['将来推計人口']?.number ?? ''
+      const year         = p['年度']?.rich_text?.[0]?.plain_text ?? ''
+
+      // 高齢化率を%表示に変換（数値が0-1の場合）
+      const elderlyRateStr = elderlyRate
+        ? (elderlyRate > 1 ? `${elderlyRate.toFixed(1)}%` : `${(elderlyRate * 100).toFixed(1)}%`)
+        : ''
+
+      return (
+        `・${title}${year ? `（${year}）` : ''}` +
+        (population  ? ` 総人口:${population.toLocaleString()}人` : '') +
+        (elderly     ? ` 65歳以上:${elderly.toLocaleString()}人` : '') +
+        (elderlyRateStr ? ` 高齢化率:${elderlyRateStr}` : '') +
+        (births      ? ` 出生数:${births}人` : '') +
+        (deaths      ? ` 死亡数:${deaths}人` : '') +
+        (households  ? ` 世帯数:${households.toLocaleString()}世帯` : '') +
+        (futureEst   ? ` 将来推計:${futureEst.toLocaleString()}人` : '')
+      )
+    }) ?? []
+
+    return rows.length > 0 ? rows.join('\n') : '（人口データはまだ登録されていません）'
+  } catch {
+    return '（人口データ取得エラー）'
+  }
+}
+
+// =====================================================
+//  [Phase 2] ヘルパー関数: 住民サービスKPIデータを取得
+//  Sprint #12 で蓄積した WellBeingKPI DB から取得
+// =====================================================
+
+async function fetchWellBeingKPI(): Promise<string> {
+  const notionApiKey = process.env.NOTION_API_KEY
+
+  // WellBeingKPI DB のID（Sprint #12で作成）
+  const dbId = 'af1e5c71a95546c3aff0c00ec7068552'
+
+  try {
+    const res = await fetch(`https://api.notion.com/v1/databases/${dbId}/query`, {
+      method: 'POST',
+      headers: notionHeaders(notionApiKey ?? ''),
+      // 直近50件を記録日の新しい順で取得
+      body: JSON.stringify({
+        page_size: 50,
+        sorts: [{ property: '記録日', direction: 'descending' }],
+      }),
+    })
+
+    if (!res.ok) return '（Well-BeingKPIデータ取得エラー）'
+
+    const data = await res.json()
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const rows = data.results?.map((r: any) => {
+      const p = r.properties
+
+      // 住民サービスKPIの各フィールドを取得
+      const serviceName      = p['サービス名']?.title?.[0]?.plain_text ?? '不明'
+      const municipality     = p['自治体名']?.rich_text?.[0]?.plain_text ?? ''
+      const category         = p['カテゴリ']?.select?.name ?? ''
+      const status           = p['稼働状況']?.select?.name ?? ''
+      const satisfactionScore = p['満足度スコア']?.number ?? ''
+      const waitingMinutes   = p['窓口待ち時間']?.number ?? ''
+      const userCount        = p['利用者数']?.number ?? ''
+      const wellbeingScore   = p['wellbeing_score']?.number ?? ''
+      const recordDate       = p['記録日']?.date?.start ?? ''
+
+      return (
+        `・[${category}]${serviceName}` +
+        (municipality ? `（${municipality}）` : '') +
+        ` 状態:${status}` +
+        (wellbeingScore !== '' ? ` WBスコア:${wellbeingScore}` : '') +
+        (satisfactionScore !== '' ? ` 満足度:${satisfactionScore}/5` : '') +
+        (waitingMinutes !== '' ? ` 待ち時間:${waitingMinutes}分` : '') +
+        (userCount !== '' ? ` 利用者数:${userCount}人` : '') +
+        (recordDate ? ` 記録日:${recordDate}` : '')
+      )
+    }) ?? []
+
+    // カテゴリ別の平均Well-Beingスコアを集計してサマリを追加
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const categoryMap: Record<string, { total: number; count: number }> = {}
+    data.results?.forEach((r: any) => {
+      const cat   = r.properties['カテゴリ']?.select?.name ?? '不明'
+      const score = r.properties['wellbeing_score']?.number
+      if (score !== undefined && score !== null) {
+        if (!categoryMap[cat]) categoryMap[cat] = { total: 0, count: 0 }
+        categoryMap[cat].total += score
+        categoryMap[cat].count++
+      }
+    })
+
+    // カテゴリ別平均スコアのサマリ文字列を生成
+    const categorySummary = Object.entries(categoryMap)
+      .map(([cat, { total, count }]) =>
+        `  【${cat}】平均WBスコア: ${Math.round(total / count)}点（${count}件）`
+      )
+      .join('\n')
+
+    const summary = categorySummary
+      ? `\n■ カテゴリ別Well-Beingスコア集計:\n${categorySummary}`
+      : ''
+
+    return rows.length > 0
+      ? rows.join('\n') + summary
+      : '（住民サービスデータはまだ登録されていません）'
+  } catch {
+    return '（Well-BeingKPIデータ取得エラー）'
+  }
+}
+
+// =====================================================
 //  POSTハンドラ: チャットメッセージを受け取りAI回答を返す
 // =====================================================
 
@@ -138,18 +290,30 @@ export async function POST(req: NextRequest) {
     // フロントエンドからの入力: ユーザーのメッセージと会話履歴
     const { message, conversationHistory } = await req.json()
 
-    // Notion DBから最新データを並列で取得（速度優先）
-    const [learningLogs, platformRecords] = await Promise.all([
-      fetchLearningLogs(),
-      fetchPlatformRecords(),
+    // ─────────────────────────────────────────────────
+    //  Phase 2: Notion 4DBから最新データを並列で取得
+    //  Promise.all で並列実行して応答速度を最大化
+    // ─────────────────────────────────────────────────
+    const [learningLogs, platformRecords, populationData, wellBeingKPI] = await Promise.all([
+      fetchLearningLogs(),     // エクセレントサービス学習ログ
+      fetchPlatformRecords(),  // IT運用診断・監視ログ
+      fetchPopulationData(),   // 人口・地域データ（Phase 2追加）
+      fetchWellBeingKPI(),     // 住民サービスKPI（Phase 2追加）
     ])
 
     // ─────────────────────────────────────────────────
-    //  RAGコンテキスト: 蓄積データをAIに渡す
-    //  「このデータを見て回答してください」という形式
+    //  Phase 2 RAGコンテキスト:
+    //  自治体固有データ（人口・サービスKPI）を含む4DB統合コンテキスト
+    //  「このデータを参照して、SDL五軸の視点で具体的な提言を行う」
     // ─────────────────────────────────────────────────
     const ragContext = `
-【この自治体のRunWithプラットフォーム蓄積データ】
+【この自治体のRunWithプラットフォーム蓄積データ — Phase 2（4DB統合）】
+
+■ 人口・地域データ（Sprint #11蓄積）:
+${populationData}
+
+■ 住民サービスKPI・Well-Beingスコア（Sprint #12蓄積）:
+${wellBeingKPI}
 
 ■ エクセレントサービス学習ログ（カードゲーム結果）:
 ${learningLogs}
@@ -159,8 +323,10 @@ ${platformRecords}
 `
 
     // ─────────────────────────────────────────────────
-    //  システムプロンプト: AIの役割・分析視点・回答原則を定義
-    //  SDL五軸とWell-Being視点を常に意識した回答を生成させる
+    //  Phase 2 システムプロンプト:
+    //  人口動態 × サービスKPI × SDL五軸 の横断分析を可能にする
+    //  「高齢化率とSDL共創軸の関係から優先施策を提言する」ような
+    //  自治体固有の文脈に根差した回答を生成させる
     // ─────────────────────────────────────────────────
     const systemPrompt = `あなたは「RunWith Well-Being顧問AI」です。
 人口減少が進む日本の自治体が住民と職員双方のWell-Beingを高めながら
@@ -174,12 +340,19 @@ ${platformRecords}
 - 統合軸：複数のサービスや知識を組み合わせているか
 - 価値軸：最終的に住民・職員の生活の質が向上しているか
 
+Phase 2強化ポイント（人口動態 × サービスKPI 横断分析）:
+- 蓄積された人口データ（高齢化率・将来推計・世帯数）とサービスKPIを紐づけて分析する
+- 例：「高齢化率XX%という文脈では、福祉サービスのWell-Beingスコア向上が最優先」
+- 例：「人口減少トレンドを踏まえると、ITインフラの効率化でYY人の職員コスト削減が可能」
+- 数値に基づいた根拠ある提言を心がける
+
 回答の原則：
-1. 必ず蓄積データを参照し「このデータによると〜」という形で根拠を示す
+1. 必ず蓄積データを参照し「このデータによると〜」という形で数値とともに根拠を示す
 2. 抽象的なアドバイスではなく、明日から実行できる具体的な提言を3つ以内で示す
-3. SDL五軸のどの軸に関連するかを明示する
-4. 職員のWell-Beingと住民サービス品質の両立を常に意識する
-5. 日本語で、自治体職員が理解しやすい言葉で話す
+3. SDL五軸のどの軸に関連するかを明示する（例：「【共創軸】」）
+4. 人口動態データとサービスKPIを横断して分析し、自治体固有の文脈で語る
+5. 職員のWell-Beingと住民サービス品質の両立を常に意識する
+6. 日本語で、自治体職員が理解しやすい言葉で話す
 
 ${ragContext}`
 
@@ -203,7 +376,7 @@ ${ragContext}`
       },
       body: JSON.stringify({
         model: 'claude-opus-4-5',    // 高品質な分析に最適なモデル
-        max_tokens: 1500,             // 十分な回答長を確保
+        max_tokens: 2000,             // Phase 2: 横断分析で回答が長くなるため増量
         system: systemPrompt,
         messages,
       }),
@@ -232,10 +405,12 @@ ${ragContext}`
         { role: 'assistant', content: aiReply  },
       ],
 
-      // 参照したデータ件数（フロントのバッジ表示に使用）
+      // Phase 2: 参照したデータ件数（フロントのバッジ表示に使用）
       dataStats: {
         learningLogLines:     learningLogs.split('\n').filter(l => l.startsWith('・')).length,
         platformRecordLines:  platformRecords.split('\n').filter(l => l.startsWith('・')).length,
+        populationDataLines:  populationData.split('\n').filter(l => l.startsWith('・')).length,   // Phase 2追加
+        wellBeingKPILines:    wellBeingKPI.split('\n').filter(l => l.startsWith('・')).length,     // Phase 2追加
       },
     })
 

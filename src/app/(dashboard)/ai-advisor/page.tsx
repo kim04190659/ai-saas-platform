@@ -2,17 +2,18 @@
 
 // =====================================================
 //  src/app/(dashboard)/ai-advisor/page.tsx
-//  AI Well-Being顧問 チャット画面
+//  AI Well-Being顧問 チャット画面 — Phase 2（Sprint #13）
 //
 //  ■ このページの役割
 //    「左で蓄積したデータを右でAI分析する」体験を実現する核心ページ。
-//    Notionに蓄積されたSDL学習ログ・IT運用データをAIが読み取り、
-//    自治体のWell-Being向上に向けた具体的な提言をチャット形式で表示する。
+//    Phase 2: 人口データ + 住民サービスKPI を加えた4DB統合RAGに対応。
+//    人口動態 × サービス品質の横断分析でSDL五軸視点の提言を表示する。
 //
 //  ■ 技術ポイント
 //    - 'use client' で React Hooks（useState, useRef, useEffect）を使用
 //    - /api/ai-advisor に POST してAI回答を取得
 //    - conversationHistory を保持して会話の文脈を維持する
+//    - Phase 2: DataStats に populationDataLines / wellBeingKPILines を追加
 // =====================================================
 
 import { useState, useRef, useEffect } from 'react'
@@ -27,32 +28,38 @@ interface Message {
 
 /** APIから返ってくるデータ件数の型 */
 interface DataStats {
-  learningLogLines: number     // 学習ログの参照件数
-  platformRecordLines: number  // プラットフォーム記録の参照件数
+  learningLogLines: number      // 学習ログの参照件数
+  platformRecordLines: number   // プラットフォーム記録の参照件数
+  populationDataLines?: number  // Phase 2: 人口データの参照件数
+  wellBeingKPILines?: number    // Phase 2: 住民サービスKPIの参照件数
 }
 
 // ─── 定数 ────────────────────────────────────────────
 
 /**
- * サンプル質問ボタンのリスト
+ * サンプル質問ボタンのリスト（Phase 2: 人口データ × サービスKPI 横断分析）
  * 自治体担当者が「何を聞けばいいか」迷わないよう典型的な質問を用意
  */
 const SAMPLE_QUESTIONS = [
+  '高齢化率とSDL共創軸の関係から、優先すべき施策を教えてください',
+  '住民サービスのWell-Beingスコアが低いカテゴリはどこで、何が原因ですか？',
+  '人口減少トレンドを踏まえて、今後5年で見直すべきサービスを提案してください',
   '蓄積データから、この自治体の強みと弱みを教えてください',
-  'SDL共創軸を高めるために、明日から取り組める施策を提案してください',
-  '人口減少が進む中で、住民Well-Beingを維持するための優先課題は何ですか？',
   '職員の負担を増やさずにサービス品質を向上させるアイデアはありますか？',
-  'クラウド障害に強い運用体制を作るには何から始めればよいですか？',
+  '窓口待ち時間の改善と住民満足度向上を同時に実現する方法はありますか？',
 ]
 
-/** AIの最初のあいさつメッセージ */
+/** AIの最初のあいさつメッセージ（Phase 2: 4DB統合対応） */
 const INITIAL_MESSAGE: Message = {
   role: 'assistant',
   content:
-    'こんにちは！**RunWith Well-Being顧問AI**です。\n\n' +
-    'このプラットフォームに蓄積されたデータ（エクセレントサービスゲームの学習ログ、' +
-    'IT運用診断結果、クラウド監視ログ）を参照しながら、' +
-    'あなたの自治体のWell-Being向上に向けた具体的な提言をお伝えします。\n\n' +
+    'こんにちは！**RunWith Well-Being顧問AI（Phase 2）**です。\n\n' +
+    'このプラットフォームに蓄積された4種類のデータを参照して分析します：\n' +
+    '📊 **人口・地域データ**（高齢化率・将来推計・世帯数）\n' +
+    '🏘️ **住民サービスKPI**（稼働状況・満足度・Well-Beingスコア）\n' +
+    '🎮 **カードゲーム学習ログ**（エクセレントサービス結果）\n' +
+    '📋 **IT運用診断・監視ログ**\n\n' +
+    '人口動態とサービス品質を横断した分析で、SDL五軸の視点から**自治体固有の文脈**に根差した提言をお伝えします。\n\n' +
     'どのようなことでも気軽にご質問ください。',
 }
 
@@ -170,14 +177,26 @@ export default function AIAdvisorPage() {
               </p>
             </div>
 
-            {/* データ参照状況バッジ（最初の回答後に表示） */}
+            {/* Phase 2: データ参照状況バッジ（最初の回答後に表示、4DB対応） */}
             {dataStats && (
               <div className="flex gap-2 flex-wrap">
+                {/* Phase 2追加: 人口データバッジ */}
+                {(dataStats.populationDataLines ?? 0) > 0 && (
+                  <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    📊 人口データ {dataStats.populationDataLines}件参照
+                  </span>
+                )}
+                {/* Phase 2追加: 住民サービスKPIバッジ */}
+                {(dataStats.wellBeingKPILines ?? 0) > 0 && (
+                  <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-purple-50 text-purple-700 border border-purple-200">
+                    🏘️ サービスKPI {dataStats.wellBeingKPILines}件参照
+                  </span>
+                )}
                 <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-sky-50 text-sky-700 border border-sky-200">
                   📚 学習ログ {dataStats.learningLogLines}件参照
                 </span>
                 <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-orange-50 text-orange-700 border border-orange-200">
-                  📊 診断・監視 {dataStats.platformRecordLines}件参照
+                  📋 診断・監視 {dataStats.platformRecordLines}件参照
                 </span>
               </div>
             )}
