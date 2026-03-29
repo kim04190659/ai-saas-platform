@@ -189,11 +189,13 @@ export const FEATURE_MODULES: FeatureModule[] = [
         description: '自治体のCSVデータをそのまま取り込み。人口・世帯・高齢化率をNotionに蓄積',
       },
       {
+        // ★ Sprint #12: 住民サービス状況ページ
+        // CitizenService クラス接地。稼働状況・窓口待ち・満足度をNotionに蓄積
         id: 'gyosei-services',
         label: '🏘️ 住民サービス状況',
         href: '/gyosei/services',
-        status: 'coming',
-        description: '行政サービスの充足率・利用状況を管理',
+        status: 'active',
+        description: '行政サービスの稼働状況・窓口待ち時間・満足度スコアを記録しNotionに蓄積',
       },
       {
         id: 'gyosei-staff',
