@@ -274,7 +274,7 @@ export const FEATURE_MODULES: FeatureModule[] = [
         id: 'runwith-kpi',
         label: '📈 運用KPIダッシュボード',
         href: '/runwith/kpi',
-        status: 'coming',
+        status: 'active',
         description: 'MTTR・MTBF・SLA達成率・コストを統合したKPIダッシュボード',
       },
       {
