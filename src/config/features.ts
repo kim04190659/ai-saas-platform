@@ -121,11 +121,31 @@ export const FEATURE_MODULES: FeatureModule[] = [
         description: '職員の働き方改革をテーマにしたカードゲーム',
       },
       {
+        // ★ Sprint 対象: 行政DXチャレンジ
+        // 自治体職員が住民サービス・財政・人材・ITの4課題を解決するカードゲーム
+        id: 'gyosei-dx-challenge',
+        label: '🏛️ 行政DXチャレンジ',
+        href: '/card-game/gyosei-dx',
+        status: 'coming',
+        description: '自治体職員向け：住民サービス・財政・人材・ITの課題カードで行政DXを体験',
+      },
+      {
+        // ★ Sprint 対象: IT運用改善
+        // インシデント対応・変更管理をテーマにしたロールプレイ型ゲーム
         id: 'it-ops-game',
-        label: '⚙️ IT運用改善ゲーム',
+        label: '⚙️ IT運用改善',
         href: '/card-game/it-ops',
         status: 'coming',
-        description: 'インシデント対応をテーマにしたシミュレーション（開発中）',
+        description: 'インシデント対応・変更管理をテーマにしたIT運用シミュレーション',
+      },
+      {
+        // ★ Sprint 対象: エクセレントサービス
+        // サービスデスクの顧客満足度向上をテーマにしたカードゲーム
+        id: 'excellent-service',
+        label: '⭐ エクセレントサービス',
+        href: '/card-game/excellent-service',
+        status: 'coming',
+        description: 'サービスデスク担当者向け：顧客満足度を上げるサービス改善カードゲーム',
       },
     ],
   },
@@ -173,6 +193,15 @@ export const FEATURE_MODULES: FeatureModule[] = [
         status: 'coming',
         description: '職員のタスク・業務負荷を見える化',
       },
+      {
+        // ★ Sprint 対象: LINE業務対応
+        // LINEを通じた住民からの問い合わせ対応を効率化するAIチャット連携機能
+        id: 'gyosei-line',
+        label: '💬 LINE業務対応',
+        href: '/gyosei/line',
+        status: 'coming',
+        description: 'LINE経由の住民問い合わせをAIが自動振り分け・担当者連携',
+      },
     ],
   },
 
@@ -213,18 +242,50 @@ export const FEATURE_MODULES: FeatureModule[] = [
         description: 'AWS・Azure・GCP・SalesforceをAIがリアルタイム監視。Downdetector情報と公式ステータスを統合表示。',
       },
       {
+        // ★ Sprint 対象: インシデント管理
+        // インシデントの記録・エスカレーション・クローズまでのライフサイクル管理
         id: 'runwith-incidents',
         label: '🚨 インシデント管理',
         href: '/runwith/incidents',
         status: 'coming',
-        description: 'インシデントの記録・分析・再発防止管理',
+        description: 'インシデントの記録・エスカレーション・再発防止を一元管理',
       },
       {
+        // ★ Sprint 対象: サービス監視
+        // サービスの稼働状況・レスポンスタイム・SLAを可視化するモニタリング画面
+        id: 'runwith-monitoring',
+        label: '📡 サービス監視',
+        href: '/runwith/monitoring',
+        status: 'coming',
+        description: 'サービス稼働状況・SLA達成率をリアルタイムで可視化',
+      },
+      {
+        // ★ Sprint 対象: 構成管理
+        // ITシステムの構成情報（CMDB）の登録・参照・変更履歴管理
+        id: 'runwith-cmdb',
+        label: '🗂️ 構成管理',
+        href: '/runwith/cmdb',
+        status: 'coming',
+        description: 'ITシステムの構成情報（CMDB）を登録・参照・変更履歴管理',
+      },
+      {
+        // ★ Sprint 対象: 運用KPIダッシュボード
+        // 運用品質の総合ダッシュボード（MTR・MTBF・SLA・コスト指標）
         id: 'runwith-kpi',
         label: '📈 運用KPIダッシュボード',
         href: '/runwith/kpi',
         status: 'coming',
-        description: '運用品質のKPI指標をリアルタイム監視',
+        description: 'MTTR・MTBF・SLA達成率・コストを統合したKPIダッシュボード',
+      },
+      {
+        // ★ Sprint #9: AI Well-Being顧問
+        // Notionに蓄積されたSDL学習ログ・IT運用診断データをAIが分析し
+        // 自治体のWell-Being向上に向けた具体的な改善提言を行うチャット画面
+        id: 'ai-advisor',
+        label: '🤖 AI Well-Being顧問',
+        href: '/ai-advisor',
+        status: 'active',
+        description: '蓄積されたデータをAIが分析し、自治体Well-Beingの改善提言を行います',
       },
     ],
   },
