@@ -198,11 +198,13 @@ export const FEATURE_MODULES: FeatureModule[] = [
         description: '行政サービスの稼働状況・窓口待ち時間・満足度スコアを記録しNotionに蓄積',
       },
       {
+        // ★ Sprint #14: 職員コンディション入力
+        // 体調・業務負荷・チームWell-Beingを日次記録。Phase 3セマンティック推論の起点。
         id: 'gyosei-staff',
-        label: '👥 職員業務支援',
+        label: '👥 職員コンディション',
         href: '/gyosei/staff',
-        status: 'coming',
-        description: '職員のタスク・業務負荷を見える化',
+        status: 'active',
+        description: '体調・業務負荷・チームWell-Beingを記録。SDL学習スコアとの相関推論に使用',
       },
       {
         // ★ Sprint 対象: LINE業務対応
