@@ -180,6 +180,15 @@ export const FEATURE_MODULES: FeatureModule[] = [
         description: '屋久島の人口・財政・SDGsデータを可視化',
       },
       {
+        // ★ Sprint #11: 人口・地域データ インポート
+        // 自治体既存CSVをドラッグ＆ドロップで取り込み、Notionに蓄積するPhase2の入口
+        id: 'gyosei-population',
+        label: '📥 人口・地域データ取込',
+        href: '/gyosei/population',
+        status: 'active',
+        description: '自治体のCSVデータをそのまま取り込み。人口・世帯・高齢化率をNotionに蓄積',
+      },
+      {
         id: 'gyosei-services',
         label: '🏘️ 住民サービス状況',
         href: '/gyosei/services',
