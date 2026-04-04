@@ -97,11 +97,14 @@ export const FEATURE_MODULES: FeatureModule[] = [
     },
     pages: [
       {
+        // ★ Notionオフロード対象: WellBeingKPI DBのフォームビューで代替可能
+        // Webページは「記録確認・AI分析連携」用に残し、
+        // 日次入力はNotionフォームで運用することを推奨
         id: 'citizen-services',
         label: '🏘️ 住民サービス状況',
         href: '/gyosei/services',
         status: 'active',
-        description: '行政サービスの稼働状況・窓口待ち時間・満足度スコアを記録しNotionに蓄積',
+        description: '行政サービスの稼働状況・窓口待ち時間・満足度スコアを記録。日次入力はNotionフォームでも可',
       },
       {
         id: 'citizen-line',
@@ -144,11 +147,14 @@ export const FEATURE_MODULES: FeatureModule[] = [
     },
     pages: [
       {
+        // ★ Notionオフロード対象: StaffCondition DBのフォームビューで代替可能
+        // Webページはスコア可視化・AI連携用に残し、
+        // 日次入力はNotionフォームで運用することを推奨
         id: 'staff-condition',
         label: '💚 職員コンディション',
         href: '/gyosei/staff',
         status: 'active',
-        description: '体調・業務負荷・チームWell-Beingを日次記録。AI顧問の推論データに活用',
+        description: '体調・業務負荷・チームWell-Beingを日次記録。入力はNotionフォームでも可・AI顧問の推論データに活用',
       },
       {
         id: 'staff-line',
@@ -234,11 +240,14 @@ export const FEATURE_MODULES: FeatureModule[] = [
         description: '4DBのデータをAIが横断分析し、SDL五軸の視点で施策提言を行うチャット',
       },
       {
+        // ★ Notionオフロード対象: NotionのCSVインポート機能で代替可能
+        // Webのドラッグ&ドロップUIは補助的に残すが、
+        // Notionの標準CSVインポートで直接PopulationData DBに取り込める
         id: 'executive-population',
         label: '📥 人口・地域データ',
         href: '/gyosei/population',
         status: 'active',
-        description: '自治体のCSVデータをNotionに蓄積。人口・世帯・高齢化率の時系列管理',
+        description: '自治体CSVをNotionに蓄積。人口・世帯・高齢化率の時系列管理（Notion標準インポートでも可）',
       },
       {
         // ★ Sprint #19: 収益・財政データ
@@ -291,11 +300,15 @@ export const FEATURE_MODULES: FeatureModule[] = [
     },
     pages: [
       {
+        // ★ Notionオフロード対象: MunicipalityProfile DBを直接編集でも代替可能
+        // AI顧問への差し込み（Layer 2）は設定内容を読むだけなので
+        // Notionで直接編集しても同じ効果が得られる。
+        // Webページは初回設定ガイド・視覚確認用として残す。
         id: 'platform-profile',
         label: '⚙️ 自治体プロフィール設定',
         href: '/gyosei/settings',
         status: 'active',
-        description: '選ぶだけでAI顧問が自治体専用の言葉に変わるLayer 2設定',
+        description: '選ぶだけでAI顧問が自治体専用の言葉に変わるLayer 2設定（Notion直接編集でも可）',
       },
       {
         id: 'platform-maturity',
