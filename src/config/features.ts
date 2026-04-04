@@ -115,12 +115,12 @@ export const FEATURE_MODULES: FeatureModule[] = [
         description: '住民からのLINE相談を一覧確認し、対応状況・回答内容をNotionに記録',
       },
       {
-        // Sprint #16 で実装予定
+        // Sprint #16 で実装完了
         id: 'citizen-touchpoint',
         label: '📍 タッチポイント記録',
         href: '/gyosei/touchpoints',
-        status: 'coming',
-        description: '窓口・LINE・訪問などの活動をNotionに蓄積・閲覧（Sprint #16）',
+        status: 'active',
+        description: '窓口・電話・訪問の接点をSDL価値共創スコアで可視化。AI顧問のRAGデータに活用',
       },
     ],
   },
