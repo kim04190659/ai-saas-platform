@@ -252,12 +252,12 @@ export const FEATURE_MODULES: FeatureModule[] = [
         description: '自治体CSVをNotionに蓄積。人口・世帯・高齢化率の時系列管理（Notion標準インポートでも可）',
       },
       {
-        // ★ Sprint #19: 収益・財政データ
+        // Sprint #17 で実装完了
         id: 'executive-revenue',
         label: '💰 収益・財政データ',
-        href: '/executive/revenue',
-        status: 'coming',
-        description: '自治体収入・予算執行データをNotionに蓄積（Sprint #19）',
+        href: '/gyosei/revenue',
+        status: 'active',
+        description: '観光・産品・宿泊など地域収益データを可視化。AI提言示唆を記録しAI顧問に供給',
       },
       {
         // ★ Sprint #17: 比較分析エンジン
