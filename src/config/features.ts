@@ -107,18 +107,20 @@ export const FEATURE_MODULES: FeatureModule[] = [
         description: '行政サービスの稼働状況・窓口待ち時間・満足度スコアを記録。日次入力はNotionフォームでも可',
       },
       {
+        // Sprint #15 で実装完了
         id: 'citizen-line',
-        label: '💬 LINE相談窓口',
-        href: '/citizen/line',
-        status: 'coming',
-        description: '住民がLINEで相談 → AIが自動応答・担当部署へ振り分け',
+        label: '💬 LINE相談管理',
+        href: '/gyosei/line-consultation',
+        status: 'active',
+        description: '住民からのLINE相談を一覧確認し、対応状況・回答内容をNotionに記録',
       },
       {
+        // Sprint #16 で実装予定
         id: 'citizen-touchpoint',
         label: '📍 タッチポイント記録',
-        href: '/citizen/touchpoint',
+        href: '/gyosei/touchpoints',
         status: 'coming',
-        description: '窓口・LINE・訪問などの活動を音声・テキストでNotionに蓄積（Sprint #20）',
+        description: '窓口・LINE・訪問などの活動をNotionに蓄積・閲覧（Sprint #16）',
       },
     ],
   },
