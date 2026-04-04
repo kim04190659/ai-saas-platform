@@ -207,6 +207,16 @@ export const FEATURE_MODULES: FeatureModule[] = [
         description: '体調・業務負荷・チームWell-Beingを記録。SDL学習スコアとの相関推論に使用',
       },
       {
+        // ★ Sprint #14.8: 自治体プロフィール設定画面（Layer 2）
+        // 選ぶだけでAI顧問が自治体専用の言葉に変わる設定画面
+        // 設定した内容は /api/ai-advisor のシステムプロンプトに差し込まれる
+        id: 'gyosei-settings',
+        label: '⚙️ プロフィール設定',
+        href: '/gyosei/settings',
+        status: 'active',
+        description: '選ぶだけでAI顧問が自治体専用の言葉に変わる設定画面（Layer 2）',
+      },
+      {
         // ★ Sprint 対象: LINE業務対応
         // LINEを通じた住民からの問い合わせ対応を効率化するAIチャット連携機能
         id: 'gyosei-line',

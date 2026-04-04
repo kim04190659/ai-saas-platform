@@ -1,17 +1,23 @@
 // =====================================================
 //  src/app/api/ai-advisor/route.ts
-//  AI Well-Being顧問 APIルート — Phase 2（Sprint #13）
+//  AI Well-Being顧問 APIルート — Phase 2 + Layer 2（Sprint #14.8）
 //
 //  ■ このファイルの役割
 //    - Notionの4つのDBから蓄積データを取得する（Phase 2強化）
 //    - 取得したデータをRAGコンテキストとしてClaude APIに渡す
 //    - SDL五軸・Well-Being視点の回答をフロントに返す
 //
-//  ■ 使用するNotionDB（Phase 2: 4DB統合）
+//  ■ 使用するNotionDB（Phase 2: 4DB統合 + Layer 2: 自治体プロフィール）
 //    1. エクセレントサービス学習ログDB（カードゲーム結果）
 //    2. RunWithプラットフォーム記録DB（IT運用診断・監視ログ）
 //    3. PopulationData DB（人口・高齢化・世帯データ）← Phase 2追加
 //    4. WellBeingKPI DB（住民サービス稼働・満足度スコア）← Phase 2追加
+//    5. MunicipalityProfile DB（自治体プロフィール）← Sprint #14.8 Layer 2追加
+//
+//  ■ Layer 2設計（Sprint #14.8の核心）
+//    自治体プロフィールをシステムプロンプトに毎回差し込むことで
+//    AI回答が「この自治体専用」の言葉になる。コード変更なしで
+//    どの自治体にも即座に対応できる汎用設計。
 // =====================================================
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -197,6 +203,73 @@ async function fetchPopulationData(): Promise<string> {
 }
 
 // =====================================================
+//  [Layer 2 / Sprint #14.8] ヘルパー関数: 自治体プロフィールを取得
+//  MunicipalityProfile DB から最新のプロフィール1件を取得し
+//  システムプロンプトへの差し込み用テキストを生成する
+// =====================================================
+
+async function fetchMunicipalityProfile(): Promise<string> {
+  const notionApiKey = process.env.NOTION_API_KEY
+
+  // MunicipalityProfile DB のID（Sprint #14.8で活用）
+  const dbId = '1488c8cb1d7346e39cb18998fa9b39c3'
+
+  try {
+    // 最新更新日時の降順で1件だけ取得
+    const res = await fetch(`https://api.notion.com/v1/databases/${dbId}/query`, {
+      method: 'POST',
+      headers: notionHeaders(notionApiKey ?? ''),
+      body: JSON.stringify({
+        page_size: 1,
+        sorts: [{ timestamp: 'last_edited_time', direction: 'descending' }],
+      }),
+    })
+
+    if (!res.ok) return '' // プロフィール未設定でもAPIは動作を継続する
+
+    const data = await res.json()
+
+    if (!data.results || data.results.length === 0) {
+      return '' // まだ設定されていない場合は空文字（デフォルトプロンプトで動作）
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const r = data.results[0] as any
+    const p = r.properties
+
+    // プロパティを取得
+    const municipalityName = p['自治体名']?.title?.[0]?.plain_text ?? ''
+    const populationSize   = p['人口規模']?.select?.name ?? ''
+    const advisorStyle     = p['AI顧問スタイル']?.select?.name ?? ''
+    const regionNote       = p['地域の特色メモ']?.rich_text?.[0]?.plain_text ?? ''
+
+    // multi_select フィールドを「、」区切りの文字列に変換
+    const mainChallenges = (p['主要課題']?.multi_select ?? [])
+      .map((o: { name: string }) => o.name).join('、')
+    const serviceAreas   = (p['重点サービス領域']?.multi_select ?? [])
+      .map((o: { name: string }) => o.name).join('、')
+    const sdlAxes        = (p['SDL強化重点軸']?.multi_select ?? [])
+      .map((o: { name: string }) => o.name).join('、')
+
+    // ─── システムプロンプトに差し込むテキストを生成 ───
+    // この文字列がAI回答を「この自治体専用」にするLayer 2の核心
+    const lines: string[] = []
+
+    if (municipalityName) lines.push(`自治体名: ${municipalityName}`)
+    if (populationSize)   lines.push(`人口規模: ${populationSize}`)
+    if (mainChallenges)   lines.push(`主要課題: ${mainChallenges}`)
+    if (serviceAreas)     lines.push(`重点サービス領域: ${serviceAreas}`)
+    if (sdlAxes)          lines.push(`SDL強化重点軸: ${sdlAxes}`)
+    if (advisorStyle)     lines.push(`AI顧問スタイル: ${advisorStyle}`)
+    if (regionNote)       lines.push(`地域の特色: ${regionNote}`)
+
+    return lines.length > 0 ? lines.join('\n') : ''
+  } catch {
+    return '' // エラー時もAPIは継続動作（プロフィールなしとして扱う）
+  }
+}
+
+// =====================================================
 //  [Phase 2] ヘルパー関数: 住民サービスKPIデータを取得
 //  Sprint #12 で蓄積した WellBeingKPI DB から取得
 // =====================================================
@@ -291,14 +364,16 @@ export async function POST(req: NextRequest) {
     const { message, conversationHistory } = await req.json()
 
     // ─────────────────────────────────────────────────
-    //  Phase 2: Notion 4DBから最新データを並列で取得
+    //  Phase 2 + Layer 2: Notion 5DBから最新データを並列で取得
     //  Promise.all で並列実行して応答速度を最大化
+    //  ★ Sprint #14.8: 自治体プロフィールを追加（5本目）
     // ─────────────────────────────────────────────────
-    const [learningLogs, platformRecords, populationData, wellBeingKPI] = await Promise.all([
-      fetchLearningLogs(),     // エクセレントサービス学習ログ
-      fetchPlatformRecords(),  // IT運用診断・監視ログ
-      fetchPopulationData(),   // 人口・地域データ（Phase 2追加）
-      fetchWellBeingKPI(),     // 住民サービスKPI（Phase 2追加）
+    const [learningLogs, platformRecords, populationData, wellBeingKPI, municipalityProfile] = await Promise.all([
+      fetchLearningLogs(),          // エクセレントサービス学習ログ
+      fetchPlatformRecords(),       // IT運用診断・監視ログ
+      fetchPopulationData(),        // 人口・地域データ（Phase 2追加）
+      fetchWellBeingKPI(),          // 住民サービスKPI（Phase 2追加）
+      fetchMunicipalityProfile(),   // 自治体プロフィール（Sprint #14.8 Layer 2追加）
     ])
 
     // ─────────────────────────────────────────────────
@@ -323,14 +398,34 @@ ${platformRecords}
 `
 
     // ─────────────────────────────────────────────────
-    //  Phase 2 システムプロンプト:
-    //  人口動態 × サービスKPI × SDL五軸 の横断分析を可能にする
-    //  「高齢化率とSDL共創軸の関係から優先施策を提言する」ような
-    //  自治体固有の文脈に根差した回答を生成させる
+    //  Layer 2 自治体プロフィールブロック（Sprint #14.8）:
+    //  プロフィールが設定されている場合のみ差し込む
+    //  「この自治体向け」という文脈を冒頭でAIに明示する
+    // ─────────────────────────────────────────────────
+    const profileBlock = municipalityProfile
+      ? `\n【この自治体のプロフィール設定（Layer 2）】\n${municipalityProfile}\n\n上記のプロフィールを踏まえ、この自治体の文脈・課題・スタイルに合わせた回答を行うこと。`
+      : ''
+
+    // AI顧問スタイルに応じた回答スタイル指示を生成する
+    // ※ プロフィールの「AI顧問スタイル」フィールドを取り出してスタイル指示に変換
+    let styleInstruction = ''
+    if (municipalityProfile.includes('提言型')) {
+      styleInstruction = '\n回答スタイル：具体的な施策提言を中心に、実行ステップを明確に示す。'
+    } else if (municipalityProfile.includes('対話型')) {
+      styleInstruction = '\n回答スタイル：対話的に質問を投げかけながら、現場の状況を引き出すように進める。'
+    } else if (municipalityProfile.includes('分析型')) {
+      styleInstruction = '\n回答スタイル：データを深く分析し、数値と根拠を丁寧に示す。'
+    }
+
+    // ─────────────────────────────────────────────────
+    //  Phase 2 + Layer 2 システムプロンプト:
+    //  人口動態 × サービスKPI × SDL五軸 の横断分析 +
+    //  自治体プロフィールによる「この自治体専用」カスタマイズ
     // ─────────────────────────────────────────────────
     const systemPrompt = `あなたは「RunWith Well-Being顧問AI」です。
 人口減少が進む日本の自治体が住民と職員双方のWell-Beingを高めながら
 持続可能な行政サービスを実現するために、データに基づいた具体的な改善提言を行う専門家AIです。
+${profileBlock}${styleInstruction}
 
 あなたの分析は、原浦龍典教授（東京大学）のService Dominant Logic（SDL）価値共創モデルの
 五軸に基づきます：
@@ -405,12 +500,13 @@ ${ragContext}`
         { role: 'assistant', content: aiReply  },
       ],
 
-      // Phase 2: 参照したデータ件数（フロントのバッジ表示に使用）
+      // Phase 2 + Layer 2: 参照したデータ件数（フロントのバッジ表示に使用）
       dataStats: {
-        learningLogLines:     learningLogs.split('\n').filter(l => l.startsWith('・')).length,
-        platformRecordLines:  platformRecords.split('\n').filter(l => l.startsWith('・')).length,
-        populationDataLines:  populationData.split('\n').filter(l => l.startsWith('・')).length,   // Phase 2追加
-        wellBeingKPILines:    wellBeingKPI.split('\n').filter(l => l.startsWith('・')).length,     // Phase 2追加
+        learningLogLines:        learningLogs.split('\n').filter(l => l.startsWith('・')).length,
+        platformRecordLines:     platformRecords.split('\n').filter(l => l.startsWith('・')).length,
+        populationDataLines:     populationData.split('\n').filter(l => l.startsWith('・')).length,   // Phase 2追加
+        wellBeingKPILines:       wellBeingKPI.split('\n').filter(l => l.startsWith('・')).length,     // Phase 2追加
+        municipalityConfigured:  municipalityProfile.length > 0,  // Sprint #14.8: プロフィール設定済みフラグ
       },
     })
 
