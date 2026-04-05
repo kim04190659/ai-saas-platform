@@ -1,23 +1,25 @@
 // =====================================================
 //  src/app/api/ai-advisor/route.ts
-//  AI Well-Being顧問 APIルート — Phase 2 + Layer 2（Sprint #14.8）
+//  AI Well-Being顧問 APIルート — Layer 3（Sprint #19）
 //
 //  ■ このファイルの役割
-//    - Notionの4つのDBから蓄積データを取得する（Phase 2強化）
+//    - NotionのDBから蓄積データを取得する（Layer 3: 7本並列）
 //    - 取得したデータをRAGコンテキストとしてClaude APIに渡す
 //    - SDL五軸・Well-Being視点の回答をフロントに返す
 //
-//  ■ 使用するNotionDB（Phase 2: 4DB統合 + Layer 2: 自治体プロフィール）
+//  ■ 使用するNotionDB（Layer 3: 7本 + 自治体プロフィール）
 //    1. エクセレントサービス学習ログDB（カードゲーム結果）
 //    2. RunWithプラットフォーム記録DB（IT運用診断・監視ログ）
-//    3. PopulationData DB（人口・高齢化・世帯データ）← Phase 2追加
-//    4. WellBeingKPI DB（住民サービス稼働・満足度スコア）← Phase 2追加
-//    5. MunicipalityProfile DB（自治体プロフィール）← Sprint #14.8 Layer 2追加
+//    3. PopulationData DB（人口・高齢化・世帯データ）
+//    4. WellBeingKPI DB（住民サービス稼働・満足度スコア）
+//    5. MunicipalityProfile DB（自治体プロフィール）← Layer 2
+//    6. 収益データDB（観光・産品・宿泊など地域収益）← Sprint #19 Layer 3追加
+//    7. 比較分析マスタDB（類似自治体ベンチマーク）← Sprint #19 Layer 3追加
 //
-//  ■ Layer 2設計（Sprint #14.8の核心）
-//    自治体プロフィールをシステムプロンプトに毎回差し込むことで
-//    AI回答が「この自治体専用」の言葉になる。コード変更なしで
-//    どの自治体にも即座に対応できる汎用設計。
+//  ■ Layer 3設計（Sprint #19の核心）
+//    収益データと類似自治体比較をRAGに加えることで、
+//    「財政的な裏付けのある提言」と「他の自治体と比べてどうか」
+//    という2軸の回答精度が大幅に向上する。
 // =====================================================
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -355,6 +357,155 @@ async function fetchWellBeingKPI(): Promise<string> {
 }
 
 // =====================================================
+//  [Layer 3 / Sprint #19] ヘルパー関数: 収益データを取得
+//  Sprint #17 で蓄積した 収益データDB から最新データを取得し
+//  「財政的な裏付けのある提言」をAIに可能にする
+// =====================================================
+
+async function fetchRevenueData(): Promise<string> {
+  const notionApiKey = process.env.NOTION_API_KEY
+
+  // 収益データDB のID（Sprint #17で活用）
+  const dbId = '00dc2b2f34ef44f78f8dd6551258a9f2'
+
+  try {
+    const res = await fetch(`https://api.notion.com/v1/databases/${dbId}/query`, {
+      method: 'POST',
+      headers: notionHeaders(notionApiKey ?? ''),
+      // 直近30件を記録日の新しい順で取得
+      body: JSON.stringify({
+        page_size: 30,
+        sorts: [{ property: '記録日', direction: 'descending' }],
+      }),
+    })
+
+    if (!res.ok) return '（収益データ取得エラー）'
+
+    const data = await res.json()
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const rows = data.results?.map((r: any) => {
+      const p = r.properties
+
+      const name         = p['データ名']?.title?.[0]?.plain_text     ?? '（名称なし）'
+      const type         = p['種別']?.select?.name                    ?? ''
+      const regionType   = p['地域タイプ']?.select?.name             ?? ''
+      const value        = p['数値']?.number                          ?? null
+      const baseValue    = p['比較基準値']?.number                    ?? null
+      const unit         = p['単位']?.rich_text?.[0]?.plain_text     ?? ''
+      const reliability  = p['信頼度']?.select?.name                  ?? ''
+      const municipality = p['自治体名']?.rich_text?.[0]?.plain_text  ?? ''
+      const period       = p['記録期間']?.rich_text?.[0]?.plain_text  ?? ''
+      const aiHint       = p['AI示唆']?.rich_text?.[0]?.plain_text    ?? ''
+
+      // 基準値乖離率を計算（値と基準値が両方ある場合）
+      let deviationStr = ''
+      if (value !== null && baseValue !== null && baseValue !== 0) {
+        const deviation = ((value - baseValue) / baseValue) * 100
+        deviationStr = ` 基準比:${deviation >= 0 ? '+' : ''}${deviation.toFixed(1)}%`
+      }
+
+      return (
+        `・[${type}]${name}` +
+        (municipality ? `（${municipality}）` : '') +
+        (regionType   ? ` 地域:${regionType}` : '') +
+        (value !== null ? ` ${value.toLocaleString()}${unit}` : '') +
+        deviationStr +
+        (period       ? ` 期間:${period}` : '') +
+        (reliability  ? ` 信頼度:${reliability}` : '') +
+        (aiHint       ? `\n  →AI示唆: ${aiHint.slice(0, 120)}` : '')
+      )
+    }) ?? []
+
+    return rows.length > 0 ? rows.join('\n') : '（収益データはまだ登録されていません）'
+  } catch {
+    return '（収益データ取得エラー）'
+  }
+}
+
+// =====================================================
+//  [Layer 3 / Sprint #19] ヘルパー関数: 類似自治体比較データを取得
+//  Sprint #18 で蓄積した 比較分析マスタDB から取得し
+//  「他の自治体と比べてどうか」という分析を可能にする
+// =====================================================
+
+async function fetchCompareData(): Promise<string> {
+  const notionApiKey = process.env.NOTION_API_KEY
+
+  // 比較分析マスタ DB のID（Sprint #18で活用）
+  const dbId = 'f209f175d6f44efb9dee02c59d893aed'
+
+  try {
+    const res = await fetch(`https://api.notion.com/v1/databases/${dbId}/query`, {
+      method: 'POST',
+      headers: notionHeaders(notionApiKey ?? ''),
+      body: JSON.stringify({
+        page_size: 50,
+        sorts: [{ property: '自治体名', direction: 'ascending' }],
+      }),
+    })
+
+    if (!res.ok) return '（比較分析データ取得エラー）'
+
+    const data = await res.json()
+
+    if (!data.results || data.results.length === 0) {
+      return '（類似自治体データはまだ登録されていません）'
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const rows = data.results.map((r: any) => {
+      const p = r.properties
+
+      const name          = p['自治体名']?.title?.[0]?.plain_text     ?? '（名称なし）'
+      const prefecture    = p['都道府県']?.rich_text?.[0]?.plain_text  ?? ''
+      const regionType    = p['地域タイプ']?.select?.name             ?? ''
+      const sizeCategory  = p['人口規模']?.select?.name               ?? ''
+      const population    = p['総人口']?.number                        ?? null
+      const elderlyRate   = p['高齢化率（%）']?.number                 ?? null
+      const fiscalStr     = p['財政力指数']?.number                    ?? null
+      const wbScore       = p['Well-Beingスコア']?.number             ?? null
+      const dxScore       = p['DX成熟度スコア']?.number               ?? null
+      const runwith       = p['RunWith導入状況']?.select?.name        ?? ''
+      // multi_select: 主要産業
+      const industries    = (p['主要産業']?.multi_select ?? [])
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .map((s: any) => s.name).join('・')
+
+      return (
+        `・${name}（${prefecture}）${regionType} ${sizeCategory}` +
+        (population   !== null ? ` 人口:${population.toLocaleString()}人` : '') +
+        (elderlyRate  !== null ? ` 高齢化率:${elderlyRate}%` : '') +
+        (fiscalStr    !== null ? ` 財政力:${fiscalStr}` : '') +
+        (wbScore      !== null ? ` WBスコア:${wbScore}` : '') +
+        (dxScore      !== null ? ` DXスコア:${dxScore}` : '') +
+        (runwith      ? ` RunWith:${runwith}` : '') +
+        (industries   ? ` 産業:${industries}` : '')
+      )
+    })
+
+    // RunWith導入済み自治体の平均WBスコアも計算してサマリに追加
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const introduced = data.results.filter((r: any) =>
+      r.properties['RunWith導入状況']?.select?.name === '導入済' &&
+      r.properties['Well-Beingスコア']?.number !== null
+    )
+    let compareSummary = ''
+    if (introduced.length > 0) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const avgWB = introduced.reduce((s: number, r: any) =>
+        s + (r.properties['Well-Beingスコア']?.number ?? 0), 0
+      ) / introduced.length
+      compareSummary = `\n■ RunWith導入済み${introduced.length}自治体の平均Well-Beingスコア: ${avgWB.toFixed(1)}点`
+    }
+
+    return rows.join('\n') + compareSummary
+  } catch {
+    return '（比較分析データ取得エラー）'
+  }
+}
+
+// =====================================================
 //  POSTハンドラ: チャットメッセージを受け取りAI回答を返す
 // =====================================================
 
@@ -364,16 +515,26 @@ export async function POST(req: NextRequest) {
     const { message, conversationHistory } = await req.json()
 
     // ─────────────────────────────────────────────────
-    //  Phase 2 + Layer 2: Notion 5DBから最新データを並列で取得
-    //  Promise.all で並列実行して応答速度を最大化
-    //  ★ Sprint #14.8: 自治体プロフィールを追加（5本目）
+    //  Layer 3（Sprint #19）: Notion 7DBから最新データを並列で取得
+    //  Promise.all で全て同時実行して応答速度を最大化
+    //  ★ Sprint #19: 収益データDB・比較分析マスタDBを追加（6・7本目）
     // ─────────────────────────────────────────────────
-    const [learningLogs, platformRecords, populationData, wellBeingKPI, municipalityProfile] = await Promise.all([
+    const [
+      learningLogs,
+      platformRecords,
+      populationData,
+      wellBeingKPI,
+      municipalityProfile,
+      revenueData,    // Sprint #19 Layer 3: 収益データ
+      compareData,    // Sprint #19 Layer 3: 類似自治体比較
+    ] = await Promise.all([
       fetchLearningLogs(),          // エクセレントサービス学習ログ
       fetchPlatformRecords(),       // IT運用診断・監視ログ
-      fetchPopulationData(),        // 人口・地域データ（Phase 2追加）
-      fetchWellBeingKPI(),          // 住民サービスKPI（Phase 2追加）
-      fetchMunicipalityProfile(),   // 自治体プロフィール（Sprint #14.8 Layer 2追加）
+      fetchPopulationData(),        // 人口・地域データ
+      fetchWellBeingKPI(),          // 住民サービスKPI
+      fetchMunicipalityProfile(),   // 自治体プロフィール（Layer 2）
+      fetchRevenueData(),           // 収益データ（Layer 3追加）
+      fetchCompareData(),           // 類似自治体比較（Layer 3追加）
     ])
 
     // ─────────────────────────────────────────────────
@@ -382,13 +543,19 @@ export async function POST(req: NextRequest) {
     //  「このデータを参照して、SDL五軸の視点で具体的な提言を行う」
     // ─────────────────────────────────────────────────
     const ragContext = `
-【この自治体のRunWithプラットフォーム蓄積データ — Phase 2（4DB統合）】
+【この自治体のRunWithプラットフォーム蓄積データ — Layer 3（7DB統合）】
 
-■ 人口・地域データ（Sprint #11蓄積）:
+■ 人口・地域データ:
 ${populationData}
 
-■ 住民サービスKPI・Well-Beingスコア（Sprint #12蓄積）:
+■ 住民サービスKPI・Well-Beingスコア:
 ${wellBeingKPI}
+
+■ 収益・財政データ（Layer 3追加 — 観光・産品・宿泊など）:
+${revenueData}
+
+■ 類似自治体ベンチマーク比較（Layer 3追加）:
+${compareData}
 
 ■ エクセレントサービス学習ログ（カードゲーム結果）:
 ${learningLogs}
@@ -435,11 +602,12 @@ ${profileBlock}${styleInstruction}
 - 統合軸：複数のサービスや知識を組み合わせているか
 - 価値軸：最終的に住民・職員の生活の質が向上しているか
 
-Phase 2強化ポイント（人口動態 × サービスKPI 横断分析）:
-- 蓄積された人口データ（高齢化率・将来推計・世帯数）とサービスKPIを紐づけて分析する
+Layer 3強化ポイント（収益データ × 類似自治体比較 の2軸追加）:
+- 蓄積された人口データ・サービスKPIに加え、収益データと類似自治体比較を横断分析する
 - 例：「高齢化率XX%という文脈では、福祉サービスのWell-Beingスコア向上が最優先」
-- 例：「人口減少トレンドを踏まえると、ITインフラの効率化でYY人の職員コスト削減が可能」
-- 数値に基づいた根拠ある提言を心がける
+- 例：「収益データを見ると観光収益が基準比+XX%で、類似自治体の平均を上回っている」
+- 例：「類似離島3自治体と比べてDX成熟度スコアがYY点低い。RunWith導入済み自治体の平均Well-BeingスコアはZZ点」
+- 財政的な裏付けと他自治体との比較を組み合わせた根拠ある提言を行う
 
 回答の原則：
 1. 必ず蓄積データを参照し「このデータによると〜」という形で数値とともに根拠を示す
@@ -500,13 +668,15 @@ ${ragContext}`
         { role: 'assistant', content: aiReply  },
       ],
 
-      // Phase 2 + Layer 2: 参照したデータ件数（フロントのバッジ表示に使用）
+      // Layer 3: 参照したデータ件数（フロントのバッジ表示に使用）
       dataStats: {
         learningLogLines:        learningLogs.split('\n').filter(l => l.startsWith('・')).length,
         platformRecordLines:     platformRecords.split('\n').filter(l => l.startsWith('・')).length,
-        populationDataLines:     populationData.split('\n').filter(l => l.startsWith('・')).length,   // Phase 2追加
-        wellBeingKPILines:       wellBeingKPI.split('\n').filter(l => l.startsWith('・')).length,     // Phase 2追加
-        municipalityConfigured:  municipalityProfile.length > 0,  // Sprint #14.8: プロフィール設定済みフラグ
+        populationDataLines:     populationData.split('\n').filter(l => l.startsWith('・')).length,
+        wellBeingKPILines:       wellBeingKPI.split('\n').filter(l => l.startsWith('・')).length,
+        municipalityConfigured:  municipalityProfile.length > 0,
+        revenueDataLines:        revenueData.split('\n').filter(l => l.startsWith('・')).length,   // Layer 3追加
+        compareDataLines:        compareData.split('\n').filter(l => l.startsWith('・')).length,   // Layer 3追加
       },
     })
 
