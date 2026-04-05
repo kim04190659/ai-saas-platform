@@ -260,12 +260,12 @@ export const FEATURE_MODULES: FeatureModule[] = [
         description: '観光・産品・宿泊など地域収益データを可視化。AI提言示唆を記録しAI顧問に供給',
       },
       {
-        // ★ Sprint #17: 比較分析エンジン
+        // Sprint #18 で実装完了
         id: 'executive-compare',
-        label: '🔍 比較分析エンジン',
-        href: '/executive/compare',
-        status: 'coming',
-        description: '類似自治体とのベンチマーク比較で施策の優先度を判断（Sprint #17）',
+        label: '🔍 類似自治体比較分析',
+        href: '/gyosei/compare',
+        status: 'active',
+        description: '類似自治体のWell-Being・DX成熟度・財政力を比較。RunWith導入効果を可視化',
       },
       {
         // ★ Sprint #21: 文書AI自動ドラフト
