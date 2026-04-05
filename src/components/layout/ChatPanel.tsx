@@ -175,7 +175,7 @@ export default function ChatPanel({
         <div>
           <div className="flex items-center gap-2">
             <Bot size={18} className="text-blue-600" />
-            <h2 className="font-semibold text-sm">AIアシスタント</h2>
+            <h2 className="font-semibold text-sm">RunWithアシスタント</h2>
           </div>
           {/* 現在のモジュール表示 — AIがどの文脈で動いているか可視化 */}
           <div className={`text-xs mt-0.5 flex items-center gap-1 ${moduleDisplay.color}`}>
@@ -209,12 +209,12 @@ export default function ChatPanel({
               {currentModule === "card-game" &&
                 "カードゲームのルール・戦略・Make or Buy の考え方について質問できます。"}
               {currentModule === "gyosei" &&
-                "屋久島町の財政・人口・Well-Being指標について質問できます。" +
+                "自治体の財政・人口・Well-Being指標について質問できます。" +
                 (gameResult ? `カードゲーム（${gameResult.grade}ランク）の学びも踏まえて回答します。` : "")}
               {currentModule === "runwith" &&
                 "IT運用管理・インシデント対応・成熟度向上について質問できます。"}
               {currentModule === "home" &&
-                "RunWithプラットフォームについて何でも質問してください。"}
+                "RunWith Platformの操作方法・仕様・設計思想について何でも質問してください。各ページの使い方や、WB・SDL・DXの考え方もお答えします。"}
             </p>
           </div>
         )}
@@ -265,7 +265,21 @@ export default function ChatPanel({
             {currentModule === "gyosei" && [
               "財政力指数0.18は低い？",
               "高齢化率を下げる施策は？",
-              gameResult ? `${gameResult.grade}ランクの学びを行政に活かすには？` : "屋久島の課題は？",
+              gameResult ? `${gameResult.grade}ランクの学びを行政に活かすには？` : "Well-Beingスコアの見方は？",
+            ].map((q) => (
+              <button
+                key={q}
+                onClick={() => setInput(q)}
+                className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 px-2 py-1 rounded-full transition-colors"
+              >
+                {q}
+              </button>
+            ))}
+            {currentModule === "home" && [
+              "職員コンディションの入力方法は？",
+              "WBスコアはどう計算する？",
+              "SDLとは何ですか？",
+              "デモの見せ方を教えて",
             ].map((q) => (
               <button
                 key={q}
