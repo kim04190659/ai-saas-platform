@@ -342,6 +342,14 @@ export const FEATURE_MODULES: FeatureModule[] = [
         status: 'active',
         description: '限界自治体の課題解決ノウハウを集積・横展開。SDL軸・カテゴリ・キーワードで横断検索',
       },
+      {
+        // Sprint #23 で実装完了
+        id: 'platform-multi-tenant',
+        label: '🌐 横展開設定',
+        href: '/runwith/multi-tenant',
+        status: 'active',
+        description: '複数自治体へのRunWith展開を管理。テナント切り替え・オンボーディング進捗確認',
+      },
     ],
   },
 ];
