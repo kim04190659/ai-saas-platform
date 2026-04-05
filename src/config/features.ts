@@ -268,12 +268,12 @@ export const FEATURE_MODULES: FeatureModule[] = [
         description: '類似自治体のWell-Being・DX成熟度・財政力を比較。RunWith導入効果を可視化',
       },
       {
-        // ★ Sprint #21: 文書AI自動ドラフト
+        // Sprint #22 で実装完了
         id: 'executive-document',
-        label: '📋 文書AI自動ドラフト',
-        href: '/executive/document',
-        status: 'coming',
-        description: '議会向け報告書・施策文書をデータからAIが自動生成（Sprint #21）',
+        label: '📋 AI政策文書生成',
+        href: '/gyosei/document-gen',
+        status: 'active',
+        description: '蓄積データをAIが横断分析し、議会向けレポート・政策提言書を自動ドラフト',
       },
     ],
   },
