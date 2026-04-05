@@ -327,12 +327,12 @@ export const FEATURE_MODULES: FeatureModule[] = [
         description: 'AWS・Azure・GCP・SalesforceをAIがリアルタイム監視',
       },
       {
-        // ★ Sprint #16: 構成管理（CMDB）
+        // Sprint #20 で実装完了
         id: 'platform-cmdb',
         label: '🗂️ 構成管理（CMDB）',
-        href: '/platform/cmdb',
-        status: 'coming',
-        description: 'IT資産・システム構成情報を登録・参照・変更履歴管理（Sprint #16）',
+        href: '/runwith/cmdb',
+        status: 'active',
+        description: 'IT資産・システム構成情報を登録・参照管理。更新期限アラートで契約更改を見逃さない',
       },
       {
         // ★ Sprint #18: 集合知ナレッジDB
