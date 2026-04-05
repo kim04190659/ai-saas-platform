@@ -162,15 +162,15 @@ export const FEATURE_MODULES: FeatureModule[] = [
         id: 'staff-line',
         label: '💬 LINE業務対応',
         href: '/staff/line',
-        status: 'coming',
-        description: '職員がLINEで住民に応答。AIがサジェスションを提示（Sprint #22）',
+        status: 'active',
+        description: '住民からのLINE相談にAIが返答案を即時生成。職員が確認・編集してNotionに保存',
       },
       {
         id: 'staff-ai-suggest',
         label: '🤖 AI窓口即時提案',
         href: '/staff/ai-suggest',
-        status: 'coming',
-        description: '窓口で住民対応中にAIがリアルタイムでサービス提案（Sprint #22）',
+        status: 'active',
+        description: '窓口で住民が相談する内容を入力すると、AIが担当課・必要書類・手続き手順を即時提案',
       },
       {
         // ── 研修カードゲーム ────────────────────────────────
