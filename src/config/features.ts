@@ -335,12 +335,12 @@ export const FEATURE_MODULES: FeatureModule[] = [
         description: 'IT資産・システム構成情報を登録・参照管理。更新期限アラートで契約更改を見逃さない',
       },
       {
-        // ★ Sprint #18: 集合知ナレッジDB
+        // Sprint #21 で実装完了
         id: 'platform-knowledge',
-        label: '🧠 集合知ナレッジDB',
-        href: '/platform/knowledge',
-        status: 'coming',
-        description: '限界自治体の課題解決ノウハウを集積・横展開（Sprint #18）',
+        label: '🧠 集合知ナレッジブラウザ',
+        href: '/runwith/knowledge',
+        status: 'active',
+        description: '限界自治体の課題解決ノウハウを集積・横展開。SDL軸・カテゴリ・キーワードで横断検索',
       },
     ],
   },
