@@ -350,6 +350,14 @@ export const FEATURE_MODULES: FeatureModule[] = [
         status: 'active',
         description: '複数自治体へのRunWith展開を管理。テナント切り替え・オンボーディング進捗確認',
       },
+      {
+        // Sprint #24 で実装完了 — オントロジー設計フレームワーク統合
+        id: 'platform-org-wizard',
+        label: '🧠 組織設計ウィザード',
+        href: '/runwith/org-wizard',
+        status: 'active',
+        description: '60分のヒアリング12問に答えるだけで8DB・9KPI・仕様書・マニュアルをNotionに自動生成。新規組織展開を大幅短縮',
+      },
     ],
   },
 ];
