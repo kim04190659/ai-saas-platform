@@ -331,6 +331,13 @@ export const FEATURE_MODULES: FeatureModule[] = [
         status: 'active',
         description: 'ナレッジベース・VoEインサイト・インシデントの3DBを統合表示。SDL五軸レーダーチャート付き',
       },
+      {
+        id: 'kirishima-roads',
+        label: '🛣️ 道路修復AI分析',
+        href: '/kirishima/roads',
+        status: 'active',
+        description: '道路台帳×気象×交通量を結合しAIが修繕優先順位を自動算出。予算配分の最適化を支援',
+      },
     ],
   },
 
