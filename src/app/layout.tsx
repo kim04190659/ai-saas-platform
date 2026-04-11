@@ -15,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AI SaaSプラットフォーム",
-  description: "生成AIを統合したWebサービス基盤",
+  title: "霧島市 RunWith | 市民Well-Being向上プラットフォーム",
+  description: "霧島市の市民満足度・職員WellBeing・KPIをリアルタイムで可視化。SDL五軸・9KPIに基づくAI政策提言プラットフォーム。",
 };
 
 export default function RootLayout({
