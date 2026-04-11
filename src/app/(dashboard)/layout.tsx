@@ -19,19 +19,15 @@ export default function DashboardLayout({
 
       <div className="flex-1 flex flex-col">
         <header className="bg-white border-b border-gray-200 p-4 flex justify-between items-center">
-          {/* 霧島市向けヘッダータイトル */}
-          <div>
-            <h2 className="text-lg font-bold text-gray-800">霧島市 RunWith</h2>
-            <p className="text-xs text-teal-600">市民Well-Being向上プラットフォーム</p>
-          </div>
+          <h2 className="text-xl font-semibold">Dashboard</h2>
           <div className="flex items-center gap-4">
             <LanguageSwitcher />
             <button
               onClick={() => setChatOpen(!chatOpen)}
-              className="flex items-center gap-2 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700"
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
             >
               <MessageSquare size={20} />
-              霧島市AIアドバイザー
+              RunWithアシスタント
             </button>
           </div>
         </header>

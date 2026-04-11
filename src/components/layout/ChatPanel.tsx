@@ -94,16 +94,16 @@ function renderInline(text: string): React.ReactNode[] {
   });
 }
 
-// 霧島市向けモジュール表示設定
+// モジュールごとの表示設定（アイコンと色）
 const MODULE_DISPLAY: Record<
   string,
   { label: string; icon: string; color: string }
 > = {
-  home:        { label: "ホーム",            icon: "🏙️", color: "text-teal-400" },
-  kirishima:   { label: "霧島市",            icon: "🏙️", color: "text-teal-400" },
-  "card-game": { label: "研修",              icon: "🎓", color: "text-cyan-400" },
-  gyosei:      { label: "行政",              icon: "🏛️", color: "text-green-400" },
-  runwith:     { label: "基盤",              icon: "🔧", color: "text-orange-400" },
+  home:       { label: "ホーム",           icon: "🏠", color: "text-blue-400" },
+  "card-game":{ label: "LOGI-TECH",        icon: "🏭", color: "text-cyan-400" },
+  gyosei:     { label: "行政OS",           icon: "🏛️", color: "text-green-400" },
+  runwith:    { label: "RunWith",          icon: "🔧", color: "text-orange-400" },
+  kirishima:  { label: "霧島市",           icon: "🏙️", color: "text-teal-400" },
 };
 
 export default function ChatPanel({
@@ -175,8 +175,8 @@ export default function ChatPanel({
       <div className="p-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
         <div>
           <div className="flex items-center gap-2">
-            <Bot size={18} className="text-teal-600" />
-            <h2 className="font-semibold text-sm text-teal-800">霧島市AIアドバイザー</h2>
+            <Bot size={18} className="text-blue-600" />
+            <h2 className="font-semibold text-sm">RunWithアシスタント</h2>
           </div>
           {/* 現在のモジュール表示 */}
           <div className={`text-xs mt-0.5 flex items-center gap-1 ${moduleDisplay.color}`}>
@@ -201,14 +201,22 @@ export default function ChatPanel({
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {/* 最初のメッセージ（挨拶） */}
         {messages.length === 0 && (
-          <div className="bg-teal-50 border border-teal-100 rounded-xl p-3 text-sm text-teal-800">
+          <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 text-sm text-blue-800">
             <p className="font-semibold mb-1">
-              🏙️ 霧島市AIアドバイザー 起動中
+              {moduleDisplay.icon} {moduleDisplay.label}モードで起動中
             </p>
-            <p className="text-xs text-teal-700 leading-relaxed">
-              霧島市のKPI・市民タッチポイント・職員WellBeing・ナレッジ活用について
-              データに基づいたアドバイスを提供します。SDL五軸・9KPIの視点から
-              具体的な改善施策をご提案します。
+            <p className="text-xs text-blue-600 leading-relaxed">
+              {currentModule === "card-game" &&
+                "カードゲームのルール・戦略・Make or Buy の考え方について質問できます。"}
+              {currentModule === "gyosei" &&
+                "自治体の財政・人口・Well-Being指標について質問できます。" +
+                (gameResult ? `カードゲーム（${gameResult.grade}ランク）の学びも踏まえて回答します。` : "")}
+              {currentModule === "runwith" &&
+                "IT運用管理・インシデント対応・成熟度向上について質問できます。"}
+              {currentModule === "kirishima" &&
+                "霧島市のKPI・市民接触・職員WellBeing・ナレッジ活用について質問できます。"}
+              {currentModule === "home" &&
+                "RunWith Platformの操作方法・仕様・設計思想について何でも質問してください。各ページの使い方や、WB・SDL・DXの考え方もお答えします。"}
             </p>
           </div>
         )}
@@ -244,17 +252,55 @@ export default function ChatPanel({
         {/* 現在のモジュールに応じたサジェスト */}
         {messages.length === 0 && (
           <div className="mb-3 flex flex-wrap gap-1">
-            {[
+            {currentModule === "card-game" && [
+              "Bランクを上げるには？",
+              "Make と Buy どちらが有利？",
+            ].map((q) => (
+              <button
+                key={q}
+                onClick={() => setInput(q)}
+                className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 px-2 py-1 rounded-full transition-colors"
+              >
+                {q}
+              </button>
+            ))}
+            {currentModule === "gyosei" && [
+              "財政力指数0.18は低い？",
+              "高齢化率を下げる施策は？",
+              gameResult ? `${gameResult.grade}ランクの学びを行政に活かすには？` : "Well-Beingスコアの見方は？",
+            ].map((q) => (
+              <button
+                key={q}
+                onClick={() => setInput(q)}
+                className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 px-2 py-1 rounded-full transition-colors"
+              >
+                {q}
+              </button>
+            ))}
+            {currentModule === "kirishima" && [
               "KPIの改善優先順位は？",
               "市民満足度を上げるには？",
               "WellBeingスコアが低い職員へのサポートは？",
-              "SDLの価値共創とは？",
               "9KPIの見方を教えて",
             ].map((q) => (
               <button
                 key={q}
                 onClick={() => setInput(q)}
                 className="text-xs bg-teal-50 hover:bg-teal-100 text-teal-700 border border-teal-200 px-2 py-1 rounded-full transition-colors"
+              >
+                {q}
+              </button>
+            ))}
+            {currentModule === "home" && [
+              "職員コンディションの入力方法は？",
+              "WBスコアはどう計算する？",
+              "SDLとは何ですか？",
+              "デモの見せ方を教えて",
+            ].map((q) => (
+              <button
+                key={q}
+                onClick={() => setInput(q)}
+                className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 px-2 py-1 rounded-full transition-colors"
               >
                 {q}
               </button>
@@ -274,13 +320,13 @@ export default function ChatPanel({
                 sendMessage();
               }
             }}
-            placeholder="霧島市の課題について質問する..."
-            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+            placeholder="AIに質問する..."
+            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           <button
             onClick={sendMessage}
             disabled={loading || !input.trim()}
-            className="px-3 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 disabled:opacity-40 transition-colors"
+            className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-40 transition-colors"
           >
             <Send size={18} />
           </button>

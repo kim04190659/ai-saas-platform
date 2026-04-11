@@ -13,11 +13,8 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Settings, ChevronDown, ChevronRight, MapPin } from 'lucide-react';
+import { Home, Settings, ChevronDown, ChevronRight, Layers, MapPin } from 'lucide-react';
 import { FEATURE_MODULES, getVisiblePages } from '@/config/features';
-
-// 霧島市向けカスタマイズ：「霧島市展開」モジュールのみ表示する
-const DISPLAY_MODULES = FEATURE_MODULES.filter((m) => m.id === 'kirishima');
 
 export default function Sidebar() {
   const pathname = usePathname();
@@ -45,13 +42,10 @@ export default function Sidebar() {
       {/* ── ロゴ ── */}
       <div className="p-4 border-b border-slate-700">
         <div className="flex items-center gap-2.5">
-          {/* 霧島市ロゴカラー：teal */}
-          <div className="w-8 h-8 rounded-lg bg-teal-600 flex items-center justify-center flex-shrink-0">
-            <MapPin size={16} className="text-white" />
-          </div>
+          <Layers size={22} className="text-slate-300 flex-shrink-0" />
           <div>
-            <h1 className="text-sm font-bold text-white leading-tight">霧島市 RunWith</h1>
-            <p className="text-xs text-teal-400 mt-0.5">市民Well-Being向上プラットフォーム</p>
+            <h1 className="text-sm font-bold text-white leading-tight">RunWith Platform</h1>
+            <p className="text-xs text-slate-400 mt-0.5">木村好孝のコンピタンス</p>
           </div>
         </div>
       </div>
@@ -73,8 +67,8 @@ export default function Sidebar() {
         {/* 区切り */}
         <div className="border-t border-slate-800 my-2" />
 
-        {/* ── モジュール一覧（霧島市向け：霧島市展開モジュールのみ表示）── */}
-        {DISPLAY_MODULES.map((mod) => {
+        {/* ── モジュール一覧（features.ts から自動生成）── */}
+        {FEATURE_MODULES.map((mod) => {
           const visiblePages = getVisiblePages(mod.id);
           const isOpen = openModules.includes(mod.id);
 
@@ -162,11 +156,10 @@ export default function Sidebar() {
 
       {/* ── フッター ── */}
       <div className="p-3 border-t border-slate-800">
-        <div className="flex items-center gap-2 px-3 py-2 text-xs text-slate-500">
-          <MapPin size={11} className="text-teal-500" />
-          <span>霧島市 × RunWith 実証</span>
+        <div className="flex items-center gap-2 px-3 py-2 text-xs text-slate-600">
+          <MapPin size={11} />
+          <span>人口減少 × AI設計</span>
         </div>
-        <div className="px-3 text-xs text-slate-700">Powered by RunWith Platform</div>
       </div>
     </div>
   );
