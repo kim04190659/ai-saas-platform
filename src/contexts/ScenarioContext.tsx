@@ -15,7 +15,7 @@ import { createContext, useContext, useState, ReactNode } from 'react';
 // ─── 型定義 ──────────────────────────────────────────────
 
 /** 現在表示中のモジュール */
-export type Module = 'home' | 'card-game' | 'gyosei' | 'runwith';
+export type Module = 'home' | 'card-game' | 'gyosei' | 'runwith' | 'kirishima';
 
 /** カードゲーム（Mission in LOGI-TECH）の結果サマリー */
 export type GameResult = {
@@ -110,6 +110,7 @@ export function ScenarioContextProvider({ children }: { children: ReactNode }) {
       'card-game': 'カードゲーム — Mission in LOGI-TECH（物流Make or Buy）',
       gyosei: '行政OS（屋久島町モデル）',
       runwith: 'RunWith（IT運用管理支援）',
+      kirishima: '霧島市 RunWith（市民Well-Being向上プラットフォーム）',
     };
 
     // ホームモードはRunWith Platform専門アシスタントとして動作
@@ -216,7 +217,6 @@ export function ScenarioContextProvider({ children }: { children: ReactNode }) {
       }
     } else if (currentModule === 'runwith') {
       lines.push('- IT運用管理、インシデント対応、成熟度向上について専門的に回答する');
-      // RunWith 成熟度診断の結果がある場合はその情報も加える
       if (runwithData) {
         lines.push('');
         lines.push('【IT運用成熟度診断の結果（直近セッション）】');
@@ -229,6 +229,10 @@ export function ScenarioContextProvider({ children }: { children: ReactNode }) {
         }
         lines.push('- ユーザーの成熟度レベルに合わせた具体的な改善提案を行う');
       }
+    } else if (currentModule === 'kirishima') {
+      lines.push('- 霧島市のKPI（E/T/L軸9指標）・市民タッチポイント・職員WellBeing・ナレッジ活用について専門的に回答する');
+      lines.push('- SDL五軸（共創・文脈・資源・統合・価値）の視点で課題を分類し、具体的な改善施策を提案する');
+      lines.push('- 短期（1ヶ月）・中期（3ヶ月）のアクションに分けて回答する');
     } else {
       lines.push('- ユーザーの質問に対してITと業務の視点から回答する');
     }
