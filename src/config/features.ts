@@ -31,7 +31,6 @@ import {
   UserCheck,
   BarChart3,
   Settings,
-  MapPin,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -275,61 +274,6 @@ export const FEATURE_MODULES: FeatureModule[] = [
         href: '/gyosei/document-gen',
         status: 'active',
         description: '蓄積データをAIが横断分析し、議会向けレポート・政策提言書を自動ドラフト',
-      },
-    ],
-  },
-
-  // ══════════════════════════════════════
-  //  🏙️ ⑤ 霧島市展開（実証モジュール）
-  //  霧島市向けNotionオントロジー連携ダッシュボード
-  //  8DB・9KPI・SDL五軸を実データで可視化
-  //  アクセントカラー: teal（ティール）
-  // ══════════════════════════════════════
-  {
-    id: 'kirishima',
-    icon: MapPin,
-    emoji: '🏙️',
-    label: '霧島市展開',
-    badge: '霧島市・実証',
-    description: '霧島市向けNotionオントロジー（8DB・9KPI）をリアルタイム可視化。KPI総合・市民接触・WellBeing・ナレッジの4視点ダッシュボード。',
-    accent: {
-      bg: 'bg-teal-50',
-      border: 'border-teal-200',
-      icon: 'bg-teal-100 text-teal-600',
-      text: 'text-teal-700',
-      badge: 'bg-teal-100 text-teal-700',
-      button: 'bg-teal-600 hover:bg-teal-700 text-white',
-      sidebarActive: 'bg-teal-600 text-white',
-      sidebarDot: 'bg-teal-400',
-    },
-    pages: [
-      {
-        id: 'kirishima-kpi',
-        label: '📊 KPI総合ダッシュボード',
-        href: '/kirishima/kpi',
-        status: 'active',
-        description: 'E軸（市民）・T軸（提供者）・L軸（責任者）の9KPIをゲージと進捗バーでリアルタイム可視化',
-      },
-      {
-        id: 'kirishima-touchpoints',
-        label: '🎯 市民接触・満足度分析',
-        href: '/kirishima/touchpoints',
-        status: 'active',
-        description: 'Notion DB02タッチポイントデータをチャネル・カテゴリ・SDL軸で多角的に分析',
-      },
-      {
-        id: 'kirishima-wellbeing',
-        label: '💚 チームWellBeing',
-        href: '/kirishima/wellbeing',
-        status: 'active',
-        description: 'Notion DB05のメンバーWBスコア・体調・業務負荷をラジアルゲージで可視化',
-      },
-      {
-        id: 'kirishima-knowledge',
-        label: '📚 ナレッジ活用状況',
-        href: '/kirishima/knowledge',
-        status: 'active',
-        description: 'ナレッジベース・VoEインサイト・インシデントの3DBを統合表示。SDL五軸レーダーチャート付き',
       },
     ],
   },
