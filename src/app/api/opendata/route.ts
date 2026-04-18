@@ -43,8 +43,9 @@ const ESTAT_API_BASE  = 'https://api.e-stat.go.jp/rest/3.0/app/json'
 // e-Stat 統計表ID: 住民基本台帳に基づく人口・人口動態・世帯数
 const ESTAT_STATS_ID  = '0003148303'
 
-// 提案書の保存先（RunWith Platform親ページ）
-const PROPOSAL_PARENT_PAGE_ID = '30e960a9-1e23-8118-aa8b-ce863fa11b44'
+// 提案書の保存先（🌱 新RunWith Platform — ワークOSインテグレーション共有済み）
+// 旧: 30e960a9-1e23-8118-aa8b-ce863fa11b44（RunWith Platform最上位ページ）
+const PROPOSAL_PARENT_PAGE_ID = '338960a9-1e23-813f-9402-f53e5240e029'
 
 // Notion DB: 自治体プロフィール（参照用）
 const MUNICIPALITY_PROFILE_DB = 'c3f85e81-a1db-4df8-8fbe-db91a5e1bed9'
@@ -301,7 +302,7 @@ export async function POST(req: NextRequest) {
 
     const aiResponse = await anthropic.messages.create({
       model:      'claude-haiku-4-5-20251001',
-      max_tokens: 2048,
+      max_tokens: 4096,
       system:     'あなたは自治体DXの専門コンサルタントです。提案書は日本語で作成してください。',
       messages:   [{ role: 'user', content: prompt }],
     })
