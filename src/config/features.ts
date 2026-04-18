@@ -420,7 +420,7 @@ export const FEATURE_MODULES: FeatureModule[] = [
         id: 'education-staff',
         label: '👩‍🏫 教職員コンディション',
         href: '/education/staff',
-        status: 'coming',
+        status: 'active',
         description: '教職員の体調・業務負荷・バーンアウトリスクを日次記録。早期サポートに活用',
       },
       {
@@ -474,7 +474,7 @@ export const FEATURE_MODULES: FeatureModule[] = [
         id: 'safety-staff',
         label: '💪 隊員コンディション',
         href: '/safety/staff',
-        status: 'coming',
+        status: 'active',
         description: '警察官・消防隊員の体調・勤務状況・ストレスレベルを管理。過重労働を早期検知',
       },
       {
@@ -528,7 +528,7 @@ export const FEATURE_MODULES: FeatureModule[] = [
         id: 'healthcare-staff',
         label: '👩‍⚕️ 医療従事者コンディション',
         href: '/healthcare/staff',
-        status: 'coming',
+        status: 'active',
         description: '医師・看護師・介護士の疲労度・充足率をモニタリング。離職リスクを早期検知',
       },
       {
