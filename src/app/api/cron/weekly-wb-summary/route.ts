@@ -139,34 +139,27 @@ async function fetchConditionRecords(
     return (data.results ?? []).map((r: any) => {
       const p = r.properties
 
-      // WBスコアを計算（保存済みの場合はそちらを使用）
-      const health   = p['体調']?.number   ?? p['healthScore']?.number   ?? 3
-      const workload = p['業務負荷']?.number ?? p['workloadScore']?.number ?? 3
-      const teamWB   = p['チームWB']?.number ?? p['teamWellBeingScore']?.number ?? 3
+      // ★ フィールド名は staff-condition POST の保存名に合わせる
+      //   体調スコア / 業務負荷スコア / チームWell-Beingスコア / wellbeing_score
+      const health   = p['体調スコア']?.number            ?? 3
+      const workload = p['業務負荷スコア']?.number         ?? 3
+      const teamWB   = p['チームWell-Beingスコア']?.number ?? 3
       const calcedWB = (health - 1) * 10 + (5 - workload) * 10 + (teamWB - 1) * 5
 
-      // 保存済みのwellbeingScoreがある場合はそちらを優先
-      const wbScore = p['wbスコア']?.number ??
-                      p['wellbeingScore']?.number ??
-                      p['WBスコア']?.number ??
-                      calcedWB
+      // wellbeing_score（アンダースコア区切り）が保存済みならそちらを優先
+      const wbScore = p['wellbeing_score']?.number ?? calcedWB
 
       return {
         id:          r.id,
-        staffName:   p['職員名']?.title?.[0]?.plain_text    ??
-                     p['staffName']?.title?.[0]?.plain_text ??
-                     p['名前']?.title?.[0]?.plain_text      ?? '（不明）',
-        department:  p['部署']?.select?.name                 ??
-                     p['department']?.rich_text?.[0]?.plain_text ?? '',
-        deptId:      p['deptId']?.rich_text?.[0]?.plain_text  ?? 'gyosei',
+        staffName:   p['職員名']?.title?.[0]?.plain_text ?? '（不明）',
+        department:  p['部署名']?.rich_text?.[0]?.plain_text ?? '',
+        deptId:      p['deptId']?.rich_text?.[0]?.plain_text ?? 'gyosei',
         wbScore:     Math.round(wbScore),
         healthScore: health,
         workload:    workload,
         teamWB:      teamWB,
-        comment:     p['コメント']?.rich_text?.[0]?.plain_text ??
-                     p['comment']?.rich_text?.[0]?.plain_text  ?? '',
-        recordDate:  p['記録日']?.date?.start ??
-                     p['recordDate']?.date?.start ?? startDate,
+        comment:     p['コメント']?.rich_text?.[0]?.plain_text ?? '',
+        recordDate:  p['記録日']?.date?.start ?? startDate,
       }
     })
   } catch (e) {
