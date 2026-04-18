@@ -251,6 +251,13 @@ export const FEATURE_MODULES: FeatureModule[] = [
         status: 'active',
         description: '蓄積データをAIが横断分析し、議会向けレポート・政策提言書を自動ドラフト',
       },
+      {
+        id: 'executive-shrink-scenario',
+        label: '🗺️ 縮小シナリオ×地区WellBeing',
+        href: '/gyosei/shrink-scenario',
+        status: 'active',
+        description: '20地区を拠点/移行/終息に分類。30年縮小ロードマップと総幸福量を町長・議会向けに可視化',
+      },
     ],
   },
 
