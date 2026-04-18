@@ -5,13 +5,22 @@
 //  ■ 役割
 //    LINEグループ（行政OS / 自治体G）に届いたメッセージを
 //    リアルタイムで処理し、住民に「AI実回答」を返信する。
-//    （Sprint #28: 定型受付文 → Notion RAG + Claude 実回答に昇格）
+//    （Sprint #28 追加: 障害通報（断水・停電等）を自動分類→担当転送）
 //
 //  ■ データフロー（Sprint #28 アップグレード後）
 //    LINE Platform（住民がメッセージ送信）
 //      ↓ Webhook POST
 //    /api/line-webhook（このファイル）
 //      ↓ 署名検証 → メッセージ抽出
+//
+//    ── 障害通報の場合（isFaultReport() が true）──
+//    classifyFault()          AIが種別・緊急度・場所を抽出
+//      ↓
+//    送信: 障害受付確認メッセージ（担当課・対応予定を含む）
+//      ↓
+//    Notion障害通報ページ保存 ＋ LINE相談ログDB保存（'障害通報'カテゴリ）
+//
+//    ── 一般相談の場合 ──
 //    searchNotionKnowledge()  Notionナレッジを検索（RAG）
 //      ↓
 //    generateAIAnswer()       Claude Haikuが200字以内で回答生成
@@ -21,24 +30,20 @@
 //    Notion LINE相談ログ DB   質問＋AI回答をセットで保存
 //
 //  ■ チャンネル別動作
-//    住民LINE → AI実回答を送信（Sprint #28）
+//    住民LINE → 障害通報: 受付確認＋Notion転送 / 一般相談: AI実回答
 //    職員LINE → 受付確認メッセージを送信（従来通り）
 //
 //  ■ 環境変数（Vercelに設定が必要）
-//    LINE_CHANNEL_SECRET      : 署名検証キー（LINE Developers Console）
+//    LINE_CHANNEL_SECRET      : 署名検証キー
 //    LINE_CHANNEL_ACCESS_TOKEN: 返信送信用トークン
-//    LINE_GYOSEI_GROUP_ID     : 行政OSグループID → チャンネル: 職員LINE
-//    LINE_JICHITAI_GROUP_ID   : 自治体GグループID → チャンネル: 住民LINE
+//    LINE_GYOSEI_GROUP_ID     : 行政OSグループID → 職員LINE
+//    LINE_JICHITAI_GROUP_ID   : 自治体GグループID → 住民LINE
 //    NOTION_API_KEY           : 設定済み
 //    ANTHROPIC_API_KEY        : 設定済み
+//    FAULT_REPORT_DB_ID       : 障害通報DB（任意・未設定でもページとして保存）
 //
 //  ■ LINE相談ログ DB ID
 //    d3c225835ec440f495bf79cd737eb862
-//
-//  ■ 署名検証の仕組み
-//    LINE Platform は HMAC-SHA256(body, channelSecret) をBase64化した値を
-//    X-Line-Signature ヘッダーに付与して送ってくる。
-//    この値を検証することで、LINEからの正規リクエストのみ処理する。
 // =====================================================
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -49,6 +54,11 @@ import {
   generateAIAnswer,
   sendLineAIAnswer,
 } from '@/lib/line-ai-answer'
+import {
+  isFaultReport,
+  classifyFault,
+  saveFaultReport,
+} from '@/lib/line-fault-classifier'
 
 // ─── 定数 ────────────────────────────────────────────
 
@@ -375,30 +385,100 @@ export async function POST(req: NextRequest) {
     const title = messageText.replace(/\n/g, ' ').slice(0, 30) +
       (messageText.length > 30 ? '…' : '')
 
-    // ── Sprint #28: チャンネル別返信処理 ──────────────────────────
+    // ── Sprint #28: チャンネル別・メッセージ種別処理 ─────────────────
     //
-    //  住民LINE → Notionナレッジ参照 + Claude AI実回答を送信
-    //  職員LINE → 従来の受付確認メッセージを送信
+    //  【優先度 高】住民LINE × 障害通報 → 自動分類・受付確認・Notion転送
+    //  【優先度 中】住民LINE × 一般相談 → Notion RAG + AI実回答
+    //  【優先度 低】職員LINE             → 受付確認メッセージ
     //
-    // ※ replyTokenは受信から30秒以内に使用しないと失効するため、
-    //   AI処理より前に並列で開始する（Promise.all で並走）
+    // ※ replyTokenは30秒以内に使用しないと失効する
 
-    let aiAnswerRaw = ''   // Notionの「回答内容」欄に保存するAI回答（フッターなし）
-    let aiAnswerSent = false  // AI回答送信の成否
+    let aiAnswerRaw  = ''
+    let aiAnswerSent = false
+    let category     = 'その他'
+    let aiResult     = ''
 
-    const isTestToken = event.replyToken === '00000000000000000000000000000000'
+    const isTestToken  = event.replyToken === '00000000000000000000000000000000'
+    const isFaultMsg   = channel === '住民LINE' && isFaultReport(messageText)
 
-    if (channel === '住民LINE' && anthropicKey && !isTestToken) {
-      // ── 住民LINE: Notion RAG + AI実回答 ──
-      // 1. Notionナレッジを検索（並列で開始）
+    if (channel === '住民LINE' && isFaultMsg && anthropicKey && !isTestToken) {
+      // ═══════════════════════════════════════════════
+      //  🚨 住民LINE × 障害通報パス
+      //  断水・停電・ガス漏れ・道路陥没など
+      // ═══════════════════════════════════════════════
+
+      // 1. AI で障害を詳細分類（種別・緊急度・場所・詳細を一括抽出）
+      const fault = await classifyFault(messageText, anthropicKey)
+
+      category = `障害通報（${fault.faultType.label}）`
+      aiResult = `担当: ${fault.faultType.dept} / 緊急度: ${fault.urgency} / 場所: ${fault.location}`
+
+      // 2. 住民へ受付確認を送信（担当課・対応方針を含む）
+      if (event.replyToken && accessToken) {
+        try {
+          const replyRes = await fetch('https://api.line.me/v2/bot/message/reply', {
+            method:  'POST',
+            headers: {
+              'Authorization': `Bearer ${accessToken}`,
+              'Content-Type':  'application/json',
+            },
+            body: JSON.stringify({
+              replyToken: event.replyToken,
+              messages:   [{ type: 'text', text: fault.replyMessage }],
+            }),
+          })
+          aiAnswerSent = replyRes.ok
+          if (!replyRes.ok) console.error('[line-webhook] 障害通報返信失敗:', replyRes.status)
+        } catch (e) {
+          console.error('[line-webhook] 障害通報返信エラー:', e)
+        }
+      }
+
+      // 3. Notionに障害通報ページを記録（公共設備管理の記録として）
+      if (notionKey) {
+        await saveFaultReport({
+          notionKey,
+          title:       fault.notionTitle,
+          detail:      fault.detail,
+          faultType:   fault.faultType,
+          urgency:     fault.urgency,
+          location:    fault.location,
+          messageText,
+          lineUserId:  userId,
+          reportedAt:  timestamp,
+        })
+      }
+
+      // 4. LINE相談ログDBにも記録（全相談の一元管理）
+      await saveToNotion({
+        notionKey,
+        title,
+        content:    messageText,
+        category,
+        channel,
+        anonymousId,
+        lineUserId: userId,
+        receivedAt: timestamp,
+        aiResult,
+        aiAnswer:   fault.replyMessage,
+      })
+
+      console.log(`[line-webhook] 🚨 障害通報: ${fault.faultType.label} / 緊急度: ${fault.urgency} / 場所: ${fault.location} | 返信: ${aiAnswerSent ? '✅' : '❌'}`)
+
+    } else if (channel === '住民LINE' && anthropicKey && !isTestToken) {
+      // ═══════════════════════════════════════════════
+      //  💬 住民LINE × 一般相談パス（RAG + AI実回答）
+      // ═══════════════════════════════════════════════
+
       const [classifyResult, knowledgeResult] = await Promise.all([
-        anthropicKey
-          ? classifyWithAI(messageText, channel, anthropicKey)
-          : Promise.resolve({ category: 'その他', aiResult: '（AIキー未設定）' }),
+        classifyWithAI(messageText, channel, anthropicKey),
         searchNotionKnowledge(messageText, notionKey),
       ])
 
-      // 2. AI回答を生成
+      category = classifyResult.category
+      aiResult = classifyResult.aiResult
+
+      // AI回答を生成
       const aiResult2 = await generateAIAnswer(
         messageText,
         knowledgeResult.context,
@@ -406,7 +486,7 @@ export async function POST(req: NextRequest) {
       )
       aiAnswerRaw = aiResult2.answerRaw
 
-      // 3. LINEに回答を送信
+      // LINEに回答を送信
       if (event.replyToken && accessToken) {
         aiAnswerSent = await sendLineAIAnswer(
           event.replyToken,
@@ -416,51 +496,59 @@ export async function POST(req: NextRequest) {
         )
       }
 
-      // AI分類とAI回答を後続処理で使えるよう変数に格納
-      var { category, aiResult } = classifyResult  // eslint-disable-line no-var
+      // Notionに保存
+      await saveToNotion({
+        notionKey,
+        title,
+        content:    messageText,
+        category,
+        channel,
+        anonymousId,
+        lineUserId: userId,
+        receivedAt: timestamp,
+        aiResult,
+        aiAnswer:   aiAnswerRaw,
+      })
 
       console.log(`[line-webhook] 住民LINE AI回答: ${aiAnswerRaw.length}字 | 送信: ${aiAnswerSent ? '✅' : '❌'} | 参照: ${aiResult2.contextUsed}`)
 
     } else {
-      // ── 職員LINE または テストトークン: 従来の受付確認メッセージ ──
+      // ═══════════════════════════════════════════════
+      //  👷 職員LINE または テストトークン
+      // ═══════════════════════════════════════════════
       if (event.replyToken && !isTestToken) {
         await sendAutoReply(event.replyToken, channel, accessToken)
       }
-      // AI分類のみ実行
       const classified = anthropicKey
         ? await classifyWithAI(messageText, channel, anthropicKey)
         : { category: 'その他', aiResult: '（AIキー未設定）' }
-      var category = classified.category  // eslint-disable-line no-var
-      var aiResult = classified.aiResult  // eslint-disable-line no-var
-    }
+      category = classified.category
+      aiResult = classified.aiResult
 
-    // Notionに保存（AI回答内容も一緒に記録）
-    const saved = notionKey
-      ? await saveToNotion({
-          notionKey,
-          title,
-          content:    messageText,
-          category,
-          channel,
-          anonymousId,
-          lineUserId: userId,
-          receivedAt: timestamp,
-          aiResult,
-          aiAnswer:   aiAnswerRaw,  // Sprint #28: AI回答をNotionにも保存
-        })
-      : null
+      await saveToNotion({
+        notionKey,
+        title,
+        content:    messageText,
+        category,
+        channel,
+        anonymousId,
+        lineUserId: userId,
+        receivedAt: timestamp,
+        aiResult,
+      })
+    }
 
     results.push({
       messageId:    event.message.id,
       channel,
       category,
       anonymousId,
-      notionPageId: saved?.id ?? null,
-      saved:        !!saved,
+      isFault:      isFaultMsg,
+      saved:        true,
       aiAnswerSent,
     })
 
-    console.log(`[line-webhook] 処理完了: ${channel} | ${category} | ${anonymousId} | Notion: ${saved?.id ?? 'NG'} | AI回答: ${aiAnswerSent ? '✅送信済' : channel === '住民LINE' ? '❌送信失敗' : '⏭️職員LINE'}`)
+    console.log(`[line-webhook] 完了: ${channel} | ${category} | ${anonymousId} | AI返信: ${aiAnswerSent ? '✅' : '⏭️'}`)
   }
 
   // LINE Platformには必ず200を返す（タイムアウト防止）

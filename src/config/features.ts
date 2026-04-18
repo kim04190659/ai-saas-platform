@@ -488,6 +488,13 @@ export const FEATURE_MODULES: FeatureModule[] = [
         status: 'active',
         description: '点検・障害データをAIが分析し、修繕優先順位・老朽化対策・予算計画を自動ドラフト',
       },
+      {
+        id: 'infrastructure-fault-reports',
+        label: '🚨 障害通報LINE受付',
+        href: '/infrastructure/fault-reports',
+        status: 'active',
+        description: '住民LINEからの断水・停電・ガス漏れ等の通報をAIが自動分類。担当課へ転送・Notionに記録',
+      },
     ],
   },
 
