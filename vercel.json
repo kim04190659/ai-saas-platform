@@ -5,12 +5,19 @@
     },
     "src/app/api/cron/weekly-wb-summary/route.ts": {
       "maxDuration": 60
+    },
+    "src/app/api/cron/risk-scoring/route.ts": {
+      "maxDuration": 60
     }
   },
   "crons": [
     {
       "path":     "/api/cron/weekly-wb-summary",
       "schedule": "0 0 * * 1"
+    },
+    {
+      "path":     "/api/cron/risk-scoring",
+      "schedule": "30 0 * * 1"
     }
   ]
 }

@@ -265,6 +265,13 @@ export const FEATURE_MODULES: FeatureModule[] = [
         status: 'active',
         description: '全5部門のコンディションを集計しAIサマリーをNotionに保存。毎週月曜9時に自動実行、手動実行も可',
       },
+      {
+        id: 'executive-risk-scoring',
+        label: '🔴 離職リスクスコアリング',
+        href: '/gyosei/risk-scoring',
+        status: 'active',
+        description: '過去4週間のWBスコア推移を職員ごとに分析。低下傾向・危険水準を自動検知しNotionにリスクレポートを保存',
+      },
     ],
   },
 
