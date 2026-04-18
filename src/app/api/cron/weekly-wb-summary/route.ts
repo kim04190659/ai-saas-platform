@@ -285,7 +285,7 @@ ${statsText}
 文体：ですます調、専門用語は最小限。数字を活用して具体的に。`
 
     const res = await anthropic.messages.create({
-      model:      'claude-sonnet-4-6',   // サマリーはSonnet（品質優先）
+      model:      'claude-haiku-4-5-20251001',  // Cron自動バッチはHaiku（コスト・速度優先）
       max_tokens: 800,
       messages:   [{ role: 'user', content: prompt }],
     })
