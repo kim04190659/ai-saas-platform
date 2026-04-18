@@ -258,6 +258,13 @@ export const FEATURE_MODULES: FeatureModule[] = [
         status: 'active',
         description: '20地区を拠点/移行/終息に分類。30年縮小ロードマップと総幸福量を町長・議会向けに可視化',
       },
+      {
+        id: 'executive-weekly-summary',
+        label: '📋 週次WBサマリー生成',
+        href: '/gyosei/weekly-summary',
+        status: 'active',
+        description: '全5部門のコンディションを集計しAIサマリーをNotionに保存。毎週月曜9時に自動実行、手動実行も可',
+      },
     ],
   },
 
