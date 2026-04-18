@@ -1,24 +1,32 @@
 // =====================================================
 //  src/app/api/line-webhook/route.ts
-//  LINE Webhook → Notion 自動連携エンジン — Sprint #26/#27
+//  LINE Webhook → AI自動回答エンジン — Sprint #26/#27/#28
 //
 //  ■ 役割
 //    LINEグループ（行政OS / 自治体G）に届いたメッセージを
-//    リアルタイムでNotionの LINE相談ログDB に自動書き込みし、
-//    住民へ自動受付メッセージを返信する。（Sprint #27追加）
+//    リアルタイムで処理し、住民に「AI実回答」を返信する。
+//    （Sprint #28: 定型受付文 → Notion RAG + Claude 実回答に昇格）
 //
-//  ■ データフロー
-//    LINE Platform（住民 or 職員がメッセージ送信）
+//  ■ データフロー（Sprint #28 アップグレード後）
+//    LINE Platform（住民がメッセージ送信）
 //      ↓ Webhook POST
 //    /api/line-webhook（このファイル）
 //      ↓ 署名検証 → メッセージ抽出
-//    Claude Haiku（相談種別を自動分類 + AI振り分け結果を生成）
+//    searchNotionKnowledge()  Notionナレッジを検索（RAG）
 //      ↓
-//    Notion LINE相談ログ DB（新規ページを作成）
+//    generateAIAnswer()       Claude Haikuが200字以内で回答生成
+//      ↓
+//    sendLineAIAnswer()       住民のLINEに実回答を送信
+//      ↓
+//    Notion LINE相談ログ DB   質問＋AI回答をセットで保存
+//
+//  ■ チャンネル別動作
+//    住民LINE → AI実回答を送信（Sprint #28）
+//    職員LINE → 受付確認メッセージを送信（従来通り）
 //
 //  ■ 環境変数（Vercelに設定が必要）
 //    LINE_CHANNEL_SECRET      : 署名検証キー（LINE Developers Console）
-//    LINE_CHANNEL_ACCESS_TOKEN: 返信送信用トークン（現在は未使用）
+//    LINE_CHANNEL_ACCESS_TOKEN: 返信送信用トークン
 //    LINE_GYOSEI_GROUP_ID     : 行政OSグループID → チャンネル: 職員LINE
 //    LINE_JICHITAI_GROUP_ID   : 自治体GグループID → チャンネル: 住民LINE
 //    NOTION_API_KEY           : 設定済み
@@ -36,6 +44,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createHmac }                from 'crypto'
 import Anthropic                     from '@anthropic-ai/sdk'
+import {
+  searchNotionKnowledge,
+  generateAIAnswer,
+  sendLineAIAnswer,
+} from '@/lib/line-ai-answer'
 
 // ─── 定数 ────────────────────────────────────────────
 
@@ -233,6 +246,7 @@ async function saveToNotion(params: {
   lineUserId:  string   // Sprint #27追加: 実際のLINEユーザーID（プッシュ返信用）
   receivedAt:  string   // ISO 8601形式
   aiResult:    string
+  aiAnswer?:   string   // Sprint #28追加: AI実回答内容（住民LINEのみ）
 }): Promise<{ id: string; url: string } | null> {
   try {
     const res = await fetch(`${NOTION_API_BASE}/pages`, {
@@ -273,9 +287,15 @@ async function saveToNotion(params: {
           'AI振り分け結果': {
             rich_text: [{ text: { content: params.aiResult } }],
           },
-          // 初期状態は「未対応」
+          // Sprint #28: AI実回答内容（住民LINEの場合のみ記録）
+          ...(params.aiAnswer ? {
+            '回答内容': {
+              rich_text: [{ text: { content: params.aiAnswer.slice(0, 2000) } }],
+            },
+          } : {}),
+          // 対応状況: AI回答を送信済みの場合は「AI回答済み」、それ以外は「未対応」
           '対応状況': {
-            select: { name: '未対応' },
+            select: { name: params.aiAnswer ? 'AI回答済み' : '未対応' },
           },
         },
       }),
@@ -355,20 +375,66 @@ export async function POST(req: NextRequest) {
     const title = messageText.replace(/\n/g, ' ').slice(0, 30) +
       (messageText.length > 30 ? '…' : '')
 
-    // ── Sprint #27: 自動受付返信を送信（replyTokenは30秒で失効するため最優先） ──
-    // Notionへの書き込みより前に実行することでタイムアウトを防ぐ
-    if (event.replyToken && event.replyToken !== '00000000000000000000000000000000') {
-      // replyToken が全0の場合はLINEのテスト送信なので返信不要
-      await sendAutoReply(event.replyToken, channel, accessToken)
+    // ── Sprint #28: チャンネル別返信処理 ──────────────────────────
+    //
+    //  住民LINE → Notionナレッジ参照 + Claude AI実回答を送信
+    //  職員LINE → 従来の受付確認メッセージを送信
+    //
+    // ※ replyTokenは受信から30秒以内に使用しないと失効するため、
+    //   AI処理より前に並列で開始する（Promise.all で並走）
+
+    let aiAnswerRaw = ''   // Notionの「回答内容」欄に保存するAI回答（フッターなし）
+    let aiAnswerSent = false  // AI回答送信の成否
+
+    const isTestToken = event.replyToken === '00000000000000000000000000000000'
+
+    if (channel === '住民LINE' && anthropicKey && !isTestToken) {
+      // ── 住民LINE: Notion RAG + AI実回答 ──
+      // 1. Notionナレッジを検索（並列で開始）
+      const [classifyResult, knowledgeResult] = await Promise.all([
+        anthropicKey
+          ? classifyWithAI(messageText, channel, anthropicKey)
+          : Promise.resolve({ category: 'その他', aiResult: '（AIキー未設定）' }),
+        searchNotionKnowledge(messageText, notionKey),
+      ])
+
+      // 2. AI回答を生成
+      const aiResult2 = await generateAIAnswer(
+        messageText,
+        knowledgeResult.context,
+        anthropicKey,
+      )
+      aiAnswerRaw = aiResult2.answerRaw
+
+      // 3. LINEに回答を送信
+      if (event.replyToken && accessToken) {
+        aiAnswerSent = await sendLineAIAnswer(
+          event.replyToken,
+          userId,
+          aiResult2.answer,
+          accessToken,
+        )
+      }
+
+      // AI分類とAI回答を後続処理で使えるよう変数に格納
+      var { category, aiResult } = classifyResult  // eslint-disable-line no-var
+
+      console.log(`[line-webhook] 住民LINE AI回答: ${aiAnswerRaw.length}字 | 送信: ${aiAnswerSent ? '✅' : '❌'} | 参照: ${aiResult2.contextUsed}`)
+
+    } else {
+      // ── 職員LINE または テストトークン: 従来の受付確認メッセージ ──
+      if (event.replyToken && !isTestToken) {
+        await sendAutoReply(event.replyToken, channel, accessToken)
+      }
+      // AI分類のみ実行
+      const classified = anthropicKey
+        ? await classifyWithAI(messageText, channel, anthropicKey)
+        : { category: 'その他', aiResult: '（AIキー未設定）' }
+      var category = classified.category  // eslint-disable-line no-var
+      var aiResult = classified.aiResult  // eslint-disable-line no-var
     }
 
-    // AI分類（Claude Haiku で高速分類）
-    const { category, aiResult } = anthropicKey
-      ? await classifyWithAI(messageText, channel, anthropicKey)
-      : { category: 'その他', aiResult: '（AIキー未設定）' }
-
-    // Notionに保存
-    // lineUserId（実際のユーザーID）を保存しておくと後で職員からプッシュ返信できる
+    // Notionに保存（AI回答内容も一緒に記録）
     const saved = notionKey
       ? await saveToNotion({
           notionKey,
@@ -377,9 +443,10 @@ export async function POST(req: NextRequest) {
           category,
           channel,
           anonymousId,
-          lineUserId: userId,    // Sprint #27: 実際のLINEユーザーID（プッシュ返信用）
+          lineUserId: userId,
           receivedAt: timestamp,
           aiResult,
+          aiAnswer:   aiAnswerRaw,  // Sprint #28: AI回答をNotionにも保存
         })
       : null
 
@@ -390,10 +457,10 @@ export async function POST(req: NextRequest) {
       anonymousId,
       notionPageId: saved?.id ?? null,
       saved:        !!saved,
-      autoReplied:  !!(event.replyToken && accessToken),
+      aiAnswerSent,
     })
 
-    console.log(`[line-webhook] 処理完了: ${channel} | ${category} | ${anonymousId} | Notion: ${saved?.id ?? 'NG'} | 自動返信: ${!!(event.replyToken && accessToken) ? '✅' : '⏭️'}`)
+    console.log(`[line-webhook] 処理完了: ${channel} | ${category} | ${anonymousId} | Notion: ${saved?.id ?? 'NG'} | AI回答: ${aiAnswerSent ? '✅送信済' : channel === '住民LINE' ? '❌送信失敗' : '⏭️職員LINE'}`)
   }
 
   // LINE Platformには必ず200を返す（タイムアウト防止）
