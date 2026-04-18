@@ -138,7 +138,7 @@ function buildPreview(template: Template, params: Record<string, string>): strin
 export function PushNotificationPanel() {
   const [activeTab,     setActiveTab]     = useState<Tab>('broadcast')
   const [selectedTpl,   setSelectedTpl]   = useState<Template>('emergency_alert')
-  const [params,        setParams]        = useState<Record<string, string>>(TEMPLATES[0].defaults)
+  const [params,        setParams]        = useState<Record<string, string>>(TEMPLATES[0].defaults as Record<string, string>)
   const [customText,    setCustomText]    = useState('')
   const [useCustom,     setUseCustom]     = useState(false)
   const [showPreview,   setShowPreview]   = useState(false)
@@ -154,7 +154,7 @@ export function PushNotificationPanel() {
   function handleTemplateChange(id: Template) {
     setSelectedTpl(id)
     const tpl = TEMPLATES.find(t => t.id === id)
-    if (tpl) setParams({ ...tpl.defaults })
+    if (tpl) setParams({ ...tpl.defaults } as Record<string, string>)
     setShowPreview(false)
     setBroadcastResult(null)
   }
