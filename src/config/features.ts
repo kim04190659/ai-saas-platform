@@ -135,6 +135,13 @@ export const FEATURE_MODULES: FeatureModule[] = [
         status: 'active',
         description: '窓口・電話・訪問の接点をSDL価値共創スコアで可視化。AI顧問のRAGデータに活用',
       },
+      {
+        id: 'citizen-push-notifications',
+        label: '🔔 住民プッシュ通知',
+        href: '/gyosei/push-notifications',
+        status: 'active',
+        description: '緊急アラート・手続き期限リマインド・行事案内をLINEで住民に先回り配信。職員が対応する前に問題を解決',
+      },
     ],
   },
 
