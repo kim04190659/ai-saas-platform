@@ -154,8 +154,8 @@ export default function StaffLinePage() {
     }
   }
 
-  // ── Notionに保存 ──
-  const handleSave = async () => {
+  // ── Notionに保存（statusを引数で指定できるように共通化） ──
+  const handleSave = async (newStatus: '対応中' | '完了' = '対応中') => {
     if (!selected || !editedReply.trim()) return
     setSaveStatus('saving')
     try {
@@ -165,7 +165,7 @@ export default function StaffLinePage() {
         body:    JSON.stringify({
           id:        selected.id,
           answer:    editedReply,
-          status:    '対応中',
+          status:    newStatus,
           staffName: staffName || selected.staffName,
         }),
       })
@@ -177,9 +177,11 @@ export default function StaffLinePage() {
         // 一覧のレコードも即時更新
         setRecords(prev => prev.map(r =>
           r.id === selected.id
-            ? { ...r, answer: editedReply, status: '対応中', staffName: staffName || r.staffName }
+            ? { ...r, answer: editedReply, status: newStatus, staffName: staffName || r.staffName }
             : r
         ))
+        // 選択中レコードのstatusも更新
+        setSelected(prev => prev ? { ...prev, status: newStatus } : prev)
         setTimeout(() => setSaveStatus('idle'), 3000)
       }
     } catch {
@@ -395,20 +397,23 @@ export default function StaffLinePage() {
                 </div>
 
                 {/* 保存ボタン */}
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 flex-wrap">
+                  {/* 対応中として保存（回答は送ったがまだ対応継続） */}
                   <button
-                    onClick={handleSave}
+                    onClick={() => handleSave('対応中')}
+                    disabled={saveStatus === 'saving' || !editedReply.trim()}
+                    className="px-5 py-2 rounded-lg bg-sky-600 text-white text-sm font-bold hover:bg-sky-700 transition-colors disabled:bg-slate-200 disabled:text-slate-400"
+                  >
+                    {saveStatus === 'saving' ? '保存中…' : '💾 対応中で保存'}
+                  </button>
+                  {/* 完了として保存（対応が終わった場合） */}
+                  <button
+                    onClick={() => handleSave('完了')}
                     disabled={saveStatus === 'saving' || !editedReply.trim()}
                     className="px-5 py-2 rounded-lg bg-emerald-600 text-white text-sm font-bold hover:bg-emerald-700 transition-colors disabled:bg-slate-200 disabled:text-slate-400"
                   >
-                    {saveStatus === 'saving' ? '保存中…' : '💾 Notionに保存'}
+                    {saveStatus === 'saving' ? '保存中…' : '✅ 完了にする'}
                   </button>
-                  {saveStatus === 'saved' && (
-                    <span className="text-sm text-emerald-600 font-medium">✅ 保存しました</span>
-                  )}
-                  {saveStatus === 'error' && (
-                    <span className="text-sm text-red-500">❌ 保存に失敗しました</span>
-                  )}
                   {editedReply && (
                     <button
                       onClick={() => navigator.clipboard.writeText(editedReply)}
@@ -418,6 +423,13 @@ export default function StaffLinePage() {
                     </button>
                   )}
                 </div>
+                {/* 保存結果メッセージ */}
+                {saveStatus === 'saved' && (
+                  <span className="text-sm text-emerald-600 font-medium">✅ 保存しました</span>
+                )}
+                {saveStatus === 'error' && (
+                  <span className="text-sm text-red-500">❌ 保存に失敗しました。もう一度お試しください</span>
+                )}
               </div>
             </>
           )}
