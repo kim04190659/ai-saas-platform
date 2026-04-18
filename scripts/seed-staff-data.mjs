@@ -123,6 +123,27 @@ async function postRecord(record) {
   }
 }
 
+// ─── Step 0: Notion DBスキーマのセットアップ ──────────────
+
+async function setupNotionSchema() {
+  console.log('\n▶ Step 0: Notion DBスキーマを確認・更新中...')
+  try {
+    const res  = await fetch(`${API_BASE}/api/setup/patch-notion-db`)
+    const json = await res.json()
+    if (json.status === 'ok') {
+      console.log(`  ✅ プロパティ追加完了: ${json.added?.join(', ')}`)
+    } else if (json.status === 'already_ok') {
+      console.log('  ✅ スキーマは設定済みです')
+    } else {
+      console.error('  ❌ スキーマ設定失敗:', json.error)
+      process.exit(1)
+    }
+  } catch (e) {
+    console.error('  ❌ スキーマ設定エラー:', e.message)
+    process.exit(1)
+  }
+}
+
 // ─── メイン処理 ───────────────────────────────────────
 
 async function main() {
@@ -132,6 +153,9 @@ async function main() {
   console.log(`  投入先: ${ENDPOINT}`)
   console.log(`  日付範囲: ${DATES[0]} 〜 ${DATES[2]}`)
   console.log(`  件数予定: 5部門 × 6人 × 3日 = 90件\n`)
+
+  // まずNotionのDBスキーマを整える
+  await setupNotionSchema()
 
   let totalOK = 0
   let totalNG = 0
