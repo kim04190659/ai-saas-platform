@@ -209,7 +209,9 @@ ${notionProfile ? `\n【自治体プロフィール（Notion）】\n${notionProf
 - 専門用語は避け、町長・議会が理解できる言葉で書く
 - 数値目標は現実的な範囲で設定する
 - SDL（サービス・ドミナント・ロジック）の考え方を自然に組み込む
-- 文体は丁寧かつ前向き`
+- 文体は丁寧かつ前向き
+- 各セクションは箇条書きを使わず簡潔な文章でまとめ、全体で3000文字以内に収める
+- 必ずセクション6まで完成させること`
 }
 
 // ─── 提案書をNotionに保存 ────────────────────────────
@@ -302,7 +304,7 @@ export async function POST(req: NextRequest) {
 
     const aiResponse = await anthropic.messages.create({
       model:      'claude-haiku-4-5-20251001',
-      max_tokens: 4096,
+      max_tokens: 8192,
       system:     'あなたは自治体DXの専門コンサルタントです。提案書は日本語で作成してください。',
       messages:   [{ role: 'user', content: prompt }],
     })
