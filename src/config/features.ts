@@ -190,6 +190,13 @@ export const FEATURE_MODULES: FeatureModule[] = [
         status: 'active',
         description: '窓口で住民が相談する内容を入力すると、AIが担当課・必要書類・手続き手順を即時提案',
       },
+      {
+        id: 'staff-document-generator',
+        label: '✨ AI文書自動起案',
+        href: '/gyosei/document-generator',
+        status: 'active',
+        description: '議事録・住民通知文・業務報告書・職員回覧をメモ入力だけでAIが起案。職員は確認・修正するだけ',
+      },
     ],
   },
 
