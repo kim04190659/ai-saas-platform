@@ -13,7 +13,7 @@
 //    - 'use client' で React Hooks（useState, useRef, useEffect）を使用
 //    - /api/ai-advisor に POST してAI回答を取得
 //    - conversationHistory を保持して会話の文脈を維持する
-//    - Phase 2: DataStats に populationDataLines / wellBeingKPILines を追加
+//    - Layer 3（Sprint #19）: DataStats に revenueDataLines / compareDataLines を追加
 // =====================================================
 
 import { useState, useRef, useEffect } from 'react'
@@ -28,38 +28,44 @@ interface Message {
 
 /** APIから返ってくるデータ件数の型 */
 interface DataStats {
-  learningLogLines: number      // 学習ログの参照件数
-  platformRecordLines: number   // プラットフォーム記録の参照件数
-  populationDataLines?: number  // Phase 2: 人口データの参照件数
-  wellBeingKPILines?: number    // Phase 2: 住民サービスKPIの参照件数
+  learningLogLines: number        // 学習ログの参照件数
+  platformRecordLines: number     // プラットフォーム記録の参照件数
+  populationDataLines?: number    // Phase 2: 人口データの参照件数
+  wellBeingKPILines?: number      // Phase 2: 住民サービスKPIの参照件数
+  municipalityConfigured?: boolean // Layer 2: 自治体プロフィール設定済み
+  revenueDataLines?: number       // Layer 3: 収益・財政データの参照件数
+  compareDataLines?: number       // Layer 3: 類似自治体比較データの参照件数
 }
 
 // ─── 定数 ────────────────────────────────────────────
 
 /**
- * サンプル質問ボタンのリスト（Phase 2: 人口データ × サービスKPI 横断分析）
+ * サンプル質問ボタンのリスト（Layer 3: 7DB統合 — 収益・比較データを含む）
  * 自治体担当者が「何を聞けばいいか」迷わないよう典型的な質問を用意
  */
 const SAMPLE_QUESTIONS = [
   '高齢化率とSDL共創軸の関係から、優先すべき施策を教えてください',
   '住民サービスのWell-Beingスコアが低いカテゴリはどこで、何が原因ですか？',
-  '人口減少トレンドを踏まえて、今後5年で見直すべきサービスを提案してください',
+  '収益データを見て、財政的に優先すべき施策を提言してください',
+  '類似自治体と比べて、この自治体のWell-Being・DX成熟度はどのレベルですか？',
+  '人口減少トレンドと収益データを合わせて、今後5年の重点戦略を教えてください',
   '蓄積データから、この自治体の強みと弱みを教えてください',
-  '職員の負担を増やさずにサービス品質を向上させるアイデアはありますか？',
-  '窓口待ち時間の改善と住民満足度向上を同時に実現する方法はありますか？',
 ]
 
-/** AIの最初のあいさつメッセージ（Phase 2: 4DB統合対応） */
+/** AIの最初のあいさつメッセージ（Layer 3: 7DB統合対応） */
 const INITIAL_MESSAGE: Message = {
   role: 'assistant',
   content:
-    'こんにちは！**RunWith Well-Being顧問AI（Phase 2）**です。\n\n' +
-    'このプラットフォームに蓄積された4種類のデータを参照して分析します：\n' +
+    'こんにちは！**RunWith Well-Being顧問AI（Layer 3）**です。\n\n' +
+    'このプラットフォームに蓄積された**7種類のデータ**を参照して分析します：\n' +
     '📊 **人口・地域データ**（高齢化率・将来推計・世帯数）\n' +
     '🏘️ **住民サービスKPI**（稼働状況・満足度・Well-Beingスコア）\n' +
+    '💰 **収益・財政データ**（観光・産品・宿泊など地域収益） ← Layer 3追加\n' +
+    '🔍 **類似自治体ベンチマーク**（Well-Being・DX・財政力比較） ← Layer 3追加\n' +
     '🎮 **カードゲーム学習ログ**（エクセレントサービス結果）\n' +
-    '📋 **IT運用診断・監視ログ**\n\n' +
-    '人口動態とサービス品質を横断した分析で、SDL五軸の視点から**自治体固有の文脈**に根差した提言をお伝えします。\n\n' +
+    '📋 **IT運用診断・監視ログ**\n' +
+    '⚙️ **自治体プロフィール設定**（Layer 2 カスタマイズ）\n\n' +
+    '収益データと類似自治体比較を加えた分析で、**財政的な裏付けのある提言**と**「他の自治体と比べてどうか」**という2軸でお答えします。\n\n' +
     'どのようなことでも気軽にご質問ください。',
 }
 
@@ -173,31 +179,51 @@ export default function AIAdvisorPage() {
                 🤖 AI Well-Being顧問
               </h1>
               <p className="text-sm text-slate-500 mt-1">
-                蓄積データをもとに、あなたの自治体のWell-Being向上を提言します
+                7DB（人口・KPI・収益・比較・学習・診断・プロフィール）を横断分析してWell-Being向上を提言
               </p>
             </div>
 
-            {/* Phase 2: データ参照状況バッジ（最初の回答後に表示、4DB対応） */}
+            {/* Layer 3: データ参照状況バッジ（最初の回答後に表示、7DB対応） */}
             {dataStats && (
               <div className="flex gap-2 flex-wrap">
-                {/* Phase 2追加: 人口データバッジ */}
                 {(dataStats.populationDataLines ?? 0) > 0 && (
                   <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
-                    📊 人口データ {dataStats.populationDataLines}件参照
+                    📊 人口 {dataStats.populationDataLines}件
                   </span>
                 )}
-                {/* Phase 2追加: 住民サービスKPIバッジ */}
                 {(dataStats.wellBeingKPILines ?? 0) > 0 && (
                   <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-purple-50 text-purple-700 border border-purple-200">
-                    🏘️ サービスKPI {dataStats.wellBeingKPILines}件参照
+                    🏘️ KPI {dataStats.wellBeingKPILines}件
                   </span>
                 )}
-                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-sky-50 text-sky-700 border border-sky-200">
-                  📚 学習ログ {dataStats.learningLogLines}件参照
-                </span>
-                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-orange-50 text-orange-700 border border-orange-200">
-                  📋 診断・監視 {dataStats.platformRecordLines}件参照
-                </span>
+                {/* Layer 3追加: 収益データバッジ */}
+                {(dataStats.revenueDataLines ?? 0) > 0 && (
+                  <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200">
+                    💰 収益 {dataStats.revenueDataLines}件
+                  </span>
+                )}
+                {/* Layer 3追加: 類似自治体比較バッジ */}
+                {(dataStats.compareDataLines ?? 0) > 0 && (
+                  <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200">
+                    🔍 比較 {dataStats.compareDataLines}件
+                  </span>
+                )}
+                {(dataStats.learningLogLines ?? 0) > 0 && (
+                  <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-sky-50 text-sky-700 border border-sky-200">
+                    📚 学習 {dataStats.learningLogLines}件
+                  </span>
+                )}
+                {(dataStats.platformRecordLines ?? 0) > 0 && (
+                  <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-orange-50 text-orange-700 border border-orange-200">
+                    📋 診断 {dataStats.platformRecordLines}件
+                  </span>
+                )}
+                {/* Layer 2: 自治体プロフィール設定済みバッジ */}
+                {dataStats.municipalityConfigured && (
+                  <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-violet-50 text-violet-700 border border-violet-200">
+                    ⚙️ プロフィール設定済
+                  </span>
+                )}
               </div>
             )}
           </div>
