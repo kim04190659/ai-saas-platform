@@ -24,7 +24,7 @@
 // ─── 型定義 ──────────────────────────────────────────────
 
 /** 部門 ID の一覧（Union 型） */
-export type DeptId = 'gyosei' | 'education' | 'safety' | 'healthcare';
+export type DeptId = 'gyosei' | 'education' | 'safety' | 'healthcare' | 'infrastructure';
 
 /** 各部門の Notion DB 設定（疎結合） */
 export type DeptNotionDbs = {
@@ -222,6 +222,44 @@ export const DEPARTMENTS: Record<DeptId, DeptConfig> = {
       { id: 'care_human',      icon: '👥', label: '介護人材確保提言',       description: '離職率改善・処遇向上に向けた施策提言',            time: '約45秒' },
       { id: 'elderly_wb_plan', icon: '👴', label: '高齢者WellBeing施策',   description: '孤独死リスク低減・生活支援充実のための施策',      time: '約35秒' },
       { id: 'care_network',    icon: '🤝', label: '地域医療連携計画',       description: '病院・診療所・介護施設の連携強化計画書',          time: '約40秒' },
+    ],
+    aiAdvisorHref: '/koumuin/ai-advisor',
+  },
+  // ══════════════════════════════
+  //  公共設備
+  // ══════════════════════════════
+  infrastructure: {
+    id:         'infrastructure',
+    name:       '公共設備',
+    fullName:   '電気・水道・ガス・道路管理',
+    emoji:      '🏗️',
+    staffLabel: '設備員',
+    unitLabel:  '管理区',
+    color: {
+      primary:  'bg-cyan-600 hover:bg-cyan-700 text-white',
+      bg:       'bg-cyan-50',
+      border:   'border-cyan-200',
+      text:     'text-cyan-700',
+      badge:    'bg-cyan-100 text-cyan-700',
+      ring:     'focus:ring-cyan-300',
+      scoreBtn: 'bg-cyan-500',
+    },
+    notionDbs: {
+      // ★ 公共設備部門専用の Notion DB を作成後、ID をここに記入
+      staffCondition: '',
+      serviceStatus:  '',
+      wellbeing:      '',
+    },
+    deptOptions: [
+      '電気設備課', '上水道課', '下水道課', 'ガス供給課',
+      '道路維持課', '公園・緑地課', '建築設備課',
+    ],
+    serviceCategories: ['電気供給', '上水道', '下水道', 'ガス供給', '道路維持', '橋梁管理'],
+    policyTemplates: [
+      { id: 'infra_report',    icon: '🏗️', label: '設備維持管理報告',       description: '電気・水道・ガス・道路の点検状況と障害件数の月次報告',  time: '約30秒' },
+      { id: 'repair_priority', icon: '🔧', label: '修繕優先順位提言',       description: '老朽化度・影響人口・緊急性を加味した修繕計画の提言',    time: '約45秒' },
+      { id: 'staff_wb_infra',  icon: '👷', label: '設備員WellBeing改善案', description: '現場作業員の労働安全・疲労管理に向けた施策提言',        time: '約35秒' },
+      { id: 'disaster_infra',  icon: '🌊', label: '災害時設備復旧計画',     description: '大規模災害発生時のライフライン復旧優先順位と手順書',    time: '約40秒' },
     ],
     aiAdvisorHref: '/koumuin/ai-advisor',
   },

@@ -417,7 +417,61 @@ export const FEATURE_MODULES: FeatureModule[] = [
   },
 
   // ══════════════════════════════════════
-  //  🌐 ⑦ 公務員連携（統合ビュー）
+  //  🏗️ ⑦ 公共設備
+  //  電気・水道・ガス・道路管理層
+  //  アクセントカラー: cyan（シアン）
+  // ══════════════════════════════════════
+  {
+    id: 'infrastructure',
+    icon: Settings,
+    emoji: '🏗️',
+    label: '公共設備',
+    badge: 'ライフライン',
+    description: '電気・水道・ガス・道路のライフライン設備を一元管理。障害記録・点検状況・老朽化分析でインフラ維持を支援する。',
+    accent: {
+      bg: 'bg-cyan-50',
+      border: 'border-cyan-200',
+      icon: 'bg-cyan-100 text-cyan-600',
+      text: 'text-cyan-700',
+      badge: 'bg-cyan-100 text-cyan-700',
+      button: 'bg-cyan-600 hover:bg-cyan-700 text-white',
+      sidebarActive: 'bg-cyan-600 text-white',
+      sidebarDot: 'bg-cyan-400',
+    },
+    pages: [
+      {
+        id: 'infrastructure-staff',
+        label: '👷 設備員コンディション',
+        href: '/infrastructure/staff',
+        status: 'active',
+        description: '電気・水道・道路担当員の体調・業務負荷を日次記録。現場安全管理に活用',
+      },
+      {
+        id: 'infrastructure-service',
+        label: '🔧 設備稼働・点検状況',
+        href: '/infrastructure/service',
+        status: 'active',
+        description: '電気・水道・ガス・道路の定期点検結果・稼働状況・老朽化度を一元把握',
+      },
+      {
+        id: 'infrastructure-incident',
+        label: '🚨 障害・緊急修繕記録',
+        href: '/infrastructure/incident',
+        status: 'active',
+        description: '停電・断水・ガス漏れ・道路陥没などの障害発生〜復旧完了を記録。影響世帯数を追跡',
+      },
+      {
+        id: 'infrastructure-policy',
+        label: '📋 AI設備維持管理提言',
+        href: '/infrastructure/policy',
+        status: 'active',
+        description: '点検・障害データをAIが分析し、修繕優先順位・老朽化対策・予算計画を自動ドラフト',
+      },
+    ],
+  },
+
+  // ══════════════════════════════════════
+  //  🌐 ⑧ 公務員連携（統合ビュー）
   //  自治体職員・教育・警察消防・医療介護を横断し
   //  「縮んでいく街を公務員全体で支える」モデルを可視化
   //  アクセントカラー: indigo（藍）
