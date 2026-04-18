@@ -176,10 +176,9 @@ export async function GET(req: NextRequest) {
       const retryData = await retryRes.json()
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const allRecords = retryData.results?.map((r: any) => mapNotionRecord(r)) ?? []
-      // JS 側で deptId フィルタ（deptId プロパティがある場合のみ絞り込み）
-      const filtered = allRecords.filter((r: { deptId?: string }) =>
-        !r.deptId || r.deptId === deptId
-      )
+      // deptId が完全一致するレコードのみ。未設定（古いデータ）は非表示。
+      const filtered = allRecords.filter((r: { deptId?: string }) => r.deptId === deptId)
+      // 一致するレコードがなければ部署別サンプルデータにフォールバック
       const records = filtered.length > 0 ? filtered : (SAMPLE_DATA[deptId] ?? SAMPLE_DATA['gyosei'])
       return NextResponse.json({ records, summary: buildSummary(records), source: filtered.length > 0 ? 'notion' : 'sample' })
     }
