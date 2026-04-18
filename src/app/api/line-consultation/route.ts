@@ -37,7 +37,8 @@ interface ConsultationRecord {
   staffName:       string   // 担当職員名
   department:      string   // 担当部署
   aiResult:        string   // AI振り分け結果
-  anonymousId:     string   // 匿名ID
+  anonymousId:     string   // 匿名ID（ハッシュ化済み、表示用）
+  lineUserId:      string   // Sprint #27追加: 実際のLINEユーザーID（プッシュ返信用）
   receivedAt:      string   // 受信日時
   satisfaction:    number   // 住民満足度
 }
@@ -109,7 +110,7 @@ export async function GET(req: NextRequest) {
       const p = r.properties
       return {
         id:           r.id,
-        title:        p['相談タイトル']?.title?.[0]?.plain_text   ?? '（タイトルなし）',
+        title:        p['相談タイトル']?.title?.[0]?.plain_text    ?? '（タイトルなし）',
         content:      p['相談内容']?.rich_text?.[0]?.plain_text    ?? '',
         category:     p['相談種別']?.select?.name                  ?? '',
         channel:      p['チャンネル']?.select?.name                ?? '',
@@ -119,6 +120,8 @@ export async function GET(req: NextRequest) {
         department:   p['担当部署']?.select?.name                  ?? '',
         aiResult:     p['AI振り分け結果']?.rich_text?.[0]?.plain_text ?? '',
         anonymousId:  p['匿名ID']?.rich_text?.[0]?.plain_text      ?? '',
+        // Sprint #27: 実際のLINEユーザーID（職員からのプッシュ返信に使用）
+        lineUserId:   p['LINE_UserID']?.rich_text?.[0]?.plain_text ?? '',
         receivedAt:   p['受信日時']?.date?.start                   ?? '',
         satisfaction: p['住民満足度']?.number                      ?? 0,
       }

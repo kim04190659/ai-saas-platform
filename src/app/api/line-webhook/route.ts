@@ -1,10 +1,11 @@
 // =====================================================
 //  src/app/api/line-webhook/route.ts
-//  LINE Webhook → Notion 自動連携エンジン — Sprint #26
+//  LINE Webhook → Notion 自動連携エンジン — Sprint #26/#27
 //
 //  ■ 役割
 //    LINEグループ（行政OS / 自治体G）に届いたメッセージを
-//    リアルタイムでNotionの LINE相談ログDB に自動書き込みする。
+//    リアルタイムでNotionの LINE相談ログDB に自動書き込みし、
+//    住民へ自動受付メッセージを返信する。（Sprint #27追加）
 //
 //  ■ データフロー
 //    LINE Platform（住民 or 職員がメッセージ送信）
@@ -71,6 +72,51 @@ function notionHeaders(apiKey: string): Record<string, string> {
     'Authorization':  `Bearer ${apiKey}`,
     'Content-Type':   'application/json',
     'Notion-Version': NOTION_VERSION,
+  }
+}
+
+// LINE Messaging API エンドポイント
+const LINE_API_REPLY = 'https://api.line.me/v2/bot/message/reply'
+
+// 住民向け自動受付メッセージ（チャンネル別）
+const AUTO_REPLY_CITIZEN  = 'ご相談をお受けしました。担当者が内容を確認の上、ご連絡いたします。しばらくお待ちください。（屋久島町）'
+const AUTO_REPLY_STAFF    = '【RunWith】メッセージを受け付けました。Webシステムで内容を確認してください。'
+
+/**
+ * LINE Messaging APIで自動受付メッセージを返信する。
+ * replyToken は受信から30秒以内にしか使えない（Webhook直後に呼ぶこと）。
+ */
+async function sendAutoReply(
+  replyToken: string,
+  channel:    '住民LINE' | '職員LINE',
+  accessToken: string,
+): Promise<void> {
+  // アクセストークン未設定の場合はスキップ（開発中）
+  if (!accessToken) {
+    console.warn('[line-webhook] LINE_CHANNEL_ACCESS_TOKEN 未設定 — 自動返信をスキップ')
+    return
+  }
+  try {
+    const text = channel === '住民LINE' ? AUTO_REPLY_CITIZEN : AUTO_REPLY_STAFF
+    const res = await fetch(LINE_API_REPLY, {
+      method:  'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type':  'application/json',
+      },
+      body: JSON.stringify({
+        replyToken,
+        messages: [{ type: 'text', text }],
+      }),
+    })
+    if (!res.ok) {
+      const errText = await res.text()
+      console.error('[line-webhook] 自動返信失敗:', res.status, errText)
+    } else {
+      console.log(`[line-webhook] 自動返信成功: ${channel}`)
+    }
+  } catch (e) {
+    console.error('[line-webhook] 自動返信エラー:', e)
   }
 }
 
@@ -173,6 +219,9 @@ ${messageText}
 /**
  * LINE相談ログDBに新規ページを作成する。
  * 1通のLINEメッセージが1件のNotionレコードになる。
+ *
+ * lineUserId: 実際のLINEユーザーID（職員からの返信に必要）
+ *             Notionの LINE_UserID フィールドに保存する
  */
 async function saveToNotion(params: {
   notionKey:   string
@@ -181,6 +230,7 @@ async function saveToNotion(params: {
   category:    string
   channel:     '住民LINE' | '職員LINE'
   anonymousId: string
+  lineUserId:  string   // Sprint #27追加: 実際のLINEユーザーID（プッシュ返信用）
   receivedAt:  string   // ISO 8601形式
   aiResult:    string
 }): Promise<{ id: string; url: string } | null> {
@@ -211,9 +261,13 @@ async function saveToNotion(params: {
           '受信日時': {
             date: { start: params.receivedAt },
           },
-          // ハッシュ化した匿名ユーザーID
+          // ハッシュ化した匿名ユーザーID（表示用）
           '匿名ID': {
             rich_text: [{ text: { content: params.anonymousId } }],
+          },
+          // 実際のLINEユーザーID（職員からの返信送信に使用）
+          'LINE_UserID': {
+            rich_text: [{ text: { content: params.lineUserId } }],
           },
           // AIによる振り分けコメント
           'AI振り分け結果': {
@@ -244,9 +298,11 @@ async function saveToNotion(params: {
 // ─── POST ハンドラ（LINE Webhookの受け口） ─────────────
 
 export async function POST(req: NextRequest) {
-  const notionKey    = process.env.NOTION_API_KEY        ?? ''
-  const anthropicKey = process.env.ANTHROPIC_API_KEY     ?? ''
-  const channelSecret = process.env.LINE_CHANNEL_SECRET  ?? ''
+  const notionKey     = process.env.NOTION_API_KEY             ?? ''
+  const anthropicKey  = process.env.ANTHROPIC_API_KEY          ?? ''
+  const channelSecret = process.env.LINE_CHANNEL_SECRET        ?? ''
+  // Sprint #27: 自動返信に使用するアクセストークン
+  const accessToken   = process.env.LINE_CHANNEL_ACCESS_TOKEN  ?? ''
 
   // ── 1. リクエストボディを取得（署名検証に生テキストが必要） ──
   const rawBody = await req.text()
@@ -292,12 +348,19 @@ export async function POST(req: NextRequest) {
     // グループIDからチャンネル種別を判定
     const channel     = detectChannel(groupId)
 
-    // ユーザーIDを匿名IDに変換
+    // ユーザーIDを匿名IDに変換（表示用）
     const anonymousId = toAnonymousId(userId)
 
     // 相談タイトル = 先頭30文字（改行は除去）
     const title = messageText.replace(/\n/g, ' ').slice(0, 30) +
       (messageText.length > 30 ? '…' : '')
+
+    // ── Sprint #27: 自動受付返信を送信（replyTokenは30秒で失効するため最優先） ──
+    // Notionへの書き込みより前に実行することでタイムアウトを防ぐ
+    if (event.replyToken && event.replyToken !== '00000000000000000000000000000000') {
+      // replyToken が全0の場合はLINEのテスト送信なので返信不要
+      await sendAutoReply(event.replyToken, channel, accessToken)
+    }
 
     // AI分類（Claude Haiku で高速分類）
     const { category, aiResult } = anthropicKey
@@ -305,29 +368,32 @@ export async function POST(req: NextRequest) {
       : { category: 'その他', aiResult: '（AIキー未設定）' }
 
     // Notionに保存
+    // lineUserId（実際のユーザーID）を保存しておくと後で職員からプッシュ返信できる
     const saved = notionKey
       ? await saveToNotion({
           notionKey,
           title,
-          content:     messageText,
+          content:    messageText,
           category,
           channel,
           anonymousId,
-          receivedAt:  timestamp,
+          lineUserId: userId,    // Sprint #27: 実際のLINEユーザーID（プッシュ返信用）
+          receivedAt: timestamp,
           aiResult,
         })
       : null
 
     results.push({
-      messageId:   event.message.id,
+      messageId:    event.message.id,
       channel,
       category,
       anonymousId,
       notionPageId: saved?.id ?? null,
       saved:        !!saved,
+      autoReplied:  !!(event.replyToken && accessToken),
     })
 
-    console.log(`[line-webhook] 保存完了: ${channel} | ${category} | ${anonymousId} | Notion: ${saved?.id ?? 'NG'}`)
+    console.log(`[line-webhook] 処理完了: ${channel} | ${category} | ${anonymousId} | Notion: ${saved?.id ?? 'NG'} | 自動返信: ${!!(event.replyToken && accessToken) ? '✅' : '⏭️'}`)
   }
 
   // LINE Platformには必ず200を返す（タイムアウト防止）

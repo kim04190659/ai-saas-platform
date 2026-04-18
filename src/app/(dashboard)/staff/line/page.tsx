@@ -36,6 +36,7 @@ interface ConsultationRecord {
   department:   string
   aiResult:     string
   anonymousId:  string
+  lineUserId:   string   // Sprint #27追加: 実際のLINEユーザーID（プッシュ返信用）
   receivedAt:   string
   satisfaction: number
 }
@@ -86,11 +87,13 @@ export default function StaffLinePage() {
   const [selected,     setSelected]     = useState<ConsultationRecord | null>(null)
 
   // ── 対応パネルの状態 ──
-  const [aiReply,      setAiReply]      = useState('')      // AI生成の返答案
-  const [editedReply,  setEditedReply]  = useState('')      // 職員が編集した返答
-  const [generating,   setGenerating]   = useState(false)   // AI生成中フラグ
-  const [staffName,    setStaffName]    = useState('')      // 担当者名
-  const [saveStatus,   setSaveStatus]   = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
+  const [aiReply,       setAiReply]       = useState('')      // AI生成の返答案
+  const [editedReply,   setEditedReply]   = useState('')      // 職員が編集した返答
+  const [generating,    setGenerating]    = useState(false)   // AI生成中フラグ
+  const [staffName,     setStaffName]     = useState('')      // 担当者名
+  const [saveStatus,    setSaveStatus]    = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
+  // Sprint #27: LINEへの返信送信状態
+  const [lineReplyStatus, setLineReplyStatus] = useState<'idle' | 'sending' | 'sent' | 'error' | 'no_user_id'>('idle')
 
   // ── データ取得 ──
   const fetchRecords = useCallback(async (statusFilter?: string) => {
@@ -119,6 +122,7 @@ export default function StaffLinePage() {
     setAiReply('')
     setEditedReply(record.answer || '')
     setSaveStatus('idle')
+    setLineReplyStatus('idle')
   }
 
   // ── AI返答案を生成 ──
@@ -186,6 +190,44 @@ export default function StaffLinePage() {
       }
     } catch {
       setSaveStatus('error')
+    }
+  }
+
+  // ── Sprint #27: LINEに直接プッシュ返信 ──
+  // 編集済みの返答内容を住民のLINEに送信する
+  const handleLineReply = async () => {
+    if (!selected || !editedReply.trim()) return
+
+    // lineUserId が記録されていない相談には送れない
+    // （Sprint #26以前に記録されたデータや、LINE設定前のデータ）
+    if (!selected.lineUserId) {
+      setLineReplyStatus('no_user_id')
+      setTimeout(() => setLineReplyStatus('idle'), 5000)
+      return
+    }
+
+    setLineReplyStatus('sending')
+    try {
+      const res = await fetch('/api/line-reply', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({
+          lineUserId: selected.lineUserId,
+          message:    editedReply,
+        }),
+      })
+      const data = await res.json()
+      if (data.error) {
+        console.error('[LINE返信エラー]', data.error)
+        setLineReplyStatus('error')
+      } else {
+        setLineReplyStatus('sent')
+        // 送信成功後、自動的に「完了」に更新する（オプション: 職員判断で変更可）
+        setTimeout(() => setLineReplyStatus('idle'), 5000)
+      }
+    } catch {
+      setLineReplyStatus('error')
+      setTimeout(() => setLineReplyStatus('idle'), 5000)
     }
   }
 
@@ -430,6 +472,60 @@ export default function StaffLinePage() {
                 {saveStatus === 'error' && (
                   <span className="text-sm text-red-500">❌ 保存に失敗しました。もう一度お試しください</span>
                 )}
+
+                {/* ── Sprint #27: LINEに直接返信ボタン ── */}
+                <div className="border-t border-slate-100 pt-3 mt-1">
+                  <p className="text-xs text-slate-500 mb-2">
+                    📱 <strong>LINEに直接返信</strong>
+                    <span className="ml-1 font-normal">— 上記の返答内容を住民のLINEに送信します</span>
+                  </p>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <button
+                      onClick={handleLineReply}
+                      disabled={
+                        lineReplyStatus === 'sending' ||
+                        !editedReply.trim() ||
+                        lineReplyStatus === 'sent'
+                      }
+                      className="px-5 py-2 rounded-lg bg-green-600 text-white text-sm font-bold hover:bg-green-700 transition-colors disabled:bg-slate-200 disabled:text-slate-400 flex items-center gap-1.5"
+                    >
+                      {lineReplyStatus === 'sending' ? (
+                        <>
+                          <span className="inline-block w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          送信中…
+                        </>
+                      ) : lineReplyStatus === 'sent' ? (
+                        <>✅ 送信済み</>
+                      ) : (
+                        <>📱 LINEに返信</>
+                      )}
+                    </button>
+
+                    {/* lineUserId が無い場合の注意書き */}
+                    {!selected.lineUserId && (
+                      <span className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-1.5">
+                        ⚠️ このレコードにLINEユーザーIDが記録されていません（LINE設定前のデータ）
+                      </span>
+                    )}
+                  </div>
+
+                  {/* LINE返信の結果メッセージ */}
+                  {lineReplyStatus === 'sent' && (
+                    <div className="mt-2 bg-green-50 border border-green-200 rounded-lg px-3 py-2">
+                      <span className="text-sm text-green-700 font-medium">✅ 住民のLINEに返信を送信しました</span>
+                    </div>
+                  )}
+                  {lineReplyStatus === 'error' && (
+                    <div className="mt-2 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                      <span className="text-sm text-red-600">❌ LINE返信の送信に失敗しました。しばらくしてから再試行してください</span>
+                    </div>
+                  )}
+                  {lineReplyStatus === 'no_user_id' && (
+                    <div className="mt-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                      <span className="text-sm text-amber-700">⚠️ LINEユーザーIDが記録されていないため返信できません。LINE Webhookで受信したメッセージのみ返信可能です</span>
+                    </div>
+                  )}
+                </div>
               </div>
             </>
           )}
