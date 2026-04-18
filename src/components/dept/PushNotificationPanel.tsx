@@ -113,6 +113,16 @@ const SEASONAL_SERVICES: Record<string, string[]> = {
   '冬': ['暖房費支援制度（11〜2月）', '流感予防接種助成', '年末年始の緊急相談窓口'],
 }
 
+// ─── デフォルトパラメータを Record<string,string> に変換 ──
+// TEMPLATES の defaults は各テンプレート固有のキーしか持たないため、
+// TypeScript が undefined を含むユニオン型に推論する。
+// Object.fromEntries で undefined を除いた安全な Record を作る。
+function toParams(defaults: Record<string, string | undefined>): Record<string, string> {
+  return Object.fromEntries(
+    Object.entries(defaults).filter((entry): entry is [string, string] => entry[1] !== undefined)
+  )
+}
+
 // ─── メッセージプレビュー生成（フロント側） ───────────────
 
 function buildPreview(template: Template, params: Record<string, string>): string {
@@ -138,7 +148,7 @@ function buildPreview(template: Template, params: Record<string, string>): strin
 export function PushNotificationPanel() {
   const [activeTab,     setActiveTab]     = useState<Tab>('broadcast')
   const [selectedTpl,   setSelectedTpl]   = useState<Template>('emergency_alert')
-  const [params,        setParams]        = useState<Record<string, string>>(TEMPLATES[0].defaults as Record<string, string>)
+  const [params,        setParams]        = useState<Record<string, string>>(toParams(TEMPLATES[0].defaults))
   const [customText,    setCustomText]    = useState('')
   const [useCustom,     setUseCustom]     = useState(false)
   const [showPreview,   setShowPreview]   = useState(false)
@@ -154,7 +164,7 @@ export function PushNotificationPanel() {
   function handleTemplateChange(id: Template) {
     setSelectedTpl(id)
     const tpl = TEMPLATES.find(t => t.id === id)
-    if (tpl) setParams({ ...tpl.defaults } as Record<string, string>)
+    if (tpl) setParams(toParams(tpl.defaults))
     setShowPreview(false)
     setBroadcastResult(null)
   }
