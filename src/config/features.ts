@@ -32,6 +32,10 @@ import {
   BarChart3,
   Settings,
   MapPin,
+  GraduationCap,
+  Shield,
+  Heart,
+  Globe,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -337,6 +341,216 @@ export const FEATURE_MODULES: FeatureModule[] = [
         href: '/kirishima/roads',
         status: 'active',
         description: '道路台帳×気象×交通量を結合しAIが修繕優先順位を自動算出。予算配分の最適化を支援',
+      },
+    ],
+  },
+
+  // ══════════════════════════════════════
+  //  🌐 ⑥ 公務員連携（統合ビュー）
+  //  自治体職員・教育・警察消防・医療介護を横断し
+  //  「縮んでいく街を公務員全体で支える」モデルを可視化
+  //  アクセントカラー: indigo（藍）
+  // ══════════════════════════════════════
+  {
+    id: 'koumuin',
+    icon: Globe,
+    emoji: '🌐',
+    label: '公務員連携',
+    badge: '部門横断',
+    description: '縮んでいく自治体を公務員全体で支える。行政・教育・警察消防・医療介護の全部門WellBeingを一画面で俯瞰し、AI が横断提言を行う。',
+    accent: {
+      bg: 'bg-indigo-50',
+      border: 'border-indigo-200',
+      icon: 'bg-indigo-100 text-indigo-600',
+      text: 'text-indigo-700',
+      badge: 'bg-indigo-100 text-indigo-700',
+      button: 'bg-indigo-600 hover:bg-indigo-700 text-white',
+      sidebarActive: 'bg-indigo-600 text-white',
+      sidebarDot: 'bg-indigo-400',
+    },
+    pages: [
+      {
+        id: 'koumuin-dashboard',
+        label: '🌐 全部門 統合ダッシュボード',
+        href: '/koumuin/dashboard',
+        status: 'active',
+        description: '行政・教育・警察消防・医療介護の全公務員WellBeingを一画面で俯瞰。街全体の支援力を可視化',
+      },
+      {
+        id: 'koumuin-ai-advisor',
+        label: '🤖 AI 全体最適化提言',
+        href: '/koumuin/ai-advisor',
+        status: 'coming',
+        description: '全部門データをAIが横断分析し、人員配置・連携強化ポイントを提言',
+      },
+      {
+        id: 'koumuin-cross-issue',
+        label: '🔄 部門横断 課題連携',
+        href: '/koumuin/cross-issue',
+        status: 'coming',
+        description: '部門をまたぐ課題（高齢者・子育て・障害者等）を一元管理し、担当部門が連携して解決',
+      },
+    ],
+  },
+
+  // ══════════════════════════════════════
+  //  🏫 ⑦ 教育
+  //  学校・教職員支援層
+  //  アクセントカラー: blue（青）
+  // ══════════════════════════════════════
+  {
+    id: 'education',
+    icon: GraduationCap,
+    emoji: '🏫',
+    label: '教育',
+    badge: '学校・教職員',
+    description: '教職員のコンディション管理から児童・生徒のWell-Being把握、AI教育政策提言まで。学校現場のDXを支援する。',
+    accent: {
+      bg: 'bg-blue-50',
+      border: 'border-blue-200',
+      icon: 'bg-blue-100 text-blue-600',
+      text: 'text-blue-700',
+      badge: 'bg-blue-100 text-blue-700',
+      button: 'bg-blue-600 hover:bg-blue-700 text-white',
+      sidebarActive: 'bg-blue-600 text-white',
+      sidebarDot: 'bg-blue-400',
+    },
+    pages: [
+      {
+        id: 'education-staff',
+        label: '👩‍🏫 教職員コンディション',
+        href: '/education/staff',
+        status: 'coming',
+        description: '教職員の体調・業務負荷・バーンアウトリスクを日次記録。早期サポートに活用',
+      },
+      {
+        id: 'education-student-wellbeing',
+        label: '👦 児童・生徒WellBeing',
+        href: '/education/student-wellbeing',
+        status: 'coming',
+        description: '学校生活満足度・不登校リスク・いじめ兆候をAIが早期検知',
+      },
+      {
+        id: 'education-service',
+        label: '🏫 学校サービス状況',
+        href: '/education/service',
+        status: 'coming',
+        description: '各校の行事・給食・授業進捗・施設状況を一元把握',
+      },
+      {
+        id: 'education-policy',
+        label: '📋 AI教育政策提言',
+        href: '/education/policy',
+        status: 'coming',
+        description: '学力・出席・WellBeingデータをAIが分析し、教育委員会向け政策案を自動ドラフト',
+      },
+    ],
+  },
+
+  // ══════════════════════════════════════
+  //  👮 ⑧ 警察・消防
+  //  地域安全・防災支援層
+  //  アクセントカラー: amber（琥珀）
+  // ══════════════════════════════════════
+  {
+    id: 'safety',
+    icon: Shield,
+    emoji: '👮',
+    label: '警察・消防',
+    badge: '安全・防災',
+    description: '隊員のコンディション管理から出動記録・地域安全ダッシュボードまで。限られた人員で地域の安全を守る。',
+    accent: {
+      bg: 'bg-amber-50',
+      border: 'border-amber-200',
+      icon: 'bg-amber-100 text-amber-600',
+      text: 'text-amber-700',
+      badge: 'bg-amber-100 text-amber-700',
+      button: 'bg-amber-600 hover:bg-amber-700 text-white',
+      sidebarActive: 'bg-amber-600 text-white',
+      sidebarDot: 'bg-amber-400',
+    },
+    pages: [
+      {
+        id: 'safety-staff',
+        label: '💪 隊員コンディション',
+        href: '/safety/staff',
+        status: 'coming',
+        description: '警察官・消防隊員の体調・勤務状況・ストレスレベルを管理。過重労働を早期検知',
+      },
+      {
+        id: 'safety-incident',
+        label: '🚨 インシデント・出動記録',
+        href: '/safety/incident',
+        status: 'coming',
+        description: '事件・事故・火災・救急出動を記録。AIがパターン分析し予防策を提言',
+      },
+      {
+        id: 'safety-dashboard',
+        label: '🛡️ 地域安全ダッシュボード',
+        href: '/safety/dashboard',
+        status: 'coming',
+        description: '犯罪・火災・救急出動件数の時系列推移と地域マップを可視化',
+      },
+      {
+        id: 'safety-disaster',
+        label: '🌊 防災・避難情報管理',
+        href: '/safety/disaster',
+        status: 'coming',
+        description: '災害発生時の避難所開設状況・要支援者リスト・物資管理を一元管理',
+      },
+    ],
+  },
+
+  // ══════════════════════════════════════
+  //  🏥 ⑨ 医療・介護
+  //  高齢化社会を支える医療・福祉層
+  //  アクセントカラー: rose（薔薇）
+  // ══════════════════════════════════════
+  {
+    id: 'healthcare',
+    icon: Heart,
+    emoji: '🏥',
+    label: '医療・介護',
+    badge: '医療・福祉',
+    description: '医療従事者・介護士のコンディション管理から高齢者WellBeingモニタリングまで。縮んでいく自治体で増え続ける医療・介護ニーズに対応する。',
+    accent: {
+      bg: 'bg-rose-50',
+      border: 'border-rose-200',
+      icon: 'bg-rose-100 text-rose-600',
+      text: 'text-rose-700',
+      badge: 'bg-rose-100 text-rose-700',
+      button: 'bg-rose-600 hover:bg-rose-700 text-white',
+      sidebarActive: 'bg-rose-600 text-white',
+      sidebarDot: 'bg-rose-400',
+    },
+    pages: [
+      {
+        id: 'healthcare-staff',
+        label: '👩‍⚕️ 医療従事者コンディション',
+        href: '/healthcare/staff',
+        status: 'coming',
+        description: '医師・看護師・介護士の疲労度・充足率をモニタリング。離職リスクを早期検知',
+      },
+      {
+        id: 'healthcare-service',
+        label: '🏥 医療サービス状況',
+        href: '/healthcare/service',
+        status: 'coming',
+        description: '診療科別の稼働状況・待ち時間・在宅医療カバー率を可視化',
+      },
+      {
+        id: 'healthcare-elderly',
+        label: '👴 高齢者WellBeingモニタリング',
+        href: '/healthcare/elderly',
+        status: 'coming',
+        description: '要介護認定者の生活状況・訪問頻度・孤独死リスクをAIが継続追跡',
+      },
+      {
+        id: 'healthcare-care',
+        label: '🤝 介護サービス連携',
+        href: '/healthcare/care',
+        status: 'coming',
+        description: '居宅介護・施設介護・地域包括支援センターの連携状況を一元管理',
       },
     ],
   },
