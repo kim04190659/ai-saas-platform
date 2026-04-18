@@ -2,6 +2,15 @@
   "functions": {
     "src/app/api/well-being-quest/evaluate/route.ts": {
       "maxDuration": 60
+    },
+    "src/app/api/cron/weekly-wb-summary/route.ts": {
+      "maxDuration": 60
     }
-  }
+  },
+  "crons": [
+    {
+      "path":     "/api/cron/weekly-wb-summary",
+      "schedule": "0 0 * * 1"
+    }
+  ]
 }
