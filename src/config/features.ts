@@ -430,12 +430,12 @@ export const FEATURE_MODULES: FeatureModule[] = [
         description: 'Notion操作の中継APIと監査ログ管理。notion_search/create_page/query_databaseを認証付きで中継し全操作をNotionに記録',
       },
       {
-        // Sprint #17 — オープンデータ連携・提案書生成エンジン（e-Stat APIキー登録後に有効化）
+        // Sprint #17/#18 で実装完了 — オープンデータ連携・提案書生成エンジン
         id: 'platform-opendata',
         label: '📊 オープンデータ連携',
         href: '/gyosei/opendata',
-        status: 'coming',
-        description: 'e-Stat API（人口動態）＋Notion蓄積データ＋Claude AIで自治体向け導入提案書を自動生成。e-Stat APIキー登録後に利用可能',
+        status: 'active',
+        description: 'e-Stat API（人口動態）＋Notion蓄積データ＋Claude AIで自治体向け導入提案書を自動生成してNotionに保存',
       },
     ],
   },
