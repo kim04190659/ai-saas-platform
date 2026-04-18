@@ -7,13 +7,25 @@
  * ■ プラットフォームのビジョン（2026年4月改訂）
  *   RunWith Platform は自治体のWell-Beingを最大化する基盤。
  *   住民 → LINE → 職員 → エクセレントサービス → Well-Being向上
- *   という価値共創フロー（SDL）を4層のメニューで体現する。
+ *   という価値共創フロー（SDL）を10層のメニューで体現する。
  *
- * ■ 4モジュール構成
- *   ① 住民接点  : 住民とのLINEタッチポイント（sky）
- *   ② 職員支援  : エクセレントサービス提供支援（emerald）
- *   ③ 経営・政策: 町長・議会向け見える化・AI提言（violet）
- *   ④ 基盤・設定: データ蓄積・IT管理・プラットフォーム設定（orange）
+ * ■ 10モジュール構成（2026年4月 再編）
+ *   ── 行政コア ──────────────────────────────
+ *   ① 住民接点    : 住民とのLINEタッチポイント（sky）
+ *   ② 職員支援    : エクセレントサービス提供支援（emerald）
+ *   ③ 経営・政策  : 町長・議会向け見える化・AI提言（violet）
+ *   ── 部門別 ────────────────────────────────
+ *   ④ 教育        : 学校・教職員支援（blue）
+ *   ⑤ 警察・消防  : 地域安全・防災支援（amber）
+ *   ⑥ 医療・介護  : 高齢化社会を支える医療・福祉（rose）
+ *   ── 横断・連携 ────────────────────────────
+ *   ⑦ 公務員連携  : 全部門横断ビュー・AI横断提言（indigo）
+ *   ── 実証展開 ──────────────────────────────
+ *   ⑧ 霧島市展開  : Notionオントロジー連携実証（teal）
+ *   ── 研修・学習 ────────────────────────────
+ *   ⑨ 研修・学習  : SDL体験型カードゲーム研修（purple）
+ *   ── 基盤 ──────────────────────────────────
+ *   ⑩ 基盤・設定  : データ蓄積・IT管理・プラットフォーム設定（orange）
  *
  * ■ 新機能を追加するとき
  *   1. 該当モジュールの pages[] に1エントリ追加
@@ -36,6 +48,7 @@ import {
   Shield,
   Heart,
   Globe,
+  BookOpen,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -102,9 +115,6 @@ export const FEATURE_MODULES: FeatureModule[] = [
     },
     pages: [
       {
-        // ★ Notionオフロード対象: WellBeingKPI DBのフォームビューで代替可能
-        // Webページは「記録確認・AI分析連携」用に残し、
-        // 日次入力はNotionフォームで運用することを推奨
         id: 'citizen-services',
         label: '🏘️ 住民サービス状況',
         href: '/gyosei/services',
@@ -112,7 +122,6 @@ export const FEATURE_MODULES: FeatureModule[] = [
         description: '行政サービスの稼働状況・窓口待ち時間・満足度スコアを記録。日次入力はNotionフォームでも可',
       },
       {
-        // Sprint #15 で実装完了
         id: 'citizen-line',
         label: '💬 LINE相談管理',
         href: '/gyosei/line-consultation',
@@ -120,7 +129,6 @@ export const FEATURE_MODULES: FeatureModule[] = [
         description: '住民からのLINE相談を一覧確認し、対応状況・回答内容をNotionに記録',
       },
       {
-        // Sprint #16 で実装完了
         id: 'citizen-touchpoint',
         label: '📍 タッチポイント記録',
         href: '/gyosei/touchpoints',
@@ -134,14 +142,15 @@ export const FEATURE_MODULES: FeatureModule[] = [
   //  👥 ② 職員支援
   //  職員がエクセレントサービスを提供できるよう支援する層
   //  アクセントカラー: emerald（緑）
+  //  ※ 研修カードゲームは ⑨研修・学習 へ分離
   // ══════════════════════════════════════
   {
     id: 'staff',
     icon: UserCheck,
     emoji: '👥',
     label: '職員支援',
-    badge: '職員・研修',
-    description: '職員のコンディション管理からAI即時提案、SDL研修カードゲームまで。エクセレントサービスを現場で実現する。',
+    badge: '職員・AI支援',
+    description: '職員のコンディション管理からLINE業務対応・AI窓口即時提案まで。エクセレントサービスを現場で実現する。',
     accent: {
       bg: 'bg-emerald-50',
       border: 'border-emerald-200',
@@ -154,9 +163,6 @@ export const FEATURE_MODULES: FeatureModule[] = [
     },
     pages: [
       {
-        // ★ Notionオフロード対象: StaffCondition DBのフォームビューで代替可能
-        // Webページはスコア可視化・AI連携用に残し、
-        // 日次入力はNotionフォームで運用することを推奨
         id: 'staff-condition',
         label: '💚 職員コンディション',
         href: '/gyosei/staff',
@@ -176,35 +182,6 @@ export const FEATURE_MODULES: FeatureModule[] = [
         href: '/staff/ai-suggest',
         status: 'active',
         description: '窓口で住民が相談する内容を入力すると、AIが担当課・必要書類・手続き手順を即時提案',
-      },
-      {
-        // ── 研修カードゲーム ────────────────────────────────
-        id: 'training-logi-tech',
-        label: '🏭 Mission in LOGI-TECH',
-        href: '/card-game/select',
-        status: 'active',
-        description: '物流会社の経営課題をカードで解決するビジネスシミュレーション',
-      },
-      {
-        id: 'training-agile',
-        label: '🥬 八百屋アジャイル道場',
-        href: '/card-game/agile-yasai',
-        status: 'active',
-        description: 'アジャイル5要素を体験する研修カードゲーム',
-      },
-      {
-        id: 'training-gyosei-dx',
-        label: '🏛️ 行政DXチャレンジ',
-        href: '/card-game/gyosei-dx',
-        status: 'active',
-        description: '新人IT職員として5つのDX課題に挑戦する行政DX体験ゲーム',
-      },
-      {
-        id: 'training-wellbeing-quest',
-        label: '💚 Well-Being QUEST',
-        href: '/well-being-quest',
-        status: 'active',
-        description: '職員の働き方改革をテーマにしたカードゲーム',
       },
     ],
   },
@@ -247,9 +224,6 @@ export const FEATURE_MODULES: FeatureModule[] = [
         description: '4DBのデータをAIが横断分析し、SDL五軸の視点で施策提言を行うチャット',
       },
       {
-        // ★ Notionオフロード対象: NotionのCSVインポート機能で代替可能
-        // Webのドラッグ&ドロップUIは補助的に残すが、
-        // Notionの標準CSVインポートで直接PopulationData DBに取り込める
         id: 'executive-population',
         label: '📥 人口・地域データ',
         href: '/gyosei/population',
@@ -257,7 +231,6 @@ export const FEATURE_MODULES: FeatureModule[] = [
         description: '自治体CSVをNotionに蓄積。人口・世帯・高齢化率の時系列管理（Notion標準インポートでも可）',
       },
       {
-        // Sprint #17 で実装完了
         id: 'executive-revenue',
         label: '💰 収益・財政データ',
         href: '/gyosei/revenue',
@@ -265,7 +238,6 @@ export const FEATURE_MODULES: FeatureModule[] = [
         description: '観光・産品・宿泊など地域収益データを可視化。AI提言示唆を記録しAI顧問に供給',
       },
       {
-        // Sprint #18 で実装完了
         id: 'executive-compare',
         label: '🔍 類似自治体比較分析',
         href: '/gyosei/compare',
@@ -273,7 +245,6 @@ export const FEATURE_MODULES: FeatureModule[] = [
         description: '類似自治体のWell-Being・DX成熟度・財政力を比較。RunWith導入効果を可視化',
       },
       {
-        // Sprint #22 で実装完了
         id: 'executive-document',
         label: '📋 AI政策文書生成',
         href: '/gyosei/document-gen',
@@ -284,7 +255,217 @@ export const FEATURE_MODULES: FeatureModule[] = [
   },
 
   // ══════════════════════════════════════
-  //  🏙️ ⑤ 霧島市展開（実証モジュール）
+  //  🏫 ④ 教育
+  //  学校・教職員支援層
+  //  アクセントカラー: blue（青）
+  // ══════════════════════════════════════
+  {
+    id: 'education',
+    icon: GraduationCap,
+    emoji: '🏫',
+    label: '教育',
+    badge: '学校・教職員',
+    description: '教職員のコンディション管理から児童・生徒のWell-Being把握、AI教育政策提言まで。学校現場のDXを支援する。',
+    accent: {
+      bg: 'bg-blue-50',
+      border: 'border-blue-200',
+      icon: 'bg-blue-100 text-blue-600',
+      text: 'text-blue-700',
+      badge: 'bg-blue-100 text-blue-700',
+      button: 'bg-blue-600 hover:bg-blue-700 text-white',
+      sidebarActive: 'bg-blue-600 text-white',
+      sidebarDot: 'bg-blue-400',
+    },
+    pages: [
+      {
+        id: 'education-staff',
+        label: '👩‍🏫 教職員コンディション',
+        href: '/education/staff',
+        status: 'active',
+        description: '教職員の体調・業務負荷・バーンアウトリスクを日次記録。早期サポートに活用',
+      },
+      {
+        id: 'education-student-wellbeing',
+        label: '👦 児童・生徒WellBeing',
+        href: '/education/student-wellbeing',
+        status: 'active',
+        description: '学校生活満足度・不登校リスク・いじめ兆候をAIが早期検知',
+      },
+      {
+        id: 'education-service',
+        label: '🏫 学校サービス状況',
+        href: '/education/service',
+        status: 'active',
+        description: '各校の行事・給食・授業進捗・施設状況を一元把握',
+      },
+      {
+        id: 'education-policy',
+        label: '📋 AI教育政策提言',
+        href: '/education/policy',
+        status: 'active',
+        description: '学力・出席・WellBeingデータをAIが分析し、教育委員会向け政策案を自動ドラフト',
+      },
+    ],
+  },
+
+  // ══════════════════════════════════════
+  //  👮 ⑤ 警察・消防
+  //  地域安全・防災支援層
+  //  アクセントカラー: amber（琥珀）
+  // ══════════════════════════════════════
+  {
+    id: 'safety',
+    icon: Shield,
+    emoji: '👮',
+    label: '警察・消防',
+    badge: '安全・防災',
+    description: '隊員のコンディション管理から出動記録・地域安全ダッシュボードまで。限られた人員で地域の安全を守る。',
+    accent: {
+      bg: 'bg-amber-50',
+      border: 'border-amber-200',
+      icon: 'bg-amber-100 text-amber-600',
+      text: 'text-amber-700',
+      badge: 'bg-amber-100 text-amber-700',
+      button: 'bg-amber-600 hover:bg-amber-700 text-white',
+      sidebarActive: 'bg-amber-600 text-white',
+      sidebarDot: 'bg-amber-400',
+    },
+    pages: [
+      {
+        id: 'safety-staff',
+        label: '💪 隊員コンディション',
+        href: '/safety/staff',
+        status: 'active',
+        description: '警察官・消防隊員の体調・勤務状況・ストレスレベルを管理。過重労働を早期検知',
+      },
+      {
+        id: 'safety-incident',
+        label: '🚨 インシデント・出動記録',
+        href: '/safety/incident',
+        status: 'active',
+        description: '事件・事故・火災・救急出動を記録。AIがパターン分析し予防策を提言',
+      },
+      {
+        id: 'safety-dashboard',
+        label: '🛡️ 地域安全ダッシュボード',
+        href: '/safety/dashboard',
+        status: 'active',
+        description: '犯罪・火災・救急出動件数の時系列推移と地域マップを可視化',
+      },
+      {
+        id: 'safety-disaster',
+        label: '🌊 防災・避難情報管理',
+        href: '/safety/disaster',
+        status: 'active',
+        description: '災害発生時の避難所開設状況・要支援者リスト・物資管理を一元管理',
+      },
+    ],
+  },
+
+  // ══════════════════════════════════════
+  //  🏥 ⑥ 医療・介護
+  //  高齢化社会を支える医療・福祉層
+  //  アクセントカラー: rose（薔薇）
+  // ══════════════════════════════════════
+  {
+    id: 'healthcare',
+    icon: Heart,
+    emoji: '🏥',
+    label: '医療・介護',
+    badge: '医療・福祉',
+    description: '医療従事者・介護士のコンディション管理から高齢者WellBeingモニタリングまで。縮んでいく自治体で増え続ける医療・介護ニーズに対応する。',
+    accent: {
+      bg: 'bg-rose-50',
+      border: 'border-rose-200',
+      icon: 'bg-rose-100 text-rose-600',
+      text: 'text-rose-700',
+      badge: 'bg-rose-100 text-rose-700',
+      button: 'bg-rose-600 hover:bg-rose-700 text-white',
+      sidebarActive: 'bg-rose-600 text-white',
+      sidebarDot: 'bg-rose-400',
+    },
+    pages: [
+      {
+        id: 'healthcare-staff',
+        label: '👩‍⚕️ 医療従事者コンディション',
+        href: '/healthcare/staff',
+        status: 'active',
+        description: '医師・看護師・介護士の疲労度・充足率をモニタリング。離職リスクを早期検知',
+      },
+      {
+        id: 'healthcare-service',
+        label: '🏥 医療サービス状況',
+        href: '/healthcare/service',
+        status: 'active',
+        description: '診療科別の稼働状況・待ち時間・在宅医療カバー率を可視化',
+      },
+      {
+        id: 'healthcare-elderly',
+        label: '👴 高齢者WellBeingモニタリング',
+        href: '/healthcare/elderly',
+        status: 'active',
+        description: '要介護認定者の生活状況・訪問頻度・孤独死リスクをAIが継続追跡',
+      },
+      {
+        id: 'healthcare-care',
+        label: '🤝 介護サービス連携',
+        href: '/healthcare/care',
+        status: 'active',
+        description: '居宅介護・施設介護・地域包括支援センターの連携状況を一元管理',
+      },
+    ],
+  },
+
+  // ══════════════════════════════════════
+  //  🌐 ⑦ 公務員連携（統合ビュー）
+  //  自治体職員・教育・警察消防・医療介護を横断し
+  //  「縮んでいく街を公務員全体で支える」モデルを可視化
+  //  アクセントカラー: indigo（藍）
+  // ══════════════════════════════════════
+  {
+    id: 'koumuin',
+    icon: Globe,
+    emoji: '🌐',
+    label: '公務員連携',
+    badge: '部門横断',
+    description: '縮んでいく自治体を公務員全体で支える。行政・教育・警察消防・医療介護の全部門WellBeingを一画面で俯瞰し、AIが横断提言を行う。',
+    accent: {
+      bg: 'bg-indigo-50',
+      border: 'border-indigo-200',
+      icon: 'bg-indigo-100 text-indigo-600',
+      text: 'text-indigo-700',
+      badge: 'bg-indigo-100 text-indigo-700',
+      button: 'bg-indigo-600 hover:bg-indigo-700 text-white',
+      sidebarActive: 'bg-indigo-600 text-white',
+      sidebarDot: 'bg-indigo-400',
+    },
+    pages: [
+      {
+        id: 'koumuin-dashboard',
+        label: '🌐 全部門 統合ダッシュボード',
+        href: '/koumuin/dashboard',
+        status: 'active',
+        description: '行政・教育・警察消防・医療介護の全公務員WellBeingを一画面で俯瞰。街全体の支援力を可視化',
+      },
+      {
+        id: 'koumuin-ai-advisor',
+        label: '🤖 AI 全体最適化提言',
+        href: '/koumuin/ai-advisor',
+        status: 'active',
+        description: '全部門データをAIが横断分析し、人員配置・連携強化ポイントを提言',
+      },
+      {
+        id: 'koumuin-cross-issue',
+        label: '🔄 部門横断 課題連携',
+        href: '/koumuin/cross-issue',
+        status: 'active',
+        description: '部門をまたぐ課題（高齢者・子育て・障害者等）を一元管理し、担当部門が連携して解決',
+      },
+    ],
+  },
+
+  // ══════════════════════════════════════
+  //  🏙️ ⑧ 霧島市展開（実証モジュール）
   //  霧島市向けNotionオントロジー連携ダッシュボード
   //  8DB・9KPI・SDL五軸を実データで可視化
   //  アクセントカラー: teal（ティール）
@@ -346,217 +527,61 @@ export const FEATURE_MODULES: FeatureModule[] = [
   },
 
   // ══════════════════════════════════════
-  //  🌐 ⑥ 公務員連携（統合ビュー）
-  //  自治体職員・教育・警察消防・医療介護を横断し
-  //  「縮んでいく街を公務員全体で支える」モデルを可視化
-  //  アクセントカラー: indigo（藍）
+  //  🎮 ⑨ 研修・学習
+  //  SDL体験型カードゲーム研修
+  //  アクセントカラー: purple（紫）
   // ══════════════════════════════════════
   {
-    id: 'koumuin',
-    icon: Globe,
-    emoji: '🌐',
-    label: '公務員連携',
-    badge: '部門横断',
-    description: '縮んでいく自治体を公務員全体で支える。行政・教育・警察消防・医療介護の全部門WellBeingを一画面で俯瞰し、AI が横断提言を行う。',
+    id: 'training',
+    icon: BookOpen,
+    emoji: '🎮',
+    label: '研修・学習',
+    badge: '研修・ゲーム',
+    description: 'SDLの価値共創・DX推進・アジャイル・Well-Beingを体験型カードゲームで学ぶ。職員研修・新人研修・チームビルディングに活用。',
     accent: {
-      bg: 'bg-indigo-50',
-      border: 'border-indigo-200',
-      icon: 'bg-indigo-100 text-indigo-600',
-      text: 'text-indigo-700',
-      badge: 'bg-indigo-100 text-indigo-700',
-      button: 'bg-indigo-600 hover:bg-indigo-700 text-white',
-      sidebarActive: 'bg-indigo-600 text-white',
-      sidebarDot: 'bg-indigo-400',
+      bg: 'bg-purple-50',
+      border: 'border-purple-200',
+      icon: 'bg-purple-100 text-purple-600',
+      text: 'text-purple-700',
+      badge: 'bg-purple-100 text-purple-700',
+      button: 'bg-purple-600 hover:bg-purple-700 text-white',
+      sidebarActive: 'bg-purple-600 text-white',
+      sidebarDot: 'bg-purple-400',
     },
     pages: [
       {
-        id: 'koumuin-dashboard',
-        label: '🌐 全部門 統合ダッシュボード',
-        href: '/koumuin/dashboard',
+        id: 'training-logi-tech',
+        label: '🏭 Mission in LOGI-TECH',
+        href: '/card-game/select',
         status: 'active',
-        description: '行政・教育・警察消防・医療介護の全公務員WellBeingを一画面で俯瞰。街全体の支援力を可視化',
+        description: '物流会社の経営課題をカードで解決するビジネスシミュレーション',
       },
       {
-        id: 'koumuin-ai-advisor',
-        label: '🤖 AI 全体最適化提言',
-        href: '/koumuin/ai-advisor',
+        id: 'training-agile',
+        label: '🥬 八百屋アジャイル道場',
+        href: '/card-game/agile-yasai',
         status: 'active',
-        description: '全部門データをAIが横断分析し、人員配置・連携強化ポイントを提言',
+        description: 'アジャイル5要素を体験する研修カードゲーム',
       },
       {
-        id: 'koumuin-cross-issue',
-        label: '🔄 部門横断 課題連携',
-        href: '/koumuin/cross-issue',
+        id: 'training-gyosei-dx',
+        label: '🏛️ 行政DXチャレンジ',
+        href: '/card-game/gyosei-dx',
         status: 'active',
-        description: '部門をまたぐ課題（高齢者・子育て・障害者等）を一元管理し、担当部門が連携して解決',
+        description: '新人IT職員として5つのDX課題に挑戦する行政DX体験ゲーム',
+      },
+      {
+        id: 'training-wellbeing-quest',
+        label: '💚 Well-Being QUEST',
+        href: '/well-being-quest',
+        status: 'active',
+        description: '職員の働き方改革をテーマにしたカードゲーム',
       },
     ],
   },
 
   // ══════════════════════════════════════
-  //  🏫 ⑦ 教育
-  //  学校・教職員支援層
-  //  アクセントカラー: blue（青）
-  // ══════════════════════════════════════
-  {
-    id: 'education',
-    icon: GraduationCap,
-    emoji: '🏫',
-    label: '教育',
-    badge: '学校・教職員',
-    description: '教職員のコンディション管理から児童・生徒のWell-Being把握、AI教育政策提言まで。学校現場のDXを支援する。',
-    accent: {
-      bg: 'bg-blue-50',
-      border: 'border-blue-200',
-      icon: 'bg-blue-100 text-blue-600',
-      text: 'text-blue-700',
-      badge: 'bg-blue-100 text-blue-700',
-      button: 'bg-blue-600 hover:bg-blue-700 text-white',
-      sidebarActive: 'bg-blue-600 text-white',
-      sidebarDot: 'bg-blue-400',
-    },
-    pages: [
-      {
-        id: 'education-staff',
-        label: '👩‍🏫 教職員コンディション',
-        href: '/education/staff',
-        status: 'active',
-        description: '教職員の体調・業務負荷・バーンアウトリスクを日次記録。早期サポートに活用',
-      },
-      {
-        id: 'education-student-wellbeing',
-        label: '👦 児童・生徒WellBeing',
-        href: '/education/student-wellbeing',
-        status: 'active',
-        description: '学校生活満足度・不登校リスク・いじめ兆候をAIが早期検知',
-      },
-      {
-        id: 'education-service',
-        label: '🏫 学校サービス状況',
-        href: '/education/service',
-        status: 'active',
-        description: '各校の行事・給食・授業進捗・施設状況を一元把握',
-      },
-      {
-        id: 'education-policy',
-        label: '📋 AI教育政策提言',
-        href: '/education/policy',
-        status: 'active',
-        description: '学力・出席・WellBeingデータをAIが分析し、教育委員会向け政策案を自動ドラフト',
-      },
-    ],
-  },
-
-  // ══════════════════════════════════════
-  //  👮 ⑧ 警察・消防
-  //  地域安全・防災支援層
-  //  アクセントカラー: amber（琥珀）
-  // ══════════════════════════════════════
-  {
-    id: 'safety',
-    icon: Shield,
-    emoji: '👮',
-    label: '警察・消防',
-    badge: '安全・防災',
-    description: '隊員のコンディション管理から出動記録・地域安全ダッシュボードまで。限られた人員で地域の安全を守る。',
-    accent: {
-      bg: 'bg-amber-50',
-      border: 'border-amber-200',
-      icon: 'bg-amber-100 text-amber-600',
-      text: 'text-amber-700',
-      badge: 'bg-amber-100 text-amber-700',
-      button: 'bg-amber-600 hover:bg-amber-700 text-white',
-      sidebarActive: 'bg-amber-600 text-white',
-      sidebarDot: 'bg-amber-400',
-    },
-    pages: [
-      {
-        id: 'safety-staff',
-        label: '💪 隊員コンディション',
-        href: '/safety/staff',
-        status: 'active',
-        description: '警察官・消防隊員の体調・勤務状況・ストレスレベルを管理。過重労働を早期検知',
-      },
-      {
-        id: 'safety-incident',
-        label: '🚨 インシデント・出動記録',
-        href: '/safety/incident',
-        status: 'active',
-        description: '事件・事故・火災・救急出動を記録。AIがパターン分析し予防策を提言',
-      },
-      {
-        id: 'safety-dashboard',
-        label: '🛡️ 地域安全ダッシュボード',
-        href: '/safety/dashboard',
-        status: 'active',
-        description: '犯罪・火災・救急出動件数の時系列推移と地域マップを可視化',
-      },
-      {
-        id: 'safety-disaster',
-        label: '🌊 防災・避難情報管理',
-        href: '/safety/disaster',
-        status: 'active',
-        description: '災害発生時の避難所開設状況・要支援者リスト・物資管理を一元管理',
-      },
-    ],
-  },
-
-  // ══════════════════════════════════════
-  //  🏥 ⑨ 医療・介護
-  //  高齢化社会を支える医療・福祉層
-  //  アクセントカラー: rose（薔薇）
-  // ══════════════════════════════════════
-  {
-    id: 'healthcare',
-    icon: Heart,
-    emoji: '🏥',
-    label: '医療・介護',
-    badge: '医療・福祉',
-    description: '医療従事者・介護士のコンディション管理から高齢者WellBeingモニタリングまで。縮んでいく自治体で増え続ける医療・介護ニーズに対応する。',
-    accent: {
-      bg: 'bg-rose-50',
-      border: 'border-rose-200',
-      icon: 'bg-rose-100 text-rose-600',
-      text: 'text-rose-700',
-      badge: 'bg-rose-100 text-rose-700',
-      button: 'bg-rose-600 hover:bg-rose-700 text-white',
-      sidebarActive: 'bg-rose-600 text-white',
-      sidebarDot: 'bg-rose-400',
-    },
-    pages: [
-      {
-        id: 'healthcare-staff',
-        label: '👩‍⚕️ 医療従事者コンディション',
-        href: '/healthcare/staff',
-        status: 'active',
-        description: '医師・看護師・介護士の疲労度・充足率をモニタリング。離職リスクを早期検知',
-      },
-      {
-        id: 'healthcare-service',
-        label: '🏥 医療サービス状況',
-        href: '/healthcare/service',
-        status: 'active',
-        description: '診療科別の稼働状況・待ち時間・在宅医療カバー率を可視化',
-      },
-      {
-        id: 'healthcare-elderly',
-        label: '👴 高齢者WellBeingモニタリング',
-        href: '/healthcare/elderly',
-        status: 'active',
-        description: '要介護認定者の生活状況・訪問頻度・孤独死リスクをAIが継続追跡',
-      },
-      {
-        id: 'healthcare-care',
-        label: '🤝 介護サービス連携',
-        href: '/healthcare/care',
-        status: 'active',
-        description: '居宅介護・施設介護・地域包括支援センターの連携状況を一元管理',
-      },
-    ],
-  },
-
-  // ══════════════════════════════════════
-  //  ⚙️ ④ 基盤・設定
+  //  ⚙️ ⑩ 基盤・設定
   //  NotionDB連携・IT基盤管理・プラットフォーム設定層
   //  アクセントカラー: orange（橙）
   // ══════════════════════════════════════
@@ -579,10 +604,6 @@ export const FEATURE_MODULES: FeatureModule[] = [
     },
     pages: [
       {
-        // ★ Notionオフロード対象: MunicipalityProfile DBを直接編集でも代替可能
-        // AI顧問への差し込み（Layer 2）は設定内容を読むだけなので
-        // Notionで直接編集しても同じ効果が得られる。
-        // Webページは初回設定ガイド・視覚確認用として残す。
         id: 'platform-profile',
         label: '⚙️ 自治体プロフィール設定',
         href: '/gyosei/settings',
@@ -604,7 +625,6 @@ export const FEATURE_MODULES: FeatureModule[] = [
         description: 'AWS・Azure・GCP・SalesforceをAIがリアルタイム監視',
       },
       {
-        // Sprint #20 で実装完了
         id: 'platform-cmdb',
         label: '🗂️ 構成管理（CMDB）',
         href: '/runwith/cmdb',
@@ -612,7 +632,6 @@ export const FEATURE_MODULES: FeatureModule[] = [
         description: 'IT資産・システム構成情報を登録・参照管理。更新期限アラートで契約更改を見逃さない',
       },
       {
-        // Sprint #21 で実装完了
         id: 'platform-knowledge',
         label: '🧠 集合知ナレッジブラウザ',
         href: '/runwith/knowledge',
@@ -620,7 +639,6 @@ export const FEATURE_MODULES: FeatureModule[] = [
         description: '限界自治体の課題解決ノウハウを集積・横展開。SDL軸・カテゴリ・キーワードで横断検索',
       },
       {
-        // Sprint #23 で実装完了
         id: 'platform-multi-tenant',
         label: '🌐 横展開設定',
         href: '/runwith/multi-tenant',
@@ -628,7 +646,6 @@ export const FEATURE_MODULES: FeatureModule[] = [
         description: '複数自治体へのRunWith展開を管理。テナント切り替え・オンボーディング進捗確認',
       },
       {
-        // Sprint #24 で実装完了 — オントロジー設計フレームワーク統合
         id: 'platform-org-wizard',
         label: '🧠 組織設計ウィザード',
         href: '/runwith/org-wizard',
@@ -636,7 +653,6 @@ export const FEATURE_MODULES: FeatureModule[] = [
         description: '60分のヒアリング12問に答えるだけで8DB・9KPI・仕様書・マニュアルをNotionに自動生成。新規組織展開を大幅短縮',
       },
       {
-        // Sprint #16 で実装完了 — MCPゲートウェイ（Notion連携・ログ管理）
         id: 'platform-mcp-gateway',
         label: '🔐 MCPゲートウェイ ログ',
         href: '/runwith/mcp-gateway',
@@ -644,7 +660,6 @@ export const FEATURE_MODULES: FeatureModule[] = [
         description: 'Notion操作の中継APIと監査ログ管理。notion_search/create_page/query_databaseを認証付きで中継し全操作をNotionに記録',
       },
       {
-        // Sprint #17/#18 で実装完了 — オープンデータ連携・提案書生成エンジン
         id: 'platform-opendata',
         label: '📊 オープンデータ連携',
         href: '/gyosei/opendata',
