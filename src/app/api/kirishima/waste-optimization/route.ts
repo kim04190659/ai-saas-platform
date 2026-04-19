@@ -113,7 +113,7 @@ ${data.routes.map((r: Record<string, unknown>) =>
 ).join('\n')}
 `.trim()
 
-  const scenarioInstruction = {
+  const scenarioInstruction: Record<string, string> = {
     current: `
 シナリオ: 現状分析
 このデータをもとに「現在の廃棄物管理が抱える問題点と緊急性の高い課題」を分析してください。
