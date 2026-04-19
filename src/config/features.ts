@@ -626,6 +626,13 @@ export const FEATURE_MODULES: FeatureModule[] = [
         status: 'active',
         description: '道路台帳×気象×交通量を結合しAIが修繕優先順位を自動算出。予算配分の最適化を支援',
       },
+      {
+        id: 'kirishima-waste',
+        label: '♻️ ごみ管理最適化',
+        href: '/kirishima/waste',
+        status: 'active',
+        description: '人口縮小に伴う収集路線の統廃合・焼却炉の広域化をAIが分析。3シナリオ（現状分析／路線統廃合／施設広域化）のコスト削減効果を試算し、Notionに提言レポートを保存',
+      },
     ],
   },
 
