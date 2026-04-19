@@ -106,32 +106,24 @@ function dividerBlock() {
 // ─── ロードマップページのブロック生成 ──────────────────
 
 /**
- * AI生成ロードマップを Notion ブロックの配列に変換する。
- * 出力例：
- *   ## 全体方針
- *   overview テキスト
- *   ---
- *   ## Phase 1: タイトル（〜3ヶ月）
- *   ### 目標
- *   goal テキスト
- *   ### 導入機能
- *   ・機能1  ・機能2
- *   ### アクション
- *   ・アクション1 ...
- *   ### 達成KPI
- *   kpi テキスト
+ * AI生成ロードマップを Notion 仕様書ページのブロック配列に変換する。
+ *
+ * 各フェーズに以下のセクションを生成：
+ *   🗄️ 作成するDB    — DB名・目的・カラム一覧・デモ行数
+ *   👁️ 作成するView  — View名・種類・対象DB・フィルタ
+ *   🤖 AI機能        — 機能名・実行タイミング・処理内容・通知先
+ *   📱 アプリ画面     — ページ名・URLパス・コンポーネント・新規/既存
  */
 function buildRoadmapBlocks(roadmap: RoadmapData, orgName: string, challenges: string[]): object[] {
   const blocks: object[] = []
 
-  // 作成日・選択課題
+  // ヘッダー情報
   const today = new Date().toLocaleDateString('ja-JP')
   blocks.push(paragraphBlock([
     `作成日: ${today}`,
     `組織名: ${orgName}`,
     `選択課題: ${challenges.join(' / ')}`,
   ].join('　')))
-
   blocks.push(dividerBlock())
 
   // 全体方針
@@ -140,47 +132,81 @@ function buildRoadmapBlocks(roadmap: RoadmapData, orgName: string, challenges: s
   blocks.push(dividerBlock())
 
   // Phase 1〜3 を共通関数で出力
-  const phases: Array<[string, RoadmapPhase]> = [
+  const phaseEntries: Array<[string, RoadmapPhase]> = [
     ['🟢 Phase 1', roadmap.phase1],
     ['🟡 Phase 2', roadmap.phase2],
     ['🔵 Phase 3', roadmap.phase3],
   ]
 
-  for (const [phaseLabel, phase] of phases) {
+  for (const [phaseLabel, phase] of phaseEntries) {
     blocks.push(heading2Block(`${phaseLabel}: ${phase.title}（${phase.period}）`))
+    blocks.push(paragraphBlock(`🎯 目標: ${phase.goal}`))
+    blocks.push(paragraphBlock(`📊 達成KPI: ${phase.kpi}`))
 
-    blocks.push(heading3Block('目標'))
-    blocks.push(paragraphBlock(phase.goal))
-
-    blocks.push(heading3Block('導入機能'))
-    for (const f of phase.features) {
-      blocks.push(bulletBlock(f))
+    // ── 作成するDB ─────────────────────────────────
+    if (phase.databases && phase.databases.length > 0) {
+      blocks.push(heading3Block('🗄️ 作成するNotionDB'))
+      for (const db of phase.databases) {
+        blocks.push(bulletBlock(
+          `${db.name}（${db.purpose}）`
+        ))
+        blocks.push(bulletBlock(
+          `  カラム: ${db.properties.join(' / ')}　デモデータ: ${db.sampleRows}行`
+        ))
+      }
     }
 
-    blocks.push(heading3Block('具体的アクション'))
-    for (const a of phase.actions) {
-      blocks.push(bulletBlock(a))
+    // ── 作成するView ───────────────────────────────
+    if (phase.views && phase.views.length > 0) {
+      blocks.push(heading3Block('👁️ 作成するView'))
+      for (const v of phase.views) {
+        const filterText = v.filter && v.filter !== 'なし' ? `　フィルタ: ${v.filter}` : ''
+        blocks.push(bulletBlock(
+          `${v.name}（${v.type}形式 / ${v.database}）${filterText}`
+        ))
+      }
     }
 
-    blocks.push(heading3Block('達成KPI'))
-    blocks.push(paragraphBlock(`🎯 ${phase.kpi}`))
+    // ── AI機能 ─────────────────────────────────────
+    if (phase.aiFeatures && phase.aiFeatures.length > 0) {
+      blocks.push(heading3Block('🤖 AI機能'))
+      for (const ai of phase.aiFeatures) {
+        blocks.push(bulletBlock(
+          `${ai.name}　実行: ${ai.trigger}　通知: ${ai.notify}`
+        ))
+        blocks.push(bulletBlock(`  処理内容: ${ai.action}`))
+      }
+    }
+
+    // ── アプリ画面 ─────────────────────────────────
+    if (phase.appPages && phase.appPages.length > 0) {
+      blocks.push(heading3Block('📱 アプリ画面'))
+      for (const p of phase.appPages) {
+        const statusLabel = p.status === 'new' ? '🆕新規作成' : '✅既存流用'
+        blocks.push(bulletBlock(
+          `${p.name}　${statusLabel}　route: ${p.route}`
+        ))
+        blocks.push(bulletBlock(`  コンポーネント: ${p.component}`))
+      }
+    }
 
     blocks.push(dividerBlock())
   }
-
-  // 最初に構築するNotionDB
-  blocks.push(heading2Block('🗄️ 最初に構築するNotionDB'))
-  for (const db of roadmap.notionSetup) {
-    blocks.push(bulletBlock(db))
-  }
-
-  blocks.push(dividerBlock())
 
   // 実施リスク
   blocks.push(heading2Block('⚠️ 実施リスクと対策'))
   for (const risk of roadmap.risks) {
     blocks.push(bulletBlock(risk))
   }
+
+  // 次のアクション（自動化の道筋）
+  blocks.push(dividerBlock())
+  blocks.push(heading2Block('🚀 次のアクション（自動化フロー）'))
+  blocks.push(bulletBlock('Step 1: このロードマップを関係者でレビュー'))
+  blocks.push(bulletBlock('Step 2: Phase 1 のDB作成（自動化予定: /api/runwith/org-setup）'))
+  blocks.push(bulletBlock('Step 3: デモデータで動作確認 → 実データに差し替え'))
+  blocks.push(bulletBlock('Step 4: アプリ画面の動的ルーティング設定（municipalities.ts）'))
+  blocks.push(bulletBlock('Step 5: AI機能のcron設定（vercel.json）'))
 
   return blocks
 }

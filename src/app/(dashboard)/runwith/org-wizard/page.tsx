@@ -1001,101 +1001,190 @@ export default function OrgWizardPage() {
             </div>
           )}
 
-          {/* 生成完了 → プレビュー */}
+          {/* 生成完了 → 仕様書プレビュー */}
           {!isGenerating && roadmap && (
             <>
-              <div className="flex items-center gap-3 mb-6 pb-4 border-b border-gray-100">
+              {/* ヘッダー */}
+              <div className="flex items-center gap-3 mb-4 pb-4 border-b border-gray-100">
                 <div className="p-2 bg-orange-100 rounded-lg">
                   <Map size={20} className="text-orange-600" />
                 </div>
                 <div className="flex-1">
                   <h2 className="text-lg font-bold text-gray-900">
-                    {data.a2_org_name} の導入ロードマップ
+                    {data.a2_org_name} 導入仕様書
                   </h2>
                   <p className="text-sm text-gray-500">
-                    内容を確認してから「Notionに保存」してください
+                    DB・View・AI機能・アプリ画面を確認してからNotionに保存してください
                   </p>
                 </div>
               </div>
 
               {/* 全体方針 */}
-              <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg mb-6">
-                <p className="text-xs font-bold text-orange-700 mb-2">📋 全体方針</p>
+              <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg mb-5">
+                <p className="text-xs font-bold text-orange-700 mb-1">📋 全体方針</p>
                 <p className="text-sm text-gray-700">{roadmap.overview}</p>
               </div>
 
-              {/* 3フェーズカード */}
-              <div className="space-y-4 mb-6">
+              {/* 3フェーズ仕様書カード */}
+              <div className="space-y-4 mb-5">
                 {[
                   { phase: roadmap.phase1, color: 'emerald', icon: '🟢', num: 1 },
                   { phase: roadmap.phase2, color: 'amber',   icon: '🟡', num: 2 },
                   { phase: roadmap.phase3, color: 'blue',    icon: '🔵', num: 3 },
                 ].map(({ phase, color, icon, num }) => {
                   const c = COLOR_MAP[color] ?? COLOR_MAP['emerald'];
+                  const dbCount  = phase.databases?.length  ?? 0;
+                  const vwCount  = phase.views?.length       ?? 0;
+                  const aiCount  = phase.aiFeatures?.length  ?? 0;
+                  const pgCount  = phase.appPages?.length    ?? 0;
                   return (
-                    <div key={num} className={`p-4 rounded-xl border ${c.border} ${c.bg}`}>
-                      <div className="flex items-start justify-between gap-3 mb-3">
-                        <div>
-                          <p className={`text-xs font-bold ${c.text} mb-0.5`}>
-                            {icon} Phase {num}（{phase.period}）
-                          </p>
-                          <h3 className="text-base font-bold text-gray-900">{phase.title}</h3>
-                        </div>
-                        <span className={`text-xs px-2 py-1 rounded-full flex-shrink-0 ${c.badge}`}>
-                          {phase.kpi}
-                        </span>
-                      </div>
-                      <p className="text-sm text-gray-600 mb-3">{phase.goal}</p>
+                    <div key={num} className={`rounded-xl border ${c.border} overflow-hidden`}>
 
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <p className="text-xs font-semibold text-gray-500 mb-1.5">導入機能</p>
-                          <ul className="space-y-1">
-                            {phase.features.map((f, i) => (
-                              <li key={i} className="text-xs text-gray-700 flex items-start gap-1">
-                                <span className="text-gray-400 flex-shrink-0">•</span> {f}
-                              </li>
-                            ))}
-                          </ul>
+                      {/* フェーズヘッダー */}
+                      <div className={`px-4 py-3 ${c.bg}`}>
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <p className={`text-xs font-bold ${c.text}`}>
+                              {icon} Phase {num}（{phase.period}）
+                            </p>
+                            <p className="text-sm font-bold text-gray-900 mt-0.5">{phase.title}</p>
+                            <p className="text-xs text-gray-600 mt-0.5">{phase.goal}</p>
+                          </div>
+                          <span className={`text-xs px-2 py-1 rounded-full flex-shrink-0 ${c.badge} whitespace-nowrap`}>
+                            🎯 {phase.kpi}
+                          </span>
                         </div>
-                        <div>
-                          <p className="text-xs font-semibold text-gray-500 mb-1.5">具体的アクション</p>
-                          <ul className="space-y-1">
-                            {phase.actions.map((a, i) => (
-                              <li key={i} className="text-xs text-gray-700 flex items-start gap-1">
-                                <span className="text-gray-400 flex-shrink-0">→</span> {a}
-                              </li>
-                            ))}
-                          </ul>
+                        {/* カウントバッジ */}
+                        <div className="flex gap-2 mt-2 flex-wrap">
+                          {dbCount > 0 && (
+                            <span className="text-xs bg-white bg-opacity-70 px-2 py-0.5 rounded-full text-gray-600">
+                              🗄️ DB {dbCount}件
+                            </span>
+                          )}
+                          {vwCount > 0 && (
+                            <span className="text-xs bg-white bg-opacity-70 px-2 py-0.5 rounded-full text-gray-600">
+                              👁️ View {vwCount}件
+                            </span>
+                          )}
+                          {aiCount > 0 && (
+                            <span className="text-xs bg-white bg-opacity-70 px-2 py-0.5 rounded-full text-gray-600">
+                              🤖 AI機能 {aiCount}件
+                            </span>
+                          )}
+                          {pgCount > 0 && (
+                            <span className="text-xs bg-white bg-opacity-70 px-2 py-0.5 rounded-full text-gray-600">
+                              📱 画面 {pgCount}件
+                            </span>
+                          )}
                         </div>
+                      </div>
+
+                      {/* 仕様詳細（4セクション） */}
+                      <div className="bg-white divide-y divide-gray-100">
+
+                        {/* 🗄️ DB仕様 */}
+                        {phase.databases && phase.databases.length > 0 && (
+                          <div className="px-4 py-3">
+                            <p className="text-xs font-bold text-gray-500 mb-2">🗄️ 作成するNotionDB</p>
+                            <div className="space-y-2">
+                              {phase.databases.map((db, i) => (
+                                <div key={i} className="bg-gray-50 rounded-lg p-2">
+                                  <div className="flex items-center justify-between gap-2 mb-1">
+                                    <span className="text-xs font-semibold text-gray-800">{db.name}</span>
+                                    <span className="text-xs text-gray-400">デモ{db.sampleRows}行</span>
+                                  </div>
+                                  <p className="text-xs text-gray-500 mb-1">{db.purpose}</p>
+                                  <p className="text-xs text-blue-600 font-mono">
+                                    {db.properties.join(' / ')}
+                                  </p>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* 👁️ View仕様 */}
+                        {phase.views && phase.views.length > 0 && (
+                          <div className="px-4 py-3">
+                            <p className="text-xs font-bold text-gray-500 mb-2">👁️ 作成するView</p>
+                            <div className="space-y-1">
+                              {phase.views.map((v, i) => (
+                                <div key={i} className="flex items-center gap-2 text-xs">
+                                  <span className="px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded font-mono">
+                                    {v.type}
+                                  </span>
+                                  <span className="font-medium text-gray-700">{v.name}</span>
+                                  <span className="text-gray-400">← {v.database}</span>
+                                  {v.filter && v.filter !== 'なし' && (
+                                    <span className="text-amber-600 text-xs">🔍{v.filter}</span>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* 🤖 AI機能仕様 */}
+                        {phase.aiFeatures && phase.aiFeatures.length > 0 && (
+                          <div className="px-4 py-3">
+                            <p className="text-xs font-bold text-gray-500 mb-2">🤖 AI機能</p>
+                            <div className="space-y-2">
+                              {phase.aiFeatures.map((ai, i) => (
+                                <div key={i} className="flex items-start gap-2 text-xs">
+                                  <span className="px-1.5 py-0.5 bg-violet-100 text-violet-700 rounded whitespace-nowrap">
+                                    {ai.trigger}
+                                  </span>
+                                  <div>
+                                    <span className="font-medium text-gray-700">{ai.name}</span>
+                                    <span className="text-gray-400 ml-1">→ {ai.action}</span>
+                                    {ai.notify !== 'なし' && (
+                                      <span className="ml-1 text-emerald-600">通知:{ai.notify}</span>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* 📱 アプリ画面仕様 */}
+                        {phase.appPages && phase.appPages.length > 0 && (
+                          <div className="px-4 py-3">
+                            <p className="text-xs font-bold text-gray-500 mb-2">📱 アプリ画面</p>
+                            <div className="space-y-1">
+                              {phase.appPages.map((p, i) => (
+                                <div key={i} className="flex items-center gap-2 text-xs">
+                                  <span className={`px-1.5 py-0.5 rounded whitespace-nowrap ${
+                                    p.status === 'new'
+                                      ? 'bg-orange-100 text-orange-700'
+                                      : 'bg-green-100 text-green-700'
+                                  }`}>
+                                    {p.status === 'new' ? '🆕新規' : '✅既存'}
+                                  </span>
+                                  <span className="font-medium text-gray-700">{p.name}</span>
+                                  <span className="text-gray-400 font-mono">{p.route}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
                       </div>
                     </div>
                   );
                 })}
               </div>
 
-              {/* Notionセットアップ・リスク */}
-              <div className="grid grid-cols-2 gap-4 mb-6">
-                <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
-                  <p className="text-xs font-bold text-gray-600 mb-2">🗄️ 最初に構築するDB</p>
-                  <ul className="space-y-1">
-                    {roadmap.notionSetup.map((db, i) => (
-                      <li key={i} className="text-xs text-gray-600 flex items-start gap-1">
-                        <span className="text-gray-400">•</span> {db}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                <div className="p-3 bg-amber-50 rounded-lg border border-amber-200">
-                  <p className="text-xs font-bold text-amber-700 mb-2">⚠️ 実施リスク</p>
-                  <ul className="space-y-1">
-                    {roadmap.risks.map((r, i) => (
-                      <li key={i} className="text-xs text-amber-700 flex items-start gap-1">
-                        <span className="text-amber-400">•</span> {r}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+              {/* リスク */}
+              <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg mb-5">
+                <p className="text-xs font-bold text-amber-700 mb-2">⚠️ 実施リスクと対策</p>
+                <ul className="space-y-1">
+                  {roadmap.risks.map((r, i) => (
+                    <li key={i} className="text-xs text-amber-700 flex items-start gap-1">
+                      <span className="flex-shrink-0">•</span> {r}
+                    </li>
+                  ))}
+                </ul>
               </div>
 
               {/* 保存エラー */}
@@ -1117,11 +1206,11 @@ export default function OrgWizardPage() {
                 {isSubmitting ? (
                   <><Loader2 size={18} className="animate-spin" /> Notionに保存中...</>
                 ) : (
-                  <><Database size={18} /> Notionに自治体ページを作成して保存</>
+                  <><Database size={18} /> 仕様書をNotionに保存して自治体ページを作成</>
                 )}
               </button>
               <p className="text-center text-xs text-gray-400 mt-2">
-                自治体ページ＋ロードマップサブページがNotionに自動作成されます
+                Notionに自治体ページ・ロードマップ仕様書が作成されます。DB作成・アプリ画面追加は次のステップで行います。
               </p>
             </>
           )}
