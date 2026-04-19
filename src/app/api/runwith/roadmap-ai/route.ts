@@ -131,29 +131,31 @@ export async function POST(req: NextRequest) {
     `【IT担当体制】担当者数: ${body.itCount || '不明'} / 技術レベル: ${body.itLevel || '初中級'}`,
     `【半年後のビジョン】${body.vision || '未記入'}`,
     '',
-    '【ロードマップ設計の原則】',
+    '【ロードマップ設計の原則（文字数を必ず守ること）】',
     '- Phase 1（〜3ヶ月）: 最優先課題の基盤機能に絞る。IT担当が少ない・初級の場合は2機能以下。',
     '- Phase 2（3〜6ヶ月）: Phase 1で効果確認後に拡張する機能群を追加する。',
     '- Phase 3（6ヶ月〜）: 地域固有課題への独自拡張・データ高度活用フェーズ。',
     '- 各フェーズに達成KPI（数値目標）を1つ必ず設定する。',
-    '- featuresは上記「利用可能機能」に列挙されたもののみ選ぶこと。',
-    '- actionsは「誰が・何をする」形式で具体的に3〜4件記述する。',
+    '- featuresは利用可能機能から選ぶこと（各フェーズ最大3項目）。',
+    '- actionsは各フェーズ最大3項目、1項目あたり30文字以内。',
+    '- goal・overviewは各50文字以内。kpiは30文字以内。',
+    '- notionSetupは3項目以内。risksは2項目以内（各40文字以内）。',
     '',
-    '【出力形式（必ずJSONのみで返すこと。マークダウン不要）】',
+    '【出力形式（必ずJSONのみで返すこと。マークダウン・説明文は一切不要）】',
     '{',
-    '  "overview": "全体方針のサマリー（2〜3文）",',
+    '  "overview": "全体方針（50字以内）",',
     '  "phase1": {',
     '    "period": "〜3ヶ月",',
-    '    "title": "フェーズタイトル",',
-    '    "goal": "このフェーズで達成すること（1〜2文）",',
-    '    "features": ["機能名1", "機能名2"],',
-    '    "actions": ["具体的アクション1", "アクション2", "アクション3"],',
-    '    "kpi": "達成KPI（例: 職員離職率の可視化・週次モニタリング開始）"',
+    '    "title": "フェーズタイトル（20字以内）",',
+    '    "goal": "達成目標（50字以内）",',
+    '    "features": ["機能1", "機能2", "機能3"],',
+    '    "actions": ["アクション1（30字以内）", "アクション2", "アクション3"],',
+    '    "kpi": "達成KPI（30字以内）"',
     '  },',
-    '  "phase2": { "period": "3〜6ヶ月", "title": "...", "goal": "...", "features": [...], "actions": [...], "kpi": "..." },',
-    '  "phase3": { "period": "6ヶ月〜", "title": "...", "goal": "...", "features": [...], "actions": [...], "kpi": "..." },',
-    '  "notionSetup": ["最初に構築するNotionDB名1", "DB名2", "DB名3"],',
-    '  "risks": ["リスク1（対策込みで記述）", "リスク2（対策込み）"]',
+    '  "phase2": { "period": "3〜6ヶ月", "title": "20字以内", "goal": "50字以内", "features": ["機能1","機能2","機能3"], "actions": ["30字以内","30字以内","30字以内"], "kpi": "30字以内" },',
+    '  "phase3": { "period": "6ヶ月〜",  "title": "20字以内", "goal": "50字以内", "features": ["機能1","機能2","機能3"], "actions": ["30字以内","30字以内","30字以内"], "kpi": "30字以内" },',
+    '  "notionSetup": ["DB名1", "DB名2", "DB名3"],',
+    '  "risks": ["リスクと対策（40字以内）", "リスクと対策（40字以内）"]',
     '}',
   ].join('\n')
 
@@ -161,14 +163,32 @@ export async function POST(req: NextRequest) {
     const anthropic = new Anthropic({ apiKey: anthropicKey })
     const res = await anthropic.messages.create({
       model:      'claude-haiku-4-5-20251001',
-      max_tokens: 2000,
+      max_tokens: 3000,   // 2000→3000: JSON切断を防ぐ
       messages:   [{ role: 'user', content: prompt }],
     })
+
+    // トークン上限で途中切断された場合はエラーにする
+    if (res.stop_reason === 'max_tokens') {
+      console.warn('[roadmap-ai] max_tokens に達しました。出力が短縮されます。')
+    }
 
     // テキスト抽出 → コードブロック除去 → JSON.parse
     const raw     = res.content[0].type === 'text' ? res.content[0].text.trim() : '{}'
     const jsonStr = raw.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()
-    const roadmap = JSON.parse(jsonStr) as RoadmapData
+
+    let roadmap: RoadmapData
+    try {
+      roadmap = JSON.parse(jsonStr) as RoadmapData
+    } catch {
+      // JSONが壊れている場合（トークン切断など）の詳細エラー
+      console.error('[roadmap-ai] JSON解析失敗。stop_reason:', res.stop_reason)
+      console.error('[roadmap-ai] 受信テキスト（先頭300字）:', raw.slice(0, 300))
+      throw new Error(
+        res.stop_reason === 'max_tokens'
+          ? 'AIの出力がトークン上限に達しました。入力内容を短くしてから再試行してください。'
+          : `JSON解析エラー: ${jsonStr.slice(0, 100)}`
+      )
+    }
 
     return NextResponse.json({ success: true, roadmap })
 
