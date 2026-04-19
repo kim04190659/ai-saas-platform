@@ -22,7 +22,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import type { RoadmapData, RoadmapPhase } from '@/app/api/runwith/roadmap-ai/route'
+import type { RoadmapData, RoadmapPhase, DocumentSpec } from '@/app/api/runwith/roadmap-ai/route'
 
 // ─── 環境変数 ──────────────────────────────────────────
 
@@ -187,6 +187,21 @@ function buildRoadmapBlocks(roadmap: RoadmapData, orgName: string, challenges: s
           `${p.name}　${statusLabel}　route: ${p.route}`
         ))
         blocks.push(bulletBlock(`  コンポーネント: ${p.component}`))
+      }
+    }
+
+    // ── 生成するドキュメント ───────────────────────
+    if (phase.documents && phase.documents.length > 0) {
+      blocks.push(heading3Block('📄 生成するドキュメント'))
+      for (const doc of phase.documents as DocumentSpec[]) {
+        const genLabel =
+          doc.generator === 'agent3'   ? '🤖 Agent3自動生成' :
+          doc.generator === 'ai-draft' ? '✨ AI自動起案'     :
+                                         '📝 手動作成'
+        blocks.push(bulletBlock(
+          `${doc.name}　対象: ${doc.audience}向け　形式: ${doc.format}　${genLabel}`
+        ))
+        blocks.push(bulletBlock(`  作成タイミング: ${doc.timing}`))
       }
     }
 

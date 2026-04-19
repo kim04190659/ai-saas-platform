@@ -115,6 +115,18 @@ export interface AppPageSpec {
   status:    string  // 'existing'（既存流用）| 'new'（新規作成）
 }
 
+/**
+ * ドキュメント生成の仕様
+ * Agent 3 または AI自動起案 で生成するマニュアル・ガイド類
+ */
+export interface DocumentSpec {
+  name:      string  // 文書名（20字以内）
+  audience:  string  // 対象者（例: '職員', '管理者', '住民', 'IT担当'）
+  format:    string  // 'notion' | 'pdf' | 'md'
+  generator: string  // 'agent3'（ロール別自動生成）| 'ai-draft'（AI自動起案）| 'manual'（手動作成）
+  timing:    string  // 作成タイミング（例: 'DB構築後・研修前', 'Phase 2開始時'）
+}
+
 /** 各フェーズの仕様（Phase 1〜3 共通構造） */
 export interface RoadmapPhase {
   period:     string          // 例: '〜3ヶ月'
@@ -125,6 +137,7 @@ export interface RoadmapPhase {
   views:      ViewSpec[]      // 作成するView
   aiFeatures: AIFeatureSpec[] // 有効にするAI機能
   appPages:   AppPageSpec[]   // 有効にするアプリ画面
+  documents:  DocumentSpec[]  // 生成するドキュメント類
 }
 
 /** ロードマップ全体 */
@@ -186,12 +199,17 @@ export async function POST(req: NextRequest) {
     ...challengeLines,
     '',
     '【設計ルール（必ず守ること）】',
-    '- Phase 1: DB 2〜3件、View 2〜3件、AI機能 1〜2件、アプリ画面 2〜3件。IT初級なら DB 2件・アプリ2件に絞る。',
-    '- Phase 2: DB 1〜2件、View 1〜2件、AI機能 1件、アプリ画面 1〜2件。',
-    '- Phase 3: DB 0〜1件、View 0〜1件、AI機能 0〜1件、アプリ画面 0〜1件。方向性重視。',
+    '- Phase 1: DB 2〜3件、View 2〜3件、AI機能 1〜2件、アプリ画面 2〜3件、ドキュメント 2〜3件。IT初級は各2件以下。',
+    '- Phase 2: DB 1〜2件、View 1〜2件、AI機能 1件、アプリ画面 1〜2件、ドキュメント 1〜2件。',
+    '- Phase 3: DB 0〜1件、View 0〜1件、AI機能 0〜1件、アプリ画面 0〜1件、ドキュメント 0〜1件。',
     '- appPages の route は必ず上記「既存アプリ画面」から選ぶ（status: "existing"）。',
     '  新規作成が必要な場合のみ status: "new" とし route を命名する。',
     '- waste_management 選択時は route の [municipality] を実際の組織名（英小文字）に置き換える。',
+    '- documents のルール:',
+    '  Phase 1: 管理者向け運用マニュアル（generator: "agent3"）と職員向け利用ガイド（generator: "agent3"）を必ず含める。',
+    '  Phase 2: 追加機能のガイドや住民向け案内など課題に応じて追加。',
+    '  Phase 3: IT担当向け設定手順書など技術的ドキュメント。',
+    '  timing は "DB構築後・研修前" "フェーズ完了後" のような具体的なタイミングを記述。',
     '- 各テキストフィールドの文字数制限を厳守する。',
     '- properties は日本語カラム名を最大6件（短く簡潔に）。',
     '- sampleRows は 3〜5 の整数。',
@@ -216,12 +234,15 @@ export async function POST(req: NextRequest) {
     '    ],',
     '    "appPages": [',
     '      { "name": "ページ名(15字)", "route": "/パス", "component": "コンポーネント名", "status": "existing|new" }',
+    '    ],',
+    '    "documents": [',
+    '      { "name": "文書名(20字)", "audience": "職員|管理者|住民|IT担当", "format": "notion|pdf|md", "generator": "agent3|ai-draft|manual", "timing": "作成タイミング(20字)" }',
     '    ]',
     '  },',
     '  "phase2": { "period": "3〜6ヶ月", "title": "...", "goal": "...", "kpi": "...",',
-    '    "databases": [...], "views": [...], "aiFeatures": [...], "appPages": [...] },',
+    '    "databases": [...], "views": [...], "aiFeatures": [...], "appPages": [...], "documents": [...] },',
     '  "phase3": { "period": "6ヶ月〜", "title": "...", "goal": "...", "kpi": "...",',
-    '    "databases": [], "views": [], "aiFeatures": [...], "appPages": [] },',
+    '    "databases": [], "views": [], "aiFeatures": [...], "appPages": [], "documents": [...] },',
     '  "risks": ["リスクと対策(40字)", "リスクと対策(40字)"]',
     '}',
   ].join('\n')

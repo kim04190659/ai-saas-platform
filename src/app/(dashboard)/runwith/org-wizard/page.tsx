@@ -1037,6 +1037,7 @@ export default function OrgWizardPage() {
                   const vwCount  = phase.views?.length       ?? 0;
                   const aiCount  = phase.aiFeatures?.length  ?? 0;
                   const pgCount  = phase.appPages?.length    ?? 0;
+                  const docCount = phase.documents?.length   ?? 0;
                   return (
                     <div key={num} className={`rounded-xl border ${c.border} overflow-hidden`}>
 
@@ -1074,6 +1075,11 @@ export default function OrgWizardPage() {
                           {pgCount > 0 && (
                             <span className="text-xs bg-white bg-opacity-70 px-2 py-0.5 rounded-full text-gray-600">
                               📱 画面 {pgCount}件
+                            </span>
+                          )}
+                          {docCount > 0 && (
+                            <span className="text-xs bg-white bg-opacity-70 px-2 py-0.5 rounded-full text-gray-600">
+                              📄 文書 {docCount}件
                             </span>
                           )}
                         </div>
@@ -1163,6 +1169,30 @@ export default function OrgWizardPage() {
                                   </span>
                                   <span className="font-medium text-gray-700">{p.name}</span>
                                   <span className="text-gray-400 font-mono">{p.route}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* 📄 生成するドキュメント */}
+                        {phase.documents && phase.documents.length > 0 && (
+                          <div className="px-4 py-3">
+                            <p className="text-xs font-bold text-gray-500 mb-2">📄 生成するドキュメント</p>
+                            <div className="space-y-1">
+                              {phase.documents.map((doc, i) => (
+                                <div key={i} className="flex items-center gap-2 text-xs flex-wrap">
+                                  <span className={`px-1.5 py-0.5 rounded whitespace-nowrap ${
+                                    doc.generator === 'agent3'
+                                      ? 'bg-purple-100 text-purple-700'
+                                      : doc.generator === 'ai-draft'
+                                      ? 'bg-blue-100 text-blue-700'
+                                      : 'bg-gray-100 text-gray-600'
+                                  }`}>
+                                    {doc.generator === 'agent3' ? '🤖Agent3' : doc.generator === 'ai-draft' ? '✨AI起案' : '📝手動'}
+                                  </span>
+                                  <span className="font-medium text-gray-700">{doc.name}</span>
+                                  <span className="text-gray-400">{doc.audience}向け / {doc.format}</span>
                                 </div>
                               ))}
                             </div>
