@@ -197,6 +197,13 @@ export const FEATURE_MODULES: FeatureModule[] = [
         status: 'active',
         description: '議事録・住民通知文・業務報告書・職員回覧をメモ入力だけでAIが起案。職員は確認・修正するだけ',
       },
+      {
+        id: 'staff-predictive-alerts',
+        label: '🔮 予兆検知ダッシュボード',
+        href: '/gyosei/predictive-alerts',
+        status: 'active',
+        description: 'インフラ老朽化・離職リスク1on1・住民満足度低下をAIが先回り検知。週次自動実行＋LINE通知でゼロ見逃しを実現',
+      },
     ],
   },
 
