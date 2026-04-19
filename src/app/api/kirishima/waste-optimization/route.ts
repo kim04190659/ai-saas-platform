@@ -93,7 +93,7 @@ async function fetchWasteData(notionKey: string) {
 
 function buildPrompt(
   scenario: string,
-  data: { districts: object[]; facilities: object[]; routes: object[] },
+  data: { districts: Record<string, unknown>[]; facilities: Record<string, unknown>[]; routes: Record<string, unknown>[] },
 ): string {
 
   const dataText = `
