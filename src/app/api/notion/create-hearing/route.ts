@@ -28,7 +28,9 @@ import type { RoadmapData, RoadmapPhase, DocumentSpec } from '@/app/api/runwith/
 
 const NOTION_API_KEY    = process.env.NOTION_API_KEY    ?? ''
 const HEARING_DB_ID     = process.env.NOTION_HEARING_DB_ID ?? ''
-const PARENT_PAGE_ID    = process.env.NOTION_PARENT_PAGE_ID ?? '338960a91e23813f9402f53e5240e029'
+// 🏙️ 自治体・組織 展開ページ（ウィザードで作成される自治体ページの親）
+// Vercel 環境変数 NOTION_PARENT_PAGE_ID を設定することで上書き可能
+const PARENT_PAGE_ID    = process.env.NOTION_PARENT_PAGE_ID ?? '347960a91e2381088f69f359081ef39e'
 
 const NOTION_API  = 'https://api.notion.com/v1'
 const NOTION_VER  = '2022-06-28'
