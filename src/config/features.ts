@@ -7,30 +7,36 @@
  * ■ プラットフォームのビジョン（2026年4月改訂）
  *   RunWith Platform は自治体のWell-Beingを最大化する基盤。
  *   住民 → LINE → 職員 → エクセレントサービス → Well-Being向上
- *   という価値共創フロー（SDL）を10層のメニューで体現する。
+ *   という価値共創フロー（SDL）を5グループのメニューで体現する。
  *
- * ■ 10モジュール構成（2026年4月 再編）
- *   ── 行政コア ──────────────────────────────
+ * ■ 5グループ構成（2026年4月 再編）
+ *   ── 行政コア（標準機能・全自治体共通）──────────────
  *   ① 住民接点    : 住民とのLINEタッチポイント（sky）
  *   ② 職員支援    : エクセレントサービス提供支援（emerald）
  *   ③ 経営・政策  : 町長・議会向け見える化・AI提言（violet）
- *   ── 部門別 ────────────────────────────────
+ *   ── 部門別（標準機能・全自治体共通）──────────────
  *   ④ 教育        : 学校・教職員支援（blue）
  *   ⑤ 警察・消防  : 地域安全・防災支援（amber）
  *   ⑥ 医療・介護  : 高齢化社会を支える医療・福祉（rose）
- *   ── 横断・連携 ────────────────────────────
- *   ⑦ 公務員連携  : 全部門横断ビュー・AI横断提言（indigo）
- *   ── 実証展開 ──────────────────────────────
- *   ⑧ 霧島市展開  : Notionオントロジー連携実証（teal）
- *   ── 研修・学習 ────────────────────────────
+ *   ⑦ 公共設備    : ライフライン設備管理（cyan）
+ *   ── 横断・研修（標準機能・全自治体共通）────────────
+ *   ⑧ 公務員連携  : 全部門横断ビュー・AI横断提言（indigo）
  *   ⑨ 研修・学習  : SDL体験型カードゲーム研修（purple）
- *   ── 基盤 ──────────────────────────────────
+ *   ── 自治体展開（自治体固有ページ）──────────────────
+ *   🏙️ 霧島市      : 霧島市向け実証ダッシュボード（teal）
+ *   🏝️ 屋久島町    : 屋久島町向け展開（準備中）
+ *   🏢 NEC         : NECコーポレートIT（準備中）
+ *   ── 基盤 ────────────────────────────────────────
  *   ⑩ 基盤・設定  : データ蓄積・IT管理・プラットフォーム設定（orange）
  *
  * ■ 新機能を追加するとき
  *   1. 該当モジュールの pages[] に1エントリ追加
  *   2. src/app/(dashboard)/xxx/page.tsx を作成
  *   3. git push → Vercel 自動デプロイ
+ *
+ * ■ 新しい自治体を追加するとき
+ *   1. group: 'municipality' のモジュールを追加
+ *   2. Notionの「🏙️ 自治体・組織 展開ページ」直下にページ作成
  *
  * ■ status の意味
  *   'active'  → リンク有効、緑ドット表示
@@ -54,6 +60,28 @@ import {
 
 // ─── 型定義 ──────────────────────────────────────────────
 
+/**
+ * モジュールのグループ分類
+ *   core        : 行政コア（住民接点・職員支援・経営政策）
+ *   department  : 部門別（教育・警察消防・医療介護・公共設備）
+ *   cross       : 横断・研修（公務員連携・研修学習）
+ *   municipality: 自治体展開（霧島市・屋久島町・NEC など）
+ *   platform    : 基盤・設定
+ */
+export type ModuleGroup = 'core' | 'department' | 'cross' | 'municipality' | 'platform';
+
+/** サイドバーのセクションヘッダーラベル */
+export const GROUP_LABELS: Record<ModuleGroup, string> = {
+  core:         '🏛️ 行政コア',
+  department:   '🏢 部門別',
+  cross:        '🌐 横断・研修',
+  municipality: '🏙️ 自治体展開',
+  platform:     '⚙️ 基盤',
+};
+
+/** セクションの表示順（この順番でサイドバーに並ぶ） */
+export const GROUP_ORDER: ModuleGroup[] = ['core', 'department', 'cross', 'municipality', 'platform'];
+
 /** ページ1件の定義 */
 export type FeaturePage = {
   id: string;          // 一意のID（英数字・ハイフン）
@@ -66,6 +94,7 @@ export type FeaturePage = {
 /** モジュール（グループ）1件の定義 */
 export type FeatureModule = {
   id: string;           // 一意のID
+  group: ModuleGroup;   // サイドバーのセクション分類
   icon: LucideIcon;     // lucide-react アイコン
   emoji: string;        // 絵文字（ラベル前につける）
   label: string;        // サイドバーのグループ名
@@ -98,6 +127,7 @@ export const FEATURE_MODULES: FeatureModule[] = [
   // ══════════════════════════════════════
   {
     id: 'citizen',
+    group: 'core',   // 行政コア
     icon: Users,
     emoji: '🏘️',
     label: '住民接点',
@@ -153,6 +183,7 @@ export const FEATURE_MODULES: FeatureModule[] = [
   // ══════════════════════════════════════
   {
     id: 'staff',
+    group: 'core',   // 行政コア
     icon: UserCheck,
     emoji: '👥',
     label: '職員支援',
@@ -214,6 +245,7 @@ export const FEATURE_MODULES: FeatureModule[] = [
   // ══════════════════════════════════════
   {
     id: 'executive',
+    group: 'core',   // 行政コア
     icon: BarChart3,
     emoji: '📊',
     label: '経営・政策',
@@ -303,6 +335,7 @@ export const FEATURE_MODULES: FeatureModule[] = [
   // ══════════════════════════════════════
   {
     id: 'education',
+    group: 'department',   // 部門別
     icon: GraduationCap,
     emoji: '🏫',
     label: '教育',
@@ -357,6 +390,7 @@ export const FEATURE_MODULES: FeatureModule[] = [
   // ══════════════════════════════════════
   {
     id: 'safety',
+    group: 'department',   // 部門別
     icon: Shield,
     emoji: '👮',
     label: '警察・消防',
@@ -411,6 +445,7 @@ export const FEATURE_MODULES: FeatureModule[] = [
   // ══════════════════════════════════════
   {
     id: 'healthcare',
+    group: 'department',   // 部門別
     icon: Heart,
     emoji: '🏥',
     label: '医療・介護',
@@ -465,6 +500,7 @@ export const FEATURE_MODULES: FeatureModule[] = [
   // ══════════════════════════════════════
   {
     id: 'infrastructure',
+    group: 'department',   // 部門別
     icon: Settings,
     emoji: '🏗️',
     label: '公共設備',
@@ -527,6 +563,7 @@ export const FEATURE_MODULES: FeatureModule[] = [
   // ══════════════════════════════════════
   {
     id: 'koumuin',
+    group: 'cross',   // 横断・研修
     icon: Globe,
     emoji: '🌐',
     label: '公務員連携',
@@ -568,17 +605,18 @@ export const FEATURE_MODULES: FeatureModule[] = [
   },
 
   // ══════════════════════════════════════
-  //  🏙️ ⑧ 霧島市展開（実証モジュール）
+  //  🏙️ 霧島市 RunWith（自治体展開）
   //  霧島市向けNotionオントロジー連携ダッシュボード
   //  8DB・9KPI・SDL五軸を実データで可視化
   //  アクセントカラー: teal（ティール）
   // ══════════════════════════════════════
   {
     id: 'kirishima',
+    group: 'municipality',   // 自治体展開
     icon: MapPin,
     emoji: '🏙️',
-    label: '霧島市展開',
-    badge: '霧島市・実証',
+    label: '霧島市 RunWith',
+    badge: '霧島市',
     description: '霧島市向けNotionオントロジー（8DB・9KPI）をリアルタイム可視化。KPI総合・市民接触・WellBeing・ナレッジの4視点ダッシュボード。',
     accent: {
       bg: 'bg-teal-50',
@@ -643,6 +681,7 @@ export const FEATURE_MODULES: FeatureModule[] = [
   // ══════════════════════════════════════
   {
     id: 'training',
+    group: 'cross',   // 横断・研修
     icon: BookOpen,
     emoji: '🎮',
     label: '研修・学習',
@@ -691,12 +730,81 @@ export const FEATURE_MODULES: FeatureModule[] = [
   },
 
   // ══════════════════════════════════════
+  //  🏝️ 屋久島町 RunWith（自治体展開・準備中）
+  //  屋久島町向け展開ページ（ウィザードで生成予定）
+  //  アクセントカラー: green（緑）
+  // ══════════════════════════════════════
+  {
+    id: 'yakushima',
+    group: 'municipality',   // 自治体展開
+    icon: MapPin,
+    emoji: '🏝️',
+    label: '屋久島町 RunWith',
+    badge: '屋久島町',
+    description: '屋久島町向けRunWith展開ページ。組織設計ウィザードで8DB・9KPI・マニュアルをNotionに自動生成する。',
+    accent: {
+      bg: 'bg-green-50',
+      border: 'border-green-200',
+      icon: 'bg-green-100 text-green-600',
+      text: 'text-green-700',
+      badge: 'bg-green-100 text-green-700',
+      button: 'bg-green-600 hover:bg-green-700 text-white',
+      sidebarActive: 'bg-green-600 text-white',
+      sidebarDot: 'bg-green-400',
+    },
+    pages: [
+      {
+        id: 'yakushima-setup',
+        label: '🧠 組織設計ウィザード起動',
+        href: '/runwith/org-wizard',
+        status: 'coming',
+        description: '組織設計ウィザードを使って屋久島町のNotionページを自動生成',
+      },
+    ],
+  },
+
+  // ══════════════════════════════════════
+  //  🏢 NEC コーポレートIT RunWith（自治体展開・準備中）
+  //  NEC コーポレートIT部門向け展開ページ
+  //  アクセントカラー: slate（スレート）
+  // ══════════════════════════════════════
+  {
+    id: 'nec',
+    group: 'municipality',   // 自治体展開（法人組織も同グループで管理）
+    icon: MapPin,
+    emoji: '🏢',
+    label: 'NEC コーポレートIT',
+    badge: 'NEC',
+    description: 'NECコーポレートIT部門向けRunWith展開ページ。組織設計ウィザードで部門ナレッジ基盤をNotionに自動生成する。',
+    accent: {
+      bg: 'bg-slate-50',
+      border: 'border-slate-200',
+      icon: 'bg-slate-100 text-slate-600',
+      text: 'text-slate-700',
+      badge: 'bg-slate-100 text-slate-700',
+      button: 'bg-slate-600 hover:bg-slate-700 text-white',
+      sidebarActive: 'bg-slate-600 text-white',
+      sidebarDot: 'bg-slate-400',
+    },
+    pages: [
+      {
+        id: 'nec-setup',
+        label: '🧠 組織設計ウィザード起動',
+        href: '/runwith/org-wizard',
+        status: 'coming',
+        description: '組織設計ウィザードを使ってNECコーポレートITのNotionページを自動生成',
+      },
+    ],
+  },
+
+  // ══════════════════════════════════════
   //  ⚙️ ⑩ 基盤・設定
   //  NotionDB連携・IT基盤管理・プラットフォーム設定層
   //  アクセントカラー: orange（橙）
   // ══════════════════════════════════════
   {
     id: 'platform',
+    group: 'platform',   // 基盤
     icon: Settings,
     emoji: '⚙️',
     label: '基盤・設定',
@@ -785,6 +893,24 @@ export const FEATURE_MODULES: FeatureModule[] = [
 /** 指定IDのモジュールを取得 */
 export function getModule(moduleId: string): FeatureModule | undefined {
   return FEATURE_MODULES.find((m) => m.id === moduleId);
+}
+
+/**
+ * GROUP_ORDER の順番でグループ化されたモジュール一覧を返す
+ * サイドバーでセクションヘッダーを描画するために使用
+ */
+export function getModulesByGroup(): {
+  group: ModuleGroup;
+  label: string;
+  modules: FeatureModule[];
+}[] {
+  return GROUP_ORDER
+    .map((group) => ({
+      group,
+      label: GROUP_LABELS[group],
+      modules: FEATURE_MODULES.filter((m) => m.group === group),
+    }))
+    .filter((g) => g.modules.length > 0);
 }
 
 /** activeなページだけを取得（ホーム画面カードのリンクに使用） */
