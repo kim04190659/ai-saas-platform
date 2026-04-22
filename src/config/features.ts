@@ -729,6 +729,48 @@ export const FEATURE_MODULES: FeatureModule[] = [
     ],
   },
 
+
+  // ══════════════════════════════════════
+  //  👨‍👩‍👧‍👦 Personal Coarc
+  //  家族向け個人AIアシスタント（BYOK方式）
+  //  アクセントカラー: purple（紫）
+  // ══════════════════════════════════════
+  {
+    id: 'personal-coarc',
+    group: 'cross',   // 横断・研修
+    icon: Users,
+    emoji: '👨‍👩‍👧‍👦',
+    label: 'Personal Coarc',
+    badge: '家族・個人AI',
+    description: '家族全員にAIアシスタントを。管理者がAPIキーを登録してQRコードを発行。家族はスキャンするだけで自分専用のAI支援ページがNotionに自動生成される。',
+    accent: {
+      bg: 'bg-purple-50',
+      border: 'border-purple-200',
+      icon: 'bg-purple-100 text-purple-600',
+      text: 'text-purple-700',
+      badge: 'bg-purple-100 text-purple-700',
+      button: 'bg-purple-600 hover:bg-purple-700 text-white',
+      sidebarActive: 'bg-purple-600 text-white',
+      sidebarDot: 'bg-purple-400',
+    },
+    pages: [
+      {
+        id: 'personal-coarc-admin',
+        label: '⚙️ 管理者セットアップ',
+        href: '/personal-coarc/admin',
+        status: 'active',
+        description: 'APIキー登録・QRコード招待',
+      },
+      {
+        id: 'personal-coarc-join',
+        label: '👤 家族登録',
+        href: '/personal-coarc/join',
+        status: 'active',
+        description: 'QRスキャン後の登録フォーム',
+      },
+    ],
+  },
+
   // ══════════════════════════════════════
   //  🏝️ 屋久島町 RunWith（自治体展開・準備中）
   //  屋久島町向け展開ページ（ウィザードで生成予定）
