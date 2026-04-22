@@ -65,6 +65,12 @@ function JoinContent() {
           className="block w-full py-4 rounded-2xl bg-purple-600 text-white font-bold text-sm shadow-lg shadow-purple-200 mb-4 text-center">
           📋 自分のページを見る（Notion）
         </a>
+        <button
+          onClick={() => router.push('/personal-coarc/chat')}
+          className="block w-full py-4 rounded-2xl bg-white border-2 border-purple-300 text-purple-600 font-bold text-sm mb-4 text-center"
+        >
+          💬 AIアシスタントと話す
+        </button>
         <button onClick={() => router.push('/')} className="text-sm text-slate-400">ホームに戻る</button>
       </div>
     </div>

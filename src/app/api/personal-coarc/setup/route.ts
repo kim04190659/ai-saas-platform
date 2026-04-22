@@ -89,7 +89,7 @@ async function analyzeWithClaude(
 async function createNotionPage(
   answers: Record<string, string>,
   analysis: string
-): Promise<string> {
+): Promise<{ url: string; id: string }> {
   const today = new Date().toLocaleDateString('ja-JP')
   const name = answers.name ?? 'あなた'
   const notionKey = process.env.NOTION_API_KEY ?? ''
@@ -145,8 +145,8 @@ async function createNotionPage(
     throw new Error(`Notionページ作成失敗: ${JSON.stringify(err)}`)
   }
 
-  const page = await res.json() as { url: string }
-  return page.url
+  const page = await res.json() as { url: string; id: string }
+  return { url: page.url, id: page.id }
 }
 
 // POSTハンドラー\uff08メイン処理\uff09
@@ -178,7 +178,7 @@ export async function POST(req: NextRequest) {
     const analysis = await analyzeWithClaude(apiKey, answers)
 
     // Notionに個人ページを生成
-    const notionUrl = await createNotionPage(answers, analysis)
+    const { url: notionUrl, id: notionPageId } = await createNotionPage(answers, analysis)
 
     // ユーザーIDを生成\uff08名前+タイムスタンプ\uff09
     const userId = `${answers.name}_${Date.now()}`
@@ -187,6 +187,7 @@ export async function POST(req: NextRequest) {
       success: true,
       userId,
       notionUrl,
+      notionPageId,
       message: `${answers.name}さんの個人ページを作成しました`,
     })
   } catch (err: unknown) {
