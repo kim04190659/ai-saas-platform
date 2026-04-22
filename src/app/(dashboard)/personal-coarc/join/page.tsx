@@ -48,6 +48,9 @@ function JoinContent() {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
+      // チャット画面で使うセッション情報をlocalStorageに保存
+      if (data.notionPageId) localStorage.setItem('pc_pageId', data.notionPageId)
+      if (answers.name) localStorage.setItem('pc_name', answers.name)
       setNotionUrl(data.notionUrl); setDone(true)
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'セットアップ失敗')
