@@ -19,6 +19,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
+import { useMunicipality } from '@/contexts/MunicipalityContext'
 
 // ─── 型定義 ──────────────────────────────────────────
 
@@ -116,20 +117,25 @@ function SummaryCard({ icon, label, value, sub, color }: {
 // ─── メインコンポーネント ─────────────────────────────
 
 export default function RevenuePage() {
+  // Sprint #35: 選択中の自治体を取得
+  const { municipalityId, municipality } = useMunicipality()
+
   const [records,      setRecords]      = useState<RevenueRecord[]>([])
   const [hints,        setHints]        = useState<RevenueRecord[]>([])
   const [summary,      setSummary]      = useState<Summary | null>(null)
-  const [form,         setForm]         = useState<FormState>(INITIAL_FORM)
+  // フォームの初期自治体名をコンテキストから設定
+  const [form,         setForm]         = useState<FormState>({ ...INITIAL_FORM, municipality: municipality.shortName })
   const [loading,      setLoading]      = useState(false)
   const [fetching,     setFetching]     = useState(true)
   const [message,      setMessage]      = useState<{ text: string; ok: boolean } | null>(null)
   const [showForm,     setShowForm]     = useState(false)
   const [filterType,   setFilterType]   = useState<string>('')
 
+  // Sprint #35: municipalityId をクエリパラメータで渡す（マルチテナント対応）
   const fetchData = useCallback(async () => {
     setFetching(true)
     try {
-      const res  = await fetch('/api/revenue')
+      const res  = await fetch(`/api/revenue?municipalityId=${municipalityId}`)
       const data = await res.json()
       if (!data.error) {
         setRecords(data.records ?? [])
@@ -139,7 +145,13 @@ export default function RevenuePage() {
     } finally {
       setFetching(false)
     }
-  }, [])
+  }, [municipalityId])  // municipalityId が変わると再取得
+
+  // 自治体が切り替わったらフォームの自治体名もリセット
+  useEffect(() => {
+    setForm(f => ({ ...f, municipality: municipality.shortName }))
+    setMessage(null)
+  }, [municipalityId, municipality.shortName])
 
   useEffect(() => { fetchData() }, [fetchData])
 
@@ -191,7 +203,7 @@ export default function RevenuePage() {
                 💰 収益・財政データ分析
               </h1>
               <p className="text-sm text-slate-500 mt-1">
-                観光・産品・宿泊など地域の収益データを記録・可視化し、AI顧問の分析に活用します
+                {municipality.name} — 観光・産品・宿泊など地域の収益データを記録・可視化し、AI顧問の分析に活用します
               </p>
             </div>
             <button

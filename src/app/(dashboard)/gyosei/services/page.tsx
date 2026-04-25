@@ -20,6 +20,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
+import { useMunicipality } from '@/contexts/MunicipalityContext';
 
 // ─── 型定義 ──────────────────────────────────────────────
 
@@ -125,6 +126,9 @@ function SummaryCard({
 // ─── メインコンポーネント ──────────────────────────────────
 
 export default function CitizenServicesPage() {
+  // Sprint #35: 選択中の自治体を取得
+  const { municipalityId, municipality } = useMunicipality();
+
   // 一覧データ
   const [services, setServices] = useState<ServiceRecord[]>([]);
   const [summary, setSummary] = useState<Summary | null>(null);
@@ -136,10 +140,10 @@ export default function CitizenServicesPage() {
   const [submitting, setSubmitting] = useState(false);
   const [submitMsg, setSubmitMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  /** フォーム初期値 */
+  /** フォーム初期値（自治体名を動的に設定） */
   const initialForm: FormData = {
     serviceName: '',
-    municipality: '屋久島町',
+    municipality: municipality.shortName,  // Sprint #35: 選択中自治体の shortName を使用
     category: '窓口',
     status: '稼働中',
     waitingMinutes: '',
@@ -152,11 +156,12 @@ export default function CitizenServicesPage() {
 
   // ─── データ取得 ─────────────────────────────────────────
 
+  // Sprint #35: municipalityId をクエリパラメータで渡す（マルチテナント対応）
   const fetchData = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch('/api/citizen-service');
+      const res = await fetch(`/api/citizen-service?municipalityId=${municipalityId}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       setServices(data.services ?? []);
@@ -166,7 +171,13 @@ export default function CitizenServicesPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [municipalityId]);  // municipalityId が変わると再取得
+
+  // 自治体が切り替わったらフォームの自治体名もリセット
+  useEffect(() => {
+    setForm(f => ({ ...f, municipality: municipality.shortName }));
+    setSubmitMsg(null);
+  }, [municipalityId, municipality.shortName]);
 
   useEffect(() => {
     fetchData();
@@ -227,7 +238,7 @@ export default function CitizenServicesPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">🏘️ 住民サービス状況</h1>
           <p className="text-gray-500 mt-1 text-sm">
-            行政サービスの稼働状況・窓口待ち時間・満足度を記録し、CitizenService × SDL価値軸で分析します
+            {municipality.name} — 行政サービスの稼働状況・窓口待ち時間・満足度を記録し、CitizenService × SDL価値軸で分析します
           </p>
         </div>
         <button

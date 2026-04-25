@@ -14,6 +14,7 @@
 // =====================================================
 
 import { NextRequest, NextResponse } from 'next/server'
+import { getMunicipalityById } from '@/config/municipalities'
 
 const NOTION_API_BASE = 'https://api.notion.com/v1'
 const NOTION_VERSION  = '2022-06-28'
@@ -29,15 +30,26 @@ function notionHeaders(apiKey: string) {
 
 // ─── GET ─────────────────────────────────────────────
 
-export async function GET() {
+// Sprint #35: NextRequest を受け取り municipalityId クエリを処理するように変更
+export async function GET(req: NextRequest) {
   const apiKey = process.env.NOTION_API_KEY
   if (!apiKey) return NextResponse.json({ error: 'NOTION_API_KEY が未設定' }, { status: 500 })
 
+  // ── Sprint #35: クエリパラメータから自治体IDを取得 ──
+  const { searchParams } = new URL(req.url)
+  const municipalityId   = searchParams.get('municipalityId') ?? 'kirishima'
+  const municipality     = getMunicipalityById(municipalityId)
+
   try {
+    // 自治体名でフィルタリングして収益データを取得（マルチテナント対応）
     const res = await fetch(`${NOTION_API_BASE}/databases/${REVENUE_DB_ID}/query`, {
       method:  'POST',
       headers: notionHeaders(apiKey),
       body:    JSON.stringify({
+        filter: {
+          property: '自治体名',
+          rich_text: { contains: municipality.shortName },
+        },
         page_size: 100,
         sorts: [{ property: '記録日', direction: 'descending' }],
       }),
