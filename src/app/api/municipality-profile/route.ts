@@ -1,10 +1,15 @@
 // =====================================================
 //  src/app/api/municipality-profile/route.ts
-//  自治体プロフィール API ルート — Sprint #14.8
+//  自治体プロフィール API ルート — Sprint #14.8 / Sprint #32 更新
 //
 //  ■ このファイルの役割
-//    - GET: MunicipalityProfile DB から最新プロフィールを1件取得する
+//    - GET: MunicipalityProfile DB から指定自治体のプロフィールを1件取得する
 //    - POST: フォームの入力値を MunicipalityProfile DB に書き込む
+//
+//  ■ Sprint #32 変更点
+//    クエリパラメータ ?municipalityId=kirishima を受け取り、
+//    自治体名でフィルタリングするように修正した（マルチテナント対応）。
+//    旧実装（全件取得して最新1件）は自治体データが混在するバグの原因だった。
 //
 //  ■ このAPIの核心的な役割
 //    取得したプロフィールを /api/ai-advisor のシステムプロンプトに
@@ -15,6 +20,7 @@
 // =====================================================
 
 import { NextRequest, NextResponse } from 'next/server'
+import { getMunicipalityById } from '@/config/municipalities'
 
 const NOTION_API_BASE        = 'https://api.notion.com/v1'
 const NOTION_VERSION         = '2022-06-28'
@@ -45,20 +51,30 @@ function notionHeaders(apiKey: string) {
   }
 }
 
-// ─── GET: 最新プロフィールを1件取得 ──────────────────
+// ─── GET: 指定自治体のプロフィールを1件取得 ──────────
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const notionApiKey = process.env.NOTION_API_KEY
   if (!notionApiKey) {
     return NextResponse.json({ error: 'NOTION_API_KEY が設定されていません' }, { status: 500 })
   }
 
+  // ── Sprint #32: クエリパラメータから自治体IDを取得 ──
+  const { searchParams } = new URL(req.url)
+  const municipalityId  = searchParams.get('municipalityId') ?? 'kirishima'
+  const municipality    = getMunicipalityById(municipalityId)
+
   try {
-    // 最新更新日時の降順で1件だけ取得（複数自治体を想定した将来拡張のため）
+    // 自治体名でフィルタリングして取得（マルチテナント対応）
+    // 旧実装（全件取得して最新1件）は廃止。自治体名プロパティで必ず絞り込む。
     const res = await fetch(`${NOTION_API_BASE}/databases/${MUNICIPALITY_PROFILE_DB}/query`, {
       method: 'POST',
       headers: notionHeaders(notionApiKey),
       body: JSON.stringify({
+        filter: {
+          property: '自治体名',
+          title: { equals: municipality.shortName },
+        },
         page_size: 1,
         sorts: [{ timestamp: 'last_edited_time', direction: 'descending' }],
       }),
