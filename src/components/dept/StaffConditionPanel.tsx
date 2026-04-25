@@ -29,6 +29,8 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import type { DeptConfig } from '@/config/departments';
+// Sprint #42: 共通コンポーネントから SummaryCard をインポート
+import { SummaryCard } from '@/components/ui/SummaryCard';
 
 // ─── 型定義 ──────────────────────────────────────────────
 
@@ -88,23 +90,7 @@ const makeInitialForm = (): FormState => ({
 });
 
 // ─── 子コンポーネント ─────────────────────────────────────
-
-/** サマリーカード（上部 4 枚） */
-function SummaryCard({
-  icon, label, value, sub, colorClass,
-}: {
-  icon: string; label: string; value: string | number;
-  sub?: string; colorClass: string;
-}) {
-  return (
-    <div className={`rounded-xl border p-4 ${colorClass}`}>
-      <div className="text-2xl mb-1">{icon}</div>
-      <div className="text-2xl font-bold">{value}</div>
-      <div className="text-xs font-medium mt-0.5">{label}</div>
-      {sub && <div className="text-xs opacity-70 mt-0.5">{sub}</div>}
-    </div>
-  );
-}
+// SummaryCard は src/components/ui/SummaryCard から共通インポート済み（Sprint #42）
 
 /**
  * スコア入力ボタン（1〜5）

@@ -9,6 +9,9 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+// Sprint #42: 共通コンポーネントからインポート
+import { StatusBadge } from '@/components/ui/StatusBadge';
+import { ProgressBar } from '@/components/ui/ProgressBar';
 
 // ─── 型定義 ──────────────────────────────────────────────
 
@@ -34,25 +37,12 @@ const INITIAL_FACILITIES: FacilityRecord[] = [
   { id: '4', name: '地域包括支援センター',    serviceType: '地域包括支援センター', capacity: 0, current: 0, manager: '中村主任',  phone: '0997-xx-xxxx', status: '受入可' },
 ];
 
-function StatusBadge({ status }: { status: FacilityRecord['status'] }) {
-  const cls = status === '受入可' ? 'bg-emerald-100 text-emerald-700'
-    : status === '満床' ? 'bg-red-100 text-red-700'
-    : 'bg-amber-100 text-amber-700';
-  return <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${cls}`}>{status}</span>;
-}
-
-function OccupancyBar({ current, capacity }: { current: number; capacity: number }) {
-  if (capacity === 0) return <span className="text-xs text-slate-400">—</span>;
-  const rate = Math.round((current / capacity) * 100);
-  const cls = rate >= 90 ? 'bg-red-400' : rate >= 70 ? 'bg-amber-400' : 'bg-emerald-400';
-  return (
-    <div className="flex items-center gap-2">
-      <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-        <div className={`h-full rounded-full ${cls}`} style={{ width: `${rate}%` }} />
-      </div>
-      <span className="text-xs text-slate-500 w-12 text-right">{current}/{capacity}名</span>
-    </div>
-  );
+// StatusBadge / ProgressBar は src/components/ui/ から共通インポート済み（Sprint #42）
+// StatusBadge の色マップ（介護施設専用）
+const CARE_STATUS_COLOR_MAP = {
+  '受入可': 'bg-emerald-100 text-emerald-700',
+  '満床':   'bg-red-100 text-red-700',
+  '要相談': 'bg-amber-100 text-amber-700',
 }
 
 export function CareCoordinationPanel() {
@@ -101,11 +91,12 @@ export function CareCoordinationPanel() {
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="font-semibold text-slate-700">{f.name}</p>
                       <span className="text-xs px-2 py-0.5 rounded-full bg-rose-100 text-rose-700">{f.serviceType}</span>
-                      <StatusBadge status={f.status} />
+                      <StatusBadge status={f.status} colorMap={CARE_STATUS_COLOR_MAP} />
                     </div>
                     <p className="text-xs text-slate-500 mt-1">担当: {f.manager}　📞 {f.phone}</p>
                     <div className="mt-2">
-                      <OccupancyBar current={f.current} capacity={f.capacity} />
+                      {/* OccupancyBar → 共通 ProgressBar に置換（Sprint #42） */}
+                      <ProgressBar current={f.current} max={f.capacity} showLabel unit="名" />
                     </div>
                   </div>
                   <a href={`tel:${f.phone}`} className="flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium bg-rose-100 text-rose-700 border border-rose-200 hover:bg-rose-200 transition-colors">

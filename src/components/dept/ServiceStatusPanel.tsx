@@ -10,6 +10,9 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import type { DeptConfig } from '@/config/departments';
+// Sprint #42: 共通コンポーネントからインポート
+import { SummaryCard } from '@/components/ui/SummaryCard';
+import { StatusBadge } from '@/components/ui/StatusBadge';
 
 // ─── 型定義 ──────────────────────────────────────────────
 
@@ -58,31 +61,7 @@ const makeInitialForm = (): FormState => ({
 });
 
 // ─── サブコンポーネント ────────────────────────────────────
-
-function SummaryCard({ icon, label, value, sub, colorClass }: {
-  icon: string; label: string; value: string | number; sub?: string; colorClass: string;
-}) {
-  return (
-    <div className={`rounded-xl border p-4 ${colorClass}`}>
-      <div className="text-2xl mb-1">{icon}</div>
-      <div className="text-2xl font-bold">{value}</div>
-      <div className="text-xs font-medium mt-0.5">{label}</div>
-      {sub && <div className="text-xs opacity-70 mt-0.5">{sub}</div>}
-    </div>
-  );
-}
-
-function StatusBadge({ status }: { status: string }) {
-  const cls =
-    status === '稼働中' ? 'bg-emerald-100 text-emerald-700'
-    : status === '制限中' ? 'bg-amber-100 text-amber-700'
-    : 'bg-red-100 text-red-700';
-  return (
-    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${cls}`}>
-      {status}
-    </span>
-  );
-}
+// SummaryCard / StatusBadge は src/components/ui/ から共通インポート済み（Sprint #42）
 
 // ─── メインコンポーネント ──────────────────────────────────
 

@@ -13,6 +13,8 @@
 import { useState } from 'react'
 import { FileText, RefreshCw, ExternalLink, AlertTriangle, CheckCircle, Clock } from 'lucide-react'
 import { useMunicipality } from '@/contexts/MunicipalityContext'
+// Sprint #42: wbColor / wbBg を共通モジュールからインポート
+import { wbColor, wbBg } from '@/components/ui/WbScore'
 
 // ─── 型定義 ──────────────────────────────────────────
 
@@ -43,21 +45,7 @@ interface SummaryResult {
   notionPage?: { id: string; url: string }
 }
 
-// ─── WBスコアに応じた色クラス ──────────────────────────
-
-function wbColor(score: number): string {
-  if (score === 0)  return 'text-gray-400'
-  if (score >= 70)  return 'text-emerald-600'
-  if (score >= 55)  return 'text-amber-500'
-  return 'text-red-500'
-}
-
-function wbBg(score: number): string {
-  if (score === 0)  return 'bg-gray-50'
-  if (score >= 70)  return 'bg-emerald-50'
-  if (score >= 55)  return 'bg-amber-50'
-  return 'bg-red-50'
-}
+// wbColor / wbBg は src/components/ui/WbScore から共通インポート済み（Sprint #42）
 
 function wbBar(score: number): string {
   if (score === 0)  return 'bg-gray-200'

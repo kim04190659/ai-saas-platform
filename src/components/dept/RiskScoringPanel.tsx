@@ -23,6 +23,8 @@ import {
   Minus,
   Users,
 } from 'lucide-react'
+// Sprint #42: wbColor を共通モジュールからインポート
+import { wbColor } from '@/components/ui/WbScore'
 
 // ─── 型定義 ──────────────────────────────────────────
 
@@ -73,12 +75,7 @@ function riskBadge(level: 'high' | 'mid' | 'low') {
   return                       { bg: 'bg-emerald-100', text: 'text-emerald-700', border: 'border-emerald-300', label: '🟢 低リスク' }
 }
 
-function wbColor(score: number): string {
-  if (score <= 0) return 'text-gray-400'
-  if (score >= 70) return 'text-emerald-600'
-  if (score >= 55) return 'text-amber-500'
-  return 'text-red-500'
-}
+// wbColor は src/components/ui/WbScore から共通インポート済み（Sprint #42）
 
 /** 週スコアのミニバー（4週分を可視化）*/
 function WeeklyBar({ scores }: { scores: number[] }) {
