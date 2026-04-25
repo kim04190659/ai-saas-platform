@@ -10,6 +10,7 @@
 // =====================================================
 
 import { useState } from 'react'
+import { useMunicipality } from '@/contexts/MunicipalityContext'
 
 // ─── 型定義 ──────────────────────────────────────────
 
@@ -117,7 +118,13 @@ function LevelBadge({ level }: { level: AlertItem['level'] }) {
 
 // ─── 検知器カード ─────────────────────────────────────
 
-function DetectorCard({ detector }: { detector: typeof DETECTORS[0] }) {
+function DetectorCard({
+  detector,
+  municipalityId,
+}: {
+  detector: typeof DETECTORS[0]
+  municipalityId: string
+}) {
   const [loading,  setLoading]  = useState(false)
   const [result,   setResult]   = useState<RunResult | null>(null)
   const [showDetail, setShowDetail] = useState(false)
@@ -126,7 +133,12 @@ function DetectorCard({ detector }: { detector: typeof DETECTORS[0] }) {
     setLoading(true)
     setResult(null)
     try {
-      const res  = await fetch(detector.endpoint, { method: 'POST' })
+      // POST ボディに municipalityId を含めて自治体別処理を実行
+      const res  = await fetch(detector.endpoint, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ municipalityId }),
+      })
       const data = await res.json() as RunResult
       setResult(data)
       setShowDetail(true)
@@ -242,6 +254,9 @@ function DetectorCard({ detector }: { detector: typeof DETECTORS[0] }) {
 // ─── メインパネル ─────────────────────────────────────
 
 export function PredictiveAlertPanel() {
+  // 選択中の自治体（マルチテナント対応）
+  const { municipalityId, municipality } = useMunicipality()
+
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-6">
 
@@ -249,7 +264,7 @@ export function PredictiveAlertPanel() {
       <div>
         <h1 className="text-2xl font-bold text-gray-900 mb-1">🔮 予兆検知ダッシュボード</h1>
         <p className="text-gray-500 text-sm">
-          AIが問題を先回りして検知し、職員・管理者に自動通知します。<br />
+          {municipality.name} — AIが問題を先回りして検知し、職員・管理者に自動通知します。<br />
           各カードの「今すぐ実行」で手動テストができます。本番では自動でスケジュール実行されます。
         </p>
       </div>
@@ -273,10 +288,10 @@ export function PredictiveAlertPanel() {
         </div>
       </div>
 
-      {/* 検知器カード */}
+      {/* 検知器カード — municipalityId を渡して自治体別に実行 */}
       <div className="space-y-4">
         {DETECTORS.map(d => (
-          <DetectorCard key={d.key} detector={d} />
+          <DetectorCard key={d.key} detector={d} municipalityId={municipalityId} />
         ))}
       </div>
 

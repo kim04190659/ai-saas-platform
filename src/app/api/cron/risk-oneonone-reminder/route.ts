@@ -18,27 +18,40 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { sendOneOnOneReminders } from '@/lib/predictive-detector'
+import { getMunicipalityById } from '@/config/municipalities'
 
 export async function GET(req: NextRequest) {
   const authHeader = req.headers.get('authorization')
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}` && process.env.NODE_ENV === 'production') {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
-  return runReminders()
+  const { searchParams } = new URL(req.url)
+  const municipalityId = searchParams.get('municipalityId') ?? 'kirishima'
+  return runReminders(municipalityId)
 }
 
-export async function POST() {
-  return runReminders()
+export async function POST(req: NextRequest) {
+  let municipalityId = 'kirishima'
+  try {
+    const body = await req.json()
+    if (body?.municipalityId) municipalityId = body.municipalityId
+  } catch { /* body なしは無視 */ }
+  return runReminders(municipalityId)
 }
 
-async function runReminders() {
+async function runReminders(municipalityId: string) {
   const notionKey    = process.env.NOTION_API_KEY    ?? ''
   const anthropicKey = process.env.ANTHROPIC_API_KEY ?? ''
   const lineToken    = process.env.LINE_CHANNEL_ACCESS_TOKEN ?? ''
 
-  console.log('[risk-oneonone-reminder] Cron 開始')
+  const municipality = getMunicipalityById(municipalityId)
 
-  const result = await sendOneOnOneReminders(notionKey, anthropicKey, lineToken)
+  console.log(`[risk-oneonone-reminder] Cron 開始: ${municipality.shortName}`)
+
+  const result = await sendOneOnOneReminders(
+    notionKey, anthropicKey, lineToken,
+    municipality.shortName, municipality.notionPageId,
+  )
 
   if (!result.success) {
     return NextResponse.json({

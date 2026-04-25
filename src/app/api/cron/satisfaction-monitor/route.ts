@@ -18,27 +18,40 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { detectSatisfactionDecline } from '@/lib/predictive-detector'
+import { getMunicipalityById } from '@/config/municipalities'
 
 export async function GET(req: NextRequest) {
   const authHeader = req.headers.get('authorization')
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}` && process.env.NODE_ENV === 'production') {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
-  return runMonitor()
+  const { searchParams } = new URL(req.url)
+  const municipalityId = searchParams.get('municipalityId') ?? 'kirishima'
+  return runMonitor(municipalityId)
 }
 
-export async function POST() {
-  return runMonitor()
+export async function POST(req: NextRequest) {
+  let municipalityId = 'kirishima'
+  try {
+    const body = await req.json()
+    if (body?.municipalityId) municipalityId = body.municipalityId
+  } catch { /* body なしは無視 */ }
+  return runMonitor(municipalityId)
 }
 
-async function runMonitor() {
+async function runMonitor(municipalityId: string) {
   const notionKey    = process.env.NOTION_API_KEY    ?? ''
   const anthropicKey = process.env.ANTHROPIC_API_KEY ?? ''
   const lineToken    = process.env.LINE_CHANNEL_ACCESS_TOKEN ?? ''
 
-  console.log('[satisfaction-monitor] Cron 開始')
+  const municipality = getMunicipalityById(municipalityId)
 
-  const result = await detectSatisfactionDecline(notionKey, anthropicKey, lineToken)
+  console.log(`[satisfaction-monitor] Cron 開始: ${municipality.shortName}`)
+
+  const result = await detectSatisfactionDecline(
+    notionKey, anthropicKey, lineToken,
+    municipality.shortName, municipality.notionPageId,
+  )
 
   if (!result.success) {
     return NextResponse.json({

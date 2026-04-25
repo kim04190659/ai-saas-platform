@@ -94,12 +94,16 @@ export async function queryNotionDB(
   }
 }
 
-/** Notion に予兆アラートレポートページを保存する */
+/**
+ * Notion に予兆アラートレポートページを保存する
+ * @param parentPageId 保存先の Notion ページ ID（省略時は環境変数 ALERT_PARENT_PAGE_ID）
+ */
 export async function saveAlertToNotion(
-  title:     string,
-  content:   string,
-  emoji:     string,
-  notionKey: string,
+  title:         string,
+  content:       string,
+  emoji:         string,
+  notionKey:     string,
+  parentPageId?: string,
 ): Promise<{ id: string; url: string } | null> {
 
   // content を 1900 字ずつ paragraph ブロックに分割
@@ -124,7 +128,7 @@ export async function saveAlertToNotion(
         'Notion-Version': NOTION_VERSION,
       },
       body: JSON.stringify({
-        parent:     { page_id: ALERT_PARENT_PAGE_ID },
+        parent:     { page_id: parentPageId ?? ALERT_PARENT_PAGE_ID },
         icon:       { emoji },
         properties: {
           title: [{ text: { content: title } }],
@@ -152,9 +156,11 @@ export async function saveAlertToNotion(
  *   - 設置年から 20 年以上経過（推定） → warning
  */
 export async function detectInfraAging(
-  notionKey:    string,
-  anthropicKey: string,
-  lineToken:    string,
+  notionKey:        string,
+  anthropicKey:     string,
+  lineToken:        string,
+  municipalityName: string = '自治体',
+  parentPageId?:    string,
 ): Promise<DetectionResult> {
 
   const type: PredictiveAlert['type'] = 'infra_aging'
@@ -193,7 +199,7 @@ export async function detectInfraAging(
 
     // Claude Haiku でリスク分析
     const anthropic = new Anthropic({ apiKey: anthropicKey })
-    const prompt = `あなたは屋久島町の公共設備管理の専門家です。
+    const prompt = `あなたは${municipalityName}の公共設備管理の専門家です。
 以下の設備点検データを分析し、老朽化・障害リスクを評価してください。
 
 ${analysisText}
@@ -269,6 +275,7 @@ ${analysisText}
       reportText,
       '🔧',
       notionKey,
+      parentPageId,
     )
 
     console.log(`[infra-aging] 検知完了: ${alerts.length}件`)
@@ -291,9 +298,11 @@ ${analysisText}
  *   3. 各部署の上長へ LINE プッシュ（個人名は伏せ、人数のみ通知）
  */
 export async function sendOneOnOneReminders(
-  notionKey:    string,
-  anthropicKey: string,
-  lineToken:    string,
+  notionKey:        string,
+  anthropicKey:     string,
+  lineToken:        string,
+  municipalityName: string = '自治体',
+  parentPageId?:    string,
 ): Promise<DetectionResult> {
 
   const type: PredictiveAlert['type'] = 'oneonone_reminder'
@@ -324,7 +333,7 @@ export async function sendOneOnOneReminders(
 
     // Claude Haiku で 1on1 リマインドメッセージを生成
     const anthropic = new Anthropic({ apiKey: anthropicKey })
-    const prompt = `あなたは屋久島町 人事担当の AI アシスタントです。
+    const prompt = `あなたは${municipalityName} 人事担当の AI アシスタントです。
 ${hasReport
   ? `直近のリスクスコアレポートで離職リスクHIGH（赤信号）の職員が検出されました。`
   : `定期的な離職リスクチェックのタイミングです。`
@@ -362,7 +371,7 @@ JSON形式で出力:
     // LINE に送信
     if (lineToken && parsed.message) {
       await broadcastMessage(
-        `💚【1on1 面談リマインド】\n${parsed.message}\n\n（屋久島町 人事）`,
+        `💚【1on1 面談リマインド】\n${parsed.message}\n\n（${municipalityName} 人事）`,
         lineToken,
       ).catch(() => null)
     }
@@ -391,6 +400,7 @@ JSON形式で出力:
       reportText,
       '💚',
       notionKey,
+      parentPageId,
     )
 
     console.log(`[oneonone] リマインド送信完了`)
@@ -413,9 +423,11 @@ JSON形式で出力:
  *   直近2週間を比較し、1.0 以上の低下 → critical
  */
 export async function detectSatisfactionDecline(
-  notionKey:    string,
-  anthropicKey: string,
-  lineToken:    string,
+  notionKey:        string,
+  anthropicKey:     string,
+  lineToken:        string,
+  municipalityName: string = '自治体',
+  parentPageId?:    string,
 ): Promise<DetectionResult> {
 
   const type: PredictiveAlert['type'] = 'satisfaction_decline'
@@ -475,7 +487,7 @@ export async function detectSatisfactionDecline(
 
     // Claude Haiku で分析
     const anthropic = new Anthropic({ apiKey: anthropicKey })
-    const prompt = `あなたは屋久島町の住民サービス品質管理の専門家です。
+    const prompt = `あなたは${municipalityName}の住民サービス品質管理の専門家です。
 以下の住民満足度データ（5点満点）を分析し、改善提言をしてください。
 
 【週次推移（古い→新しい）】
@@ -518,7 +530,7 @@ JSON形式で出力:
     // LINE 通知（warning / critical のみ）
     if ((resolvedLevel === 'critical' || resolvedLevel === 'warning') && lineToken && parsed.lineMessage) {
       await broadcastMessage(
-        `📊【住民満足度アラート】\n${parsed.lineMessage}\n\n（屋久島町）`,
+        `📊【住民満足度アラート】\n${parsed.lineMessage}\n\n（${municipalityName}）`,
         lineToken,
       ).catch(() => null)
     }
@@ -552,6 +564,7 @@ JSON形式で出力:
       reportText,
       '📊',
       notionKey,
+      parentPageId,
     )
 
     console.log(`[satisfaction] 検知完了: level=${resolvedLevel}`)
