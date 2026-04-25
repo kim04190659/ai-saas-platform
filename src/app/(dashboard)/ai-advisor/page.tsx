@@ -14,9 +14,11 @@
 //    - /api/ai-advisor に POST してAI回答を取得
 //    - conversationHistory を保持して会話の文脈を維持する
 //    - Layer 3（Sprint #19）: DataStats に revenueDataLines / compareDataLines を追加
+//    - Sprint #33: useMunicipality() で選択中自治体を取得し、APIに municipalityId を渡す
 // =====================================================
 
 import { useState, useRef, useEffect } from 'react'
+import { useMunicipality } from '@/contexts/MunicipalityContext'
 
 // ─── 型定義 ──────────────────────────────────────────
 
@@ -72,6 +74,9 @@ const INITIAL_MESSAGE: Message = {
 // ─── メインコンポーネント ─────────────────────────────
 
 export default function AIAdvisorPage() {
+  // Sprint #33: 選択中の自治体を Context から取得
+  const { municipalityId, municipality } = useMunicipality()
+
   // ── State: 画面表示用のチャット履歴 ──
   const [messages, setMessages] = useState<Message[]>([INITIAL_MESSAGE])
 
@@ -114,12 +119,14 @@ export default function AIAdvisorPage() {
 
     try {
       // APIルートを呼び出し（Notionデータ取得 + Claude API呼び出しはサーバー側で行う）
+      // Sprint #33: municipalityId を渡して、選択中の自治体のデータだけを取得させる
       const res = await fetch('/api/ai-advisor', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: userMessage,
-          conversationHistory, // 過去の会話履歴を渡して文脈を維持
+          conversationHistory,  // 過去の会話履歴を渡して文脈を維持
+          municipalityId,       // 選択中の自治体ID（例: 'kirishima'）
         }),
       })
 
@@ -177,6 +184,10 @@ export default function AIAdvisorPage() {
             <div>
               <h1 className="text-xl font-bold text-slate-800 flex items-center gap-2">
                 🤖 AI Well-Being顧問
+                {/* Sprint #33: 選択中の自治体名を表示 */}
+                <span className="text-sm font-normal text-slate-500 ml-1">
+                  — {municipality.name}
+                </span>
               </h1>
               <p className="text-sm text-slate-500 mt-1">
                 7DB（人口・KPI・収益・比較・学習・診断・プロフィール）を横断分析してWell-Being向上を提言

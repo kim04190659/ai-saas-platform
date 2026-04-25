@@ -23,6 +23,7 @@
 // =====================================================
 
 import { NextRequest, NextResponse } from 'next/server'
+import { getMunicipalityById } from '@/config/municipalities'
 
 // Notion APIの共通ヘッダーを生成するヘルパー
 function notionHeaders(apiKey: string) {
@@ -210,18 +211,22 @@ async function fetchPopulationData(): Promise<string> {
 //  システムプロンプトへの差し込み用テキストを生成する
 // =====================================================
 
-async function fetchMunicipalityProfile(): Promise<string> {
+async function fetchMunicipalityProfile(municipalityName: string): Promise<string> {
   const notionApiKey = process.env.NOTION_API_KEY
 
   // MunicipalityProfile DB のID（Sprint #14.8で活用）
   const dbId = '1488c8cb1d7346e39cb18998fa9b39c3'
 
   try {
-    // 最新更新日時の降順で1件だけ取得
+    // Sprint #33: 自治体名でフィルタリング（マルチテナント対応）
     const res = await fetch(`https://api.notion.com/v1/databases/${dbId}/query`, {
       method: 'POST',
       headers: notionHeaders(notionApiKey ?? ''),
       body: JSON.stringify({
+        filter: {
+          property: '自治体名',
+          title: { equals: municipalityName },
+        },
         page_size: 1,
         sorts: [{ timestamp: 'last_edited_time', direction: 'descending' }],
       }),
@@ -240,7 +245,7 @@ async function fetchMunicipalityProfile(): Promise<string> {
     const p = r.properties
 
     // プロパティを取得
-    const municipalityName = p['自治体名']?.title?.[0]?.plain_text ?? ''
+    const profileName = p['自治体名']?.title?.[0]?.plain_text ?? ''
     const populationSize   = p['人口規模']?.select?.name ?? ''
     const advisorStyle     = p['AI顧問スタイル']?.select?.name ?? ''
     const regionNote       = p['地域の特色メモ']?.rich_text?.[0]?.plain_text ?? ''
@@ -257,7 +262,7 @@ async function fetchMunicipalityProfile(): Promise<string> {
     // この文字列がAI回答を「この自治体専用」にするLayer 2の核心
     const lines: string[] = []
 
-    if (municipalityName) lines.push(`自治体名: ${municipalityName}`)
+    if (profileName) lines.push(`自治体名: ${profileName}`)
     if (populationSize)   lines.push(`人口規模: ${populationSize}`)
     if (mainChallenges)   lines.push(`主要課題: ${mainChallenges}`)
     if (serviceAreas)     lines.push(`重点サービス領域: ${serviceAreas}`)
@@ -276,7 +281,7 @@ async function fetchMunicipalityProfile(): Promise<string> {
 //  Sprint #12 で蓄積した WellBeingKPI DB から取得
 // =====================================================
 
-async function fetchWellBeingKPI(): Promise<string> {
+async function fetchWellBeingKPI(municipalityName: string): Promise<string> {
   const notionApiKey = process.env.NOTION_API_KEY
 
   // WellBeingKPI DB のID（Sprint #12で作成）
@@ -286,8 +291,12 @@ async function fetchWellBeingKPI(): Promise<string> {
     const res = await fetch(`https://api.notion.com/v1/databases/${dbId}/query`, {
       method: 'POST',
       headers: notionHeaders(notionApiKey ?? ''),
-      // 直近50件を記録日の新しい順で取得
+      // Sprint #33: 自治体名でフィルタリング + 記録日の降順で取得
       body: JSON.stringify({
+        filter: {
+          property: '自治体名',
+          rich_text: { contains: municipalityName },
+        },
         page_size: 50,
         sorts: [{ property: '記録日', direction: 'descending' }],
       }),
@@ -362,7 +371,7 @@ async function fetchWellBeingKPI(): Promise<string> {
 //  「財政的な裏付けのある提言」をAIに可能にする
 // =====================================================
 
-async function fetchRevenueData(): Promise<string> {
+async function fetchRevenueData(municipalityName: string): Promise<string> {
   const notionApiKey = process.env.NOTION_API_KEY
 
   // 収益データDB のID（Sprint #17で活用）
@@ -372,8 +381,12 @@ async function fetchRevenueData(): Promise<string> {
     const res = await fetch(`https://api.notion.com/v1/databases/${dbId}/query`, {
       method: 'POST',
       headers: notionHeaders(notionApiKey ?? ''),
-      // 直近30件を記録日の新しい順で取得
+      // Sprint #33: 自治体名でフィルタリング + 記録日の降順で取得
       body: JSON.stringify({
+        filter: {
+          property: '自治体名',
+          rich_text: { contains: municipalityName },
+        },
         page_size: 30,
         sorts: [{ property: '記録日', direction: 'descending' }],
       }),
@@ -511,8 +524,12 @@ async function fetchCompareData(): Promise<string> {
 
 export async function POST(req: NextRequest) {
   try {
-    // フロントエンドからの入力: ユーザーのメッセージと会話履歴
-    const { message, conversationHistory } = await req.json()
+    // フロントエンドからの入力: ユーザーのメッセージ・会話履歴・自治体ID
+    const { message, conversationHistory, municipalityId } = await req.json()
+
+    // Sprint #33: 自治体IDから自治体オブジェクト（shortName 等）を解決
+    const municipality     = getMunicipalityById(municipalityId ?? 'kirishima')
+    const municipalityName = municipality.shortName  // Notion DBのフィルタリングに使用
 
     // ─────────────────────────────────────────────────
     //  Layer 3（Sprint #19）: Notion 7DBから最新データを並列で取得
@@ -531,9 +548,9 @@ export async function POST(req: NextRequest) {
       fetchLearningLogs(),          // エクセレントサービス学習ログ
       fetchPlatformRecords(),       // IT運用診断・監視ログ
       fetchPopulationData(),        // 人口・地域データ
-      fetchWellBeingKPI(),          // 住民サービスKPI
-      fetchMunicipalityProfile(),   // 自治体プロフィール（Layer 2）
-      fetchRevenueData(),           // 収益データ（Layer 3追加）
+      fetchWellBeingKPI(municipalityName),    // 住民サービスKPI（自治体フィルター）
+      fetchMunicipalityProfile(municipalityName), // 自治体プロフィール（自治体フィルター）
+      fetchRevenueData(municipalityName),     // 収益データ（自治体フィルター）
       fetchCompareData(),           // 類似自治体比較（Layer 3追加）
     ])
 
@@ -569,8 +586,11 @@ ${platformRecords}
     //  プロフィールが設定されている場合のみ差し込む
     //  「この自治体向け」という文脈を冒頭でAIに明示する
     // ─────────────────────────────────────────────────
+    // Sprint #33: 自治体名を常にシステムプロンプトに明示する
+    const municipalityBlock = `\n【対象自治体】${municipality.name}（${municipalityName}）\nこの自治体のデータのみを参照し、${municipalityName}の文脈で回答すること。`
+
     const profileBlock = municipalityProfile
-      ? `\n【この自治体のプロフィール設定（Layer 2）】\n${municipalityProfile}\n\n上記のプロフィールを踏まえ、この自治体の文脈・課題・スタイルに合わせた回答を行うこと。`
+      ? `\n【この自治体のプロフィール設定（Layer 2）】\n${municipalityProfile}\n\n上記のプロフィールを踏まえ、${municipalityName}の文脈・課題・スタイルに合わせた回答を行うこと。`
       : ''
 
     // AI顧問スタイルに応じた回答スタイル指示を生成する
@@ -590,6 +610,7 @@ ${platformRecords}
     //  自治体プロフィールによる「この自治体専用」カスタマイズ
     // ─────────────────────────────────────────────────
     const systemPrompt = `あなたは「RunWith Well-Being顧問AI」です。
+${municipalityBlock}
 人口減少が進む日本の自治体が住民と職員双方のWell-Beingを高めながら
 持続可能な行政サービスを実現するために、データに基づいた具体的な改善提言を行う専門家AIです。
 ${profileBlock}${styleInstruction}
