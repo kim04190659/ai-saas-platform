@@ -12,9 +12,11 @@
 
 import { useState } from 'react'
 import { FileText, RefreshCw, ExternalLink, AlertTriangle, CheckCircle, Clock } from 'lucide-react'
+import { useMunicipality } from '@/contexts/MunicipalityContext'
 
 // ─── 型定義 ──────────────────────────────────────────
 
+/** APIレスポンスに municipalityName を追加 */
 interface DeptStat {
   deptId:       string
   deptName:     string
@@ -28,9 +30,10 @@ interface DeptStat {
 }
 
 interface SummaryResult {
-  status:    'success' | 'error'
-  weekLabel: string
-  message:   string
+  status:           'success' | 'error'
+  weekLabel:        string
+  message:          string
+  municipalityName?: string
   summary?: {
     deptCount:  number
     totalStaff: number
@@ -70,6 +73,9 @@ export function WeeklyWBSummaryPanel() {
   const [result,    setResult]    = useState<SummaryResult | null>(null)
   const [elapsed,   setElapsed]   = useState<number>(0)
 
+  // 選択中の自治体（マルチテナント対応）
+  const { municipalityId, municipality } = useMunicipality()
+
   // 「今すぐ生成」ボタンのハンドラ
   async function handleGenerate() {
     setLoading(true)
@@ -77,7 +83,8 @@ export function WeeklyWBSummaryPanel() {
     const start = Date.now()
 
     try {
-      const res  = await fetch('/api/cron/weekly-wb-summary')
+      // municipalityId をクエリパラメータで渡す
+      const res  = await fetch(`/api/cron/weekly-wb-summary?municipalityId=${municipalityId}`)
       const data = await res.json() as SummaryResult
       setElapsed(Math.round((Date.now() - start) / 1000))
       setResult(data)
@@ -109,7 +116,7 @@ export function WeeklyWBSummaryPanel() {
             週次 WellBeing サマリー
           </h1>
           <p className="mt-1 text-gray-500 text-sm">
-            全5部門の職員コンディションを集計し、AIサマリーをNotionに自動保存します。
+            {municipality.name} — 全5部門の職員コンディションを集計し、AIサマリーをNotionに自動保存します。
           </p>
         </div>
       </div>
@@ -288,7 +295,7 @@ export function WeeklyWBSummaryPanel() {
 
       {/* 補足説明 */}
       <div className="text-xs text-gray-400 space-y-1 border-t pt-4">
-        <p>• 生成されたサマリーはNotionの「🌱 新RunWith Platform」配下に保存されます。</p>
+        <p>• 生成されたサマリーはNotionの「{municipality.name} RunWith」ページ配下に保存されます。</p>
         <p>• Vercel Cronにより毎週月曜9:00（JST）に自動実行されます（Proプラン必要）。</p>
         <p>• WB40点未満 🔴要注意 / 55点未満 ⚠️注意 / 70点以上 ✅良好</p>
       </div>

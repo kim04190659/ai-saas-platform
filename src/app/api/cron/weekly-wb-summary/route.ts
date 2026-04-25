@@ -28,15 +28,13 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic                     from '@anthropic-ai/sdk'
+import { getMunicipalityById }       from '@/config/municipalities'
 
 // ─── 定数 ────────────────────────────────────────────
 
 const NOTION_API_BASE       = 'https://api.notion.com/v1'
 const NOTION_VERSION        = '2022-06-28'
 const STAFF_CONDITION_DB_ID = '4d65b3ba47764ea6b472c2c9452f27c6'
-
-// 出力先: 🌱 新RunWith Platform ページの配下に作成
-const NOTION_PARENT_PAGE_ID = '338960a91e23813f9402f53e5240e029'
 
 // 部門定義（deptId → 表示名・絵文字）
 const DEPT_LABELS: Record<string, { name: string; emoji: string }> = {
@@ -96,15 +94,17 @@ function notionHeaders(apiKey: string): Record<string, string> {
 // ─── データ取得 ───────────────────────────────────────
 
 /**
- * 指定期間のスタッフコンディションレコードをNotionから取得する。
- * @param startDate 開始日（ISO形式 yyyy-mm-dd）
- * @param endDate   終了日（ISO形式 yyyy-mm-dd）
- * @param notionKey Notion APIキー
+ * 指定期間・自治体のスタッフコンディションレコードをNotionから取得する。
+ * @param startDate          開始日（ISO形式 yyyy-mm-dd）
+ * @param endDate            終了日（ISO形式 yyyy-mm-dd）
+ * @param notionKey          Notion APIキー
+ * @param municipalityName   自治体短縮名（例: '霧島市'）— フィルタリング用
  */
 async function fetchConditionRecords(
-  startDate: string,
-  endDate:   string,
-  notionKey: string,
+  startDate:        string,
+  endDate:          string,
+  notionKey:        string,
+  municipalityName: string,
 ): Promise<ConditionRecord[]> {
   try {
     const res = await fetch(`${NOTION_API_BASE}/databases/${STAFF_CONDITION_DB_ID}/query`, {
@@ -113,6 +113,7 @@ async function fetchConditionRecords(
       body: JSON.stringify({
         page_size: 200,
         filter: {
+          // 日付範囲 ＋ 自治体名の3条件 AND
           and: [
             {
               property: '記録日',
@@ -121,6 +122,10 @@ async function fetchConditionRecords(
             {
               property: '記録日',
               date: { on_or_before: endDate },
+            },
+            {
+              property: '自治体名',
+              rich_text: { contains: municipalityName },
             },
           ],
         },
@@ -230,11 +235,13 @@ function aggregateByDept(
 
 /**
  * Claude Sonnetが部門集計データを分析し、町長・部門長向けサマリーを生成する。
+ * @param municipalityName 自治体名（プロンプトに埋め込む）
  */
 async function generateWBSummary(
-  deptStats:     DeptStats[],
-  weekLabel:     string,
-  anthropicKey:  string,
+  deptStats:        DeptStats[],
+  weekLabel:        string,
+  anthropicKey:     string,
+  municipalityName: string,
 ): Promise<string> {
   try {
     const anthropic = new Anthropic({ apiKey: anthropicKey })
@@ -252,7 +259,7 @@ async function generateWBSummary(
     const totalRisk  = deptStats.reduce((s, d) => s + d.riskCount, 0)
 
     const prompt = `あなたは自治体Well-Being分析の専門家です。
-以下の屋久島町職員コンディション週次データを分析し、町長・部門長向けの簡潔なサマリーを作成してください。
+以下の${municipalityName}職員コンディション週次データを分析し、町長・部門長向けの簡潔なサマリーを作成してください。
 
 【集計期間】${weekLabel}
 【全体平均WBスコア】${overallAvg.toFixed(1)}点（100点満点）
@@ -295,12 +302,15 @@ ${statsText}
 
 /**
  * 週次WBサマリーをNotionページとして保存する。
+ * @param notionParentPageId 保存先の自治体Notionページ ID
  */
 async function createSummaryPage(
-  weekLabel:   string,
-  deptStats:   DeptStats[],
-  aiSummary:   string,
-  notionKey:   string,
+  weekLabel:          string,
+  deptStats:          DeptStats[],
+  aiSummary:          string,
+  notionKey:          string,
+  municipalityName:   string,
+  notionParentPageId: string,
 ): Promise<{ id: string; url: string } | null> {
   try {
     // ページタイトル
@@ -366,7 +376,7 @@ ${aiSummary}
       method: 'POST',
       headers: notionHeaders(notionKey),
       body: JSON.stringify({
-        parent:     { page_id: NOTION_PARENT_PAGE_ID },
+        parent:     { page_id: notionParentPageId },
         icon:       { emoji: '📊' },
         properties: {
           title: [{ text: { content: title } }],
@@ -403,19 +413,27 @@ ${aiSummary}
 /**
  * 週次WBサマリーを生成して Notion に保存するメイン関数。
  * Vercel Cron または手動GET リクエストから呼ばれる。
+ * @param municipalityId 自治体ID（省略時はデフォルト自治体）
  */
-async function runWeeklyWBSummary(): Promise<{
-  success:    boolean
-  weekLabel:  string
-  deptStats:  DeptStats[]
-  notionPage: { id: string; url: string } | null
-  message:    string
+async function runWeeklyWBSummary(municipalityId: string = 'kirishima'): Promise<{
+  success:          boolean
+  weekLabel:        string
+  deptStats:        DeptStats[]
+  notionPage:       { id: string; url: string } | null
+  message:          string
+  municipalityName: string
 }> {
   const notionKey    = process.env.NOTION_API_KEY    ?? ''
   const anthropicKey = process.env.ANTHROPIC_API_KEY ?? ''
 
+  // 自治体マスタから自治体情報を取得
+  const municipality = getMunicipalityById(municipalityId)
+
   if (!notionKey) {
-    return { success: false, weekLabel: '', deptStats: [], notionPage: null, message: 'NOTION_API_KEY 未設定' }
+    return {
+      success: false, weekLabel: '', deptStats: [], notionPage: null,
+      message: 'NOTION_API_KEY 未設定', municipalityName: municipality.shortName,
+    }
   }
 
   // ── 日付範囲を計算 ──────────────────────────────────
@@ -438,13 +456,14 @@ async function runWeeklyWBSummary(): Promise<{
 
   console.log(`[weekly-wb] 集計期間: ${weekLabel}`)
 
-  // ── データ取得（今週・先週）──────────────────────────
+  // ── データ取得（今週・先週）——自治体名でフィルタリング ──
   const [thisWeekRecords, lastWeekRecords] = await Promise.all([
-    fetchConditionRecords(thisWeekStartStr, today, notionKey),
+    fetchConditionRecords(thisWeekStartStr, today, notionKey, municipality.shortName),
     fetchConditionRecords(
       lastWeekStart.toISOString().slice(0, 10),
       lastWeekEnd.toISOString().slice(0, 10),
       notionKey,
+      municipality.shortName,
     ),
   ])
 
@@ -453,19 +472,22 @@ async function runWeeklyWBSummary(): Promise<{
   // ── 部門別集計 ────────────────────────────────────
   const deptStats = aggregateByDept(thisWeekRecords, lastWeekRecords)
 
-  // ── AI サマリー生成 ────────────────────────────────
+  // ── AI サマリー生成（自治体名をプロンプトに含める）────
   const aiSummary = anthropicKey
-    ? await generateWBSummary(deptStats, weekLabel, anthropicKey)
+    ? await generateWBSummary(deptStats, weekLabel, anthropicKey, municipality.shortName)
     : '（ANTHROPIC_API_KEY 未設定のためAIサマリーは省略）'
 
-  // ── Notionページ作成 ───────────────────────────────
-  const notionPage = await createSummaryPage(weekLabel, deptStats, aiSummary, notionKey)
+  // ── Notionページ作成（自治体のNotionページ配下に保存）─
+  const notionPage = await createSummaryPage(
+    weekLabel, deptStats, aiSummary, notionKey,
+    municipality.shortName, municipality.notionPageId,
+  )
 
   const message = notionPage
-    ? `週次WBサマリーをNotionに保存しました: ${notionPage.url}`
+    ? `${municipality.shortName} 週次WBサマリーをNotionに保存しました: ${notionPage.url}`
     : 'Notionページ作成に失敗しました（データは集計済み）'
 
-  return { success: !!notionPage, weekLabel, deptStats, notionPage, message }
+  return { success: !!notionPage, weekLabel, deptStats, notionPage, message, municipalityName: municipality.shortName }
 }
 
 // ─── GET ハンドラ（Cron または手動テスト） ─────────────
@@ -483,15 +505,20 @@ export async function GET(req: NextRequest) {
     }
   }
 
+  // ── クエリパラメータから自治体IDを取得（省略時は 'kirishima'）
+  const { searchParams } = new URL(req.url)
+  const municipalityId   = searchParams.get('municipalityId') ?? 'kirishima'
+
   // ── 処理実行 ─────────────────────────────────────
-  console.log('[weekly-wb] 週次WBサマリー生成開始')
-  const result = await runWeeklyWBSummary()
+  console.log(`[weekly-wb] 週次WBサマリー生成開始: municipalityId=${municipalityId}`)
+  const result = await runWeeklyWBSummary(municipalityId)
   console.log('[weekly-wb] 完了:', result.message)
 
   return NextResponse.json({
-    status:    result.success ? 'success' : 'error',
-    weekLabel: result.weekLabel,
-    message:   result.message,
+    status:           result.success ? 'success' : 'error',
+    weekLabel:        result.weekLabel,
+    message:          result.message,
+    municipalityName: result.municipalityName,
     summary: {
       deptCount:   result.deptStats.filter(d => d.count > 0).length,
       totalStaff:  result.deptStats.reduce((s, d) => s + d.count, 0),
