@@ -16,6 +16,7 @@
 // =====================================================
 
 import { NextRequest, NextResponse } from 'next/server'
+import { getMunicipalityById } from '@/config/municipalities'
 
 // ─── 定数 ─────────────────────────────────────────────
 const NOTION_API_BASE   = 'https://api.notion.com/v1'
@@ -75,6 +76,10 @@ export async function GET(req: NextRequest) {
   // クエリパラメータ ?status=未対応 でフィルタリング（省略時は全件）
   const statusFilter = req.nextUrl.searchParams.get('status')
 
+  // ── Sprint #36: クエリパラメータから自治体IDを取得 ──
+  const municipalityId = req.nextUrl.searchParams.get('municipalityId') ?? 'kirishima'
+  const municipality   = getMunicipalityById(municipalityId)
+
   try {
     // ── Notion DB クエリ ──
     // 受信日時の新しい順で最大 100 件取得
@@ -83,12 +88,24 @@ export async function GET(req: NextRequest) {
       sorts: [{ property: '受信日時', direction: 'descending' }],
     }
 
-    // ステータスでフィルタリングする場合
+    // ── フィルター構築（自治体名 + ステータスの組み合わせ対応）──
+    // 自治体名フィルター（必須：マルチテナント対応）
+    const municipalityFilter = {
+      property: '自治体名',
+      rich_text: { contains: municipality.shortName },
+    }
+
     if (statusFilter) {
+      // ステータス指定あり → 自治体名 AND ステータスの複合フィルター
       queryBody.filter = {
-        property: '対応状況',
-        select:   { equals: statusFilter },
+        and: [
+          municipalityFilter,
+          { property: '対応状況', select: { equals: statusFilter } },
+        ],
       }
+    } else {
+      // ステータス指定なし → 自治体名のみでフィルタリング
+      queryBody.filter = municipalityFilter
     }
 
     const res = await fetch(`${NOTION_API_BASE}/databases/${LINE_LOG_DB_ID}/query`, {

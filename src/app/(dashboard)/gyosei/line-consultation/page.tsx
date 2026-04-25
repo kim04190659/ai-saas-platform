@@ -22,6 +22,7 @@
 // =====================================================
 
 import { useState, useEffect, useCallback } from 'react'
+import { useMunicipality } from '@/contexts/MunicipalityContext'
 import Link from 'next/link'
 
 // ─── 型定義 ──────────────────────────────────────────
@@ -319,6 +320,9 @@ function ConsultationCard({
 // ─── メインコンポーネント ─────────────────────────────
 
 export default function LineConsultationPage() {
+  // Sprint #36: 選択中の自治体を取得
+  const { municipalityId, municipality } = useMunicipality()
+
   // ── State ──
   const [records,      setRecords]      = useState<ConsultationRecord[]>([])
   const [summary,      setSummary]      = useState<Summary | null>(null)
@@ -326,21 +330,21 @@ export default function LineConsultationPage() {
   const [fetching,     setFetching]     = useState(true)
   const [updateMsg,    setUpdateMsg]    = useState<{ text: string; ok: boolean } | null>(null)
 
-  // ── データ取得 ──
+  // ── データ取得（Sprint #36: municipalityId をクエリパラメータで渡す）──
   const fetchData = useCallback(async (status?: string) => {
     setFetching(true)
     try {
-      // 全件サマリー取得（フィルタなし）
-      const summaryRes = await fetch('/api/line-consultation')
+      // 全件サマリー取得（自治体フィルターのみ、ステータスフィルターなし）
+      const summaryRes = await fetch(`/api/line-consultation?municipalityId=${municipalityId}`)
       const summaryData = await summaryRes.json()
       if (!summaryData.error) {
         setSummary(summaryData.summary ?? null)
       }
 
-      // フィルタリングした一覧取得
+      // フィルタリングした一覧取得（自治体 + ステータスの複合フィルター）
       const url = status
-        ? `/api/line-consultation?status=${encodeURIComponent(status)}`
-        : '/api/line-consultation'
+        ? `/api/line-consultation?municipalityId=${municipalityId}&status=${encodeURIComponent(status)}`
+        : `/api/line-consultation?municipalityId=${municipalityId}`
       const res  = await fetch(url)
       const data = await res.json()
       if (!data.error) {
@@ -351,9 +355,15 @@ export default function LineConsultationPage() {
     } finally {
       setFetching(false)
     }
-  }, [])
+  }, [municipalityId])  // municipalityId が変わると再取得
 
-  // 初回・フィルター変更時にデータ取得
+  // 自治体が切り替わったらフィルターをリセット
+  useEffect(() => {
+    setActiveFilter('')
+    setUpdateMsg(null)
+  }, [municipalityId])
+
+  // 初回・フィルター変更・自治体変更時にデータ取得
   useEffect(() => {
     fetchData(activeFilter || undefined)
   }, [activeFilter, fetchData])
@@ -398,7 +408,7 @@ export default function LineConsultationPage() {
             💬 LINE相談ログ — 職員対応管理
           </h1>
           <p className="text-sm text-slate-500 mt-1">
-            住民からのLINE相談を確認し、対応状況・回答内容をNotionに記録します
+            {municipality.name} — 住民からのLINE相談を確認し、対応状況・回答内容をNotionに記録します
           </p>
           <div className="mt-3 flex gap-2 flex-wrap">
             <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-sky-50 text-sky-700 border border-sky-200">

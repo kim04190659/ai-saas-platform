@@ -23,6 +23,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
+import { useMunicipality } from '@/contexts/MunicipalityContext'
 
 // ─── 型定義 ──────────────────────────────────────────
 
@@ -160,20 +161,24 @@ function SummaryCard({
 // ─── メインコンポーネント ─────────────────────────────
 
 export default function TouchpointsPage() {
+  // Sprint #36: 選択中の自治体を取得
+  const { municipalityId, municipality } = useMunicipality()
+
   // ── State ──
   const [records,     setRecords]     = useState<TouchpointRecord[]>([])
   const [summary,     setSummary]     = useState<Summary | null>(null)
-  const [form,        setForm]        = useState<FormState>(INITIAL_FORM)
+  // フォームの初期自治体名をコンテキストから設定
+  const [form,        setForm]        = useState<FormState>({ ...INITIAL_FORM, municipalityName: municipality.shortName })
   const [loading,     setLoading]     = useState(false)
   const [fetching,    setFetching]    = useState(true)
   const [message,     setMessage]     = useState<{ text: string; ok: boolean } | null>(null)
   const [showForm,    setShowForm]    = useState(false)
 
-  // ── データ取得 ──
+  // ── データ取得（Sprint #36: municipalityId をクエリパラメータで渡す）──
   const fetchData = useCallback(async () => {
     setFetching(true)
     try {
-      const res  = await fetch('/api/touchpoints')
+      const res  = await fetch(`/api/touchpoints?municipalityId=${municipalityId}`)
       const data = await res.json()
       if (!data.error) {
         setRecords(data.records ?? [])
@@ -184,7 +189,13 @@ export default function TouchpointsPage() {
     } finally {
       setFetching(false)
     }
-  }, [])
+  }, [municipalityId])  // municipalityId が変わると再取得
+
+  // 自治体が切り替わったらフォームの自治体名もリセット
+  useEffect(() => {
+    setForm(f => ({ ...f, municipalityName: municipality.shortName }))
+    setMessage(null)
+  }, [municipalityId, municipality.shortName])
 
   useEffect(() => { fetchData() }, [fetchData])
 
@@ -243,7 +254,7 @@ export default function TouchpointsPage() {
               <h1 className="text-xl font-bold text-slate-800 flex items-center gap-2">
                 📍 タッチポイントイベント記録
               </h1>
-              <p className="text-sm text-slate-500 mt-1">
+              <p className="text-sm text-slate-500 mt-1">{municipality.name} —
                 窓口・電話・訪問など住民との接点を記録し、SDL価値共創スコアで可視化します
               </p>
             </div>

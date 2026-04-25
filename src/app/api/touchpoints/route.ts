@@ -17,6 +17,7 @@
 // =====================================================
 
 import { NextRequest, NextResponse } from 'next/server'
+import { getMunicipalityById } from '@/config/municipalities'
 
 // ─── 定数 ─────────────────────────────────────────────
 const NOTION_API_BASE  = 'https://api.notion.com/v1'
@@ -94,18 +95,28 @@ function calcSDLScore(input: TouchpointInput): number {
 // ─── GET ハンドラ ─────────────────────────────────────
 // タッチポイントイベント一覧を取得
 
-export async function GET() {
+// Sprint #36: NextRequest を受け取り municipalityId クエリを処理するように変更
+export async function GET(req: NextRequest) {
   const notionApiKey = process.env.NOTION_API_KEY
   if (!notionApiKey) {
     return NextResponse.json({ error: 'NOTION_API_KEY が設定されていません' }, { status: 500 })
   }
 
+  // ── Sprint #36: クエリパラメータから自治体IDを取得 ──
+  const { searchParams } = new URL(req.url)
+  const municipalityId   = searchParams.get('municipalityId') ?? 'kirishima'
+  const municipality     = getMunicipalityById(municipalityId)
+
   try {
-    // 記録日の新しい順で最大 100 件取得
+    // 自治体名でフィルタリングして記録日の新しい順で最大 100 件取得（マルチテナント対応）
     const res = await fetch(`${NOTION_API_BASE}/databases/${TOUCHPOINT_DB_ID}/query`, {
       method:  'POST',
       headers: notionHeaders(notionApiKey),
       body:    JSON.stringify({
+        filter: {
+          property: '自治体名',
+          rich_text: { contains: municipality.shortName },
+        },
         page_size: 100,
         sorts: [{ property: '記録日', direction: 'descending' }],
       }),
