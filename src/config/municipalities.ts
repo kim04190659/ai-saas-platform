@@ -54,7 +54,7 @@ export const MUNICIPALITIES: Municipality[] = [
     shortName:    '屋久島町',
     notionPageId: '347960a91e2381ac9999d0bad0d8646e',
     color:        'emerald',
-    status:       'coming',
+    status:       'active',  // Sprint #32: ダッシュボードデータ実装済みのため active に変更
   },
   {
     id:           'nec',
