@@ -243,6 +243,14 @@ export const FEATURE_MODULES: FeatureModule[] = [
         status: 'active',
         description: 'Yahoo知恵袋・Google News・発言小町などから住民の困り事を自動収集。AIがカテゴリ分類・優先度付けしてNotionに蓄積する',
       },
+      {
+        // Sprint #44 追加: 困り事→施策提案サイクル
+        id: 'staff-issue-policy',
+        label: '💡 困り事 → 施策提案',
+        href: '/gyosei/issue-policy',
+        status: 'active',
+        description: '収集した困り事をカテゴリ別に集計・トレンド分析。前週比で増加・改善・解決を追跡し、AIが優先施策を提案するWell-Being向上サイクル',
+      },
     ],
   },
 

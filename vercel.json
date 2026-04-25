@@ -20,6 +20,9 @@
     },
     "src/app/api/cron/citizen-radar/route.ts": {
       "maxDuration": 60
+    },
+    "src/app/api/cron/issue-policy/route.ts": {
+      "maxDuration": 60
     }
   },
   "crons": [
@@ -50,6 +53,10 @@
     {
       "path":     "/api/cron/citizen-radar",
       "schedule": "0 22 * * 0"
+    },
+    {
+      "path":     "/api/cron/issue-policy",
+      "schedule": "0 0 * * 1"
     }
   ]
 }
