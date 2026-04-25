@@ -53,6 +53,43 @@ interface UpdateRequest {
   department?: string   // 担当部署（変更する場合）
 }
 
+// ─── 自治体別サンプルデータ（Notion が空のときのフォールバック用）────
+
+/** LINE相談サンプル1件の型 */
+interface SampleConsultation {
+  title: string; content: string; category: string; channel: string;
+  status: string; answer: string; staffName: string; department: string;
+  aiResult: string; anonymousId: string; lineUserId: string;
+  receivedAt: string; satisfaction: number;
+}
+
+/** 屋久島町のLINE相談サンプル */
+const YAKUSHIMA_SAMPLE_CONSULTATIONS: SampleConsultation[] = [
+  { title: '移住後の生活について教えてほしい', content: '先月屋久島に移住しました。ゴミの分別方法と水道の手続きを教えてください。', category: '生活・環境', channel: '住民LINE', status: '完了', answer: 'ゴミ分別マニュアルをお送りします。水道の開栓手続きは役場住民課（0997-46-2111）にお電話ください。', staffName: '田中 花子', department: '住民課', aiResult: '生活手続き → 住民課', anonymousId: 'anon-yk-001', lineUserId: '', receivedAt: '2026-04-12T09:30:00', satisfaction: 5 },
+  { title: '縄文杉トレッキングの混雑状況は？', content: '来月トレッキングを計画しています。混雑する時間帯と空いている曜日を教えてください。', category: '観光・体験', channel: '住民LINE', status: '完了', answer: '平日早朝（5〜7時スタート）が比較的空いています。許可証は事前予約制をご利用ください。', staffName: '山田 太郎', department: '観光課', aiResult: '観光情報 → 観光課', anonymousId: 'anon-yk-002', lineUserId: '', receivedAt: '2026-04-10T14:15:00', satisfaction: 4 },
+  { title: '子供の保育所について', content: '来春から子供を保育所に入れたいのですが、空き状況と申込方法を教えてください。', category: '子育て・教育', channel: '住民LINE', status: '対応中', answer: '', staffName: '佐藤 美咲', department: '福祉課', aiResult: '保育所申込 → 福祉課', anonymousId: 'anon-yk-003', lineUserId: '', receivedAt: '2026-04-11T10:00:00', satisfaction: 0 },
+  { title: '台風接近時の避難場所を確認したい', content: '島出身ではなく、どこに避難すればよいか分かりません。近くの避難所を教えてください。', category: '防災・安全', channel: '住民LINE', status: '完了', answer: '宮之浦地区の避難所は「屋久島環境文化村センター」です。防災マップをお送りします。', staffName: '中村 健一', department: '総務課', aiResult: '防災情報 → 総務課', anonymousId: 'anon-yk-004', lineUserId: '', receivedAt: '2026-04-09T16:45:00', satisfaction: 5 },
+  { title: '水道料金の支払い方法', content: 'コンビニでの支払いはできますか？口座振替の手続きも知りたいです。', category: '税・手続き', channel: '住民LINE', status: '未対応', answer: '', staffName: '', department: '', aiResult: '税・料金 → 収納課', anonymousId: 'anon-yk-005', lineUserId: '', receivedAt: '2026-04-13T09:00:00', satisfaction: 0 },
+];
+
+/** 霧島市のLINE相談サンプル */
+const KIRISHIMA_SAMPLE_CONSULTATIONS: SampleConsultation[] = [
+  { title: '霧島神宮周辺の駐車場について', content: '初詣で霧島神宮に行きたいのですが、駐車場の混雑状況を教えてください。臨時駐車場はありますか？', category: '観光・体験', channel: '住民LINE', status: '完了', answer: '元旦は大変混雑します。臨時駐車場（霧島高校グラウンド）をご利用ください。シャトルバスも運行します。', staffName: '松田 浩二', department: '観光課', aiResult: '観光情報 → 観光課', anonymousId: 'anon-kr-001', lineUserId: '', receivedAt: '2026-04-11T10:30:00', satisfaction: 4 },
+  { title: '市税の分割納付について', content: '今月の市民税の一括納付が難しい状況です。分割払いの相談は可能でしょうか？', category: '税・手続き', channel: '住民LINE', status: '対応中', answer: '分割納付のご相談は収納課（0995-45-5111）にてお受けしています。', staffName: '木村 洋子', department: '収納課', aiResult: '税務相談 → 収納課', anonymousId: 'anon-kr-002', lineUserId: '', receivedAt: '2026-04-10T13:00:00', satisfaction: 3 },
+  { title: '道路の陥没を発見しました', content: '国分地区の市道に大きな穴があります。車が通れる状況ですが危険です。早急に対応してください。', category: 'インフラ・環境', channel: '住民LINE', status: '完了', answer: '現地を確認しました。本日中に補修工事を行います。ご連絡いただきありがとうございます。', staffName: '田原 誠', department: '建設課', aiResult: 'インフラ → 建設課', anonymousId: 'anon-kr-003', lineUserId: '', receivedAt: '2026-04-09T08:15:00', satisfaction: 5 },
+  { title: '保育所の一時預かりサービス', content: '急用があり子供を預けたいのですが、一時預かりサービスの空き状況を教えてください。', category: '子育て・教育', channel: '住民LINE', status: '完了', answer: '隼人児童センターで本日14時以降お受けできます。事前にお電話での予約をお願いします。', staffName: '吉田 さゆり', department: '子育て支援課', aiResult: '子育て → 子育て支援課', anonymousId: 'anon-kr-004', lineUserId: '', receivedAt: '2026-04-12T09:45:00', satisfaction: 5 },
+  { title: 'ゴミ収集日が変わったか確認したい', content: 'ゴールデンウィーク期間中のゴミ収集日を教えてください。普通ごみと資源ごみ両方知りたいです。', category: '生活・環境', channel: '住民LINE', status: '未対応', answer: '', staffName: '', department: '', aiResult: '生活情報 → 環境課', anonymousId: 'anon-kr-005', lineUserId: '', receivedAt: '2026-04-13T07:30:00', satisfaction: 0 },
+];
+
+/** 自治体IDに応じたLINE相談サンプルデータを返す */
+function getSampleConsultations(municipalityId: string): SampleConsultation[] {
+  const map: Record<string, SampleConsultation[]> = {
+    yakushima: YAKUSHIMA_SAMPLE_CONSULTATIONS,
+    kirishima: KIRISHIMA_SAMPLE_CONSULTATIONS,
+  }
+  return map[municipalityId] ?? YAKUSHIMA_SAMPLE_CONSULTATIONS
+}
+
 // ─── ヘルパー関数 ─────────────────────────────────────
 
 /** Notion API 共通ヘッダーを生成 */
@@ -120,6 +157,29 @@ export async function GET(req: NextRequest) {
     }
 
     const data = await res.json()
+
+    // Sprint #37: Notion が空の場合は自治体別サンプルデータにフォールバック
+    if (!data.results || data.results.length === 0) {
+      // ステータスフィルターが指定されている場合はサンプルも絞り込む
+      const allSamples = getSampleConsultations(municipalityId)
+      const filtered   = statusFilter
+        ? allSamples.filter(s => s.status === statusFilter)
+        : allSamples
+      const sampleRecords = filtered.map((s, i) => ({ ...s, id: `sample-${i}` }))
+      // サマリーは全件で算出（フィルターなし）
+      const allForSummary = allSamples
+      const total           = allForSummary.length
+      const unhandledCount  = allForSummary.filter(r => r.status === '未対応').length
+      const inProgressCount = allForSummary.filter(r => r.status === '対応中').length
+      const completedCount  = allForSummary.filter(r => r.status === '完了').length
+      const escalatedCount  = allForSummary.filter(r => r.status === 'エスカレーション').length
+      const completionRate  = total > 0 ? Math.round((completedCount / total) * 100) : 0
+      return NextResponse.json({
+        records: sampleRecords,
+        summary: { total, unhandledCount, inProgressCount, completedCount, escalatedCount, completionRate },
+        source: 'sample',
+      })
+    }
 
     // Notion レコードを扱いやすい形に変換
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

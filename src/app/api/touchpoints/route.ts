@@ -92,6 +92,43 @@ function calcSDLScore(input: TouchpointInput): number {
   return Math.round(Math.min(100, Math.max(0, (raw / 12) * 100)))
 }
 
+// ─── 自治体別サンプルデータ（Notion が空のときのフォールバック用）────
+
+/** タッチポイントサンプル1件の型（id・sdlScore は動的生成） */
+interface SampleTouchpoint {
+  eventId: string; touchpointType: string; visitorAttribute: string; visitorAge: string;
+  purposeCategory: string; continuationIntent: string; problemBefore: number;
+  problemAfter: number; contactMinutes: number; sdlScore: number;
+  department: string; municipalityName: string; aiMemo: string; recordDate: string;
+}
+
+/** 屋久島町のタッチポイントサンプル */
+const YAKUSHIMA_SAMPLE_TOUCHPOINTS: SampleTouchpoint[] = [
+  { eventId: 'YK-2026-001', touchpointType: '窓口来訪',     visitorAttribute: '住民（移住者）', visitorAge: '30代', purposeCategory: '移住相談',     continuationIntent: '紹介あり',     problemBefore: 2, problemAfter: 3, contactMinutes: 45, sdlScore: 100, department: '企画課',   municipalityName: '屋久島町', aiMemo: '移住希望の夫婦。就農支援と住宅情報を提供。屋久島暮らしへの高い満足度を表明。', recordDate: '2026-04-10' },
+  { eventId: 'YK-2026-002', touchpointType: 'アウトリーチ訪問', visitorAttribute: '住民（定住）',   visitorAge: '70代', purposeCategory: '福祉相談',     continuationIntent: '高（また来る）', problemBefore: 3, problemAfter: 2, contactMinutes: 60, sdlScore: 80,  department: '福祉課',   municipalityName: '屋久島町', aiMemo: '一人暮らし高齢者宅を訪問。介護サービスの利用案内。本土への転居を検討中とのこと。', recordDate: '2026-04-08' },
+  { eventId: 'YK-2026-003', touchpointType: 'イベント参加',   visitorAttribute: '観光来訪者',    visitorAge: '40代', purposeCategory: '観光・体験',   continuationIntent: '紹介あり',     problemBefore: 0, problemAfter: 3, contactMinutes: 120, sdlScore: 100, department: '観光課',  municipalityName: '屋久島町', aiMemo: '縄文杉トレッキングツアー参加。SNSでの発信を約束。リピーター候補として登録。', recordDate: '2026-04-05' },
+  { eventId: 'YK-2026-004', touchpointType: '電話相談',      visitorAttribute: '関係人口',       visitorAge: '50代', purposeCategory: '産業・農業',   continuationIntent: '高（また来る）', problemBefore: 2, problemAfter: 2, contactMinutes: 30, sdlScore: 65,  department: '産業課',   municipalityName: '屋久島町', aiMemo: 'タンカン農家からの後継者問題相談。農業体験プログラムの案内実施。', recordDate: '2026-04-03' },
+  { eventId: 'YK-2026-005', touchpointType: '窓口来訪',      visitorAttribute: '住民（定住）',   visitorAge: '20代', purposeCategory: '生活手続き',   continuationIntent: '中（様子見）',  problemBefore: 1, problemAfter: 3, contactMinutes: 20, sdlScore: 75,  department: '住民課',   municipalityName: '屋久島町', aiMemo: '転入届・国保加入手続き。島外から就職で移住。若者定住支援制度を案内。', recordDate: '2026-04-01' },
+];
+
+/** 霧島市のタッチポイントサンプル */
+const KIRISHIMA_SAMPLE_TOUCHPOINTS: SampleTouchpoint[] = [
+  { eventId: 'KR-2026-001', touchpointType: 'イベント参加',   visitorAttribute: '観光来訪者',    visitorAge: '60代', purposeCategory: '観光・体験',   continuationIntent: '紹介あり',     problemBefore: 0, problemAfter: 3, contactMinutes: 90,  sdlScore: 100, department: '観光課',   municipalityName: '霧島市', aiMemo: '霧島神宮初詣イベント参加。温泉旅館との連携パッケージに高評価。再来を約束。', recordDate: '2026-04-12' },
+  { eventId: 'KR-2026-002', touchpointType: '窓口来訪',      visitorAttribute: '住民（移住者）', visitorAge: '30代', purposeCategory: '移住相談',     continuationIntent: '高（また来る）', problemBefore: 2, problemAfter: 3, contactMinutes: 50,  sdlScore: 88,  department: '企画課',   municipalityName: '霧島市', aiMemo: '東京からのテレワーク移住希望者。移住支援金制度と空き家バンクを案内。非常に前向き。', recordDate: '2026-04-10' },
+  { eventId: 'KR-2026-003', touchpointType: '電話相談',      visitorAttribute: '事業者',         visitorAge: '不明', purposeCategory: '産業・農業',   continuationIntent: '高（また来る）', problemBefore: 2, problemAfter: 2, contactMinutes: 35,  sdlScore: 60,  department: '農林課',   municipalityName: '霧島市', aiMemo: '霧島茶農家から補助金申請の問い合わせ。書類準備のサポートを約束。', recordDate: '2026-04-08' },
+  { eventId: 'KR-2026-004', touchpointType: 'SNS接触',       visitorAttribute: '関係人口',       visitorAge: '20代', purposeCategory: '観光・体験',   continuationIntent: '紹介あり',     problemBefore: 0, problemAfter: 3, contactMinutes: 5,   sdlScore: 100, department: '広報課',   municipalityName: '霧島市', aiMemo: 'Instagramの霧島温泉投稿にコメント対応。フォロワー8万のインフルエンサー。', recordDate: '2026-04-05' },
+  { eventId: 'KR-2026-005', touchpointType: 'アウトリーチ訪問', visitorAttribute: '住民（定住）', visitorAge: '80代', purposeCategory: '福祉相談',     continuationIntent: '中（様子見）',  problemBefore: 3, problemAfter: 2, contactMinutes: 75,  sdlScore: 55,  department: '福祉課',   municipalityName: '霧島市', aiMemo: '独居高齢者への定期訪問。デイサービス利用を勧めるも本人が消極的。継続的な関わりが必要。', recordDate: '2026-04-02' },
+];
+
+/** 自治体IDに応じたタッチポイントサンプルデータを返す */
+function getSampleTouchpoints(municipalityId: string): SampleTouchpoint[] {
+  const map: Record<string, SampleTouchpoint[]> = {
+    yakushima: YAKUSHIMA_SAMPLE_TOUCHPOINTS,
+    kirishima: KIRISHIMA_SAMPLE_TOUCHPOINTS,
+  }
+  return map[municipalityId] ?? YAKUSHIMA_SAMPLE_TOUCHPOINTS
+}
+
 // ─── GET ハンドラ ─────────────────────────────────────
 // タッチポイントイベント一覧を取得
 
@@ -128,6 +165,26 @@ export async function GET(req: NextRequest) {
     }
 
     const data = await res.json()
+
+    // Sprint #37: Notion が空の場合は自治体別サンプルデータにフォールバック
+    if (!data.results || data.results.length === 0) {
+      const samples = getSampleTouchpoints(municipalityId)
+      const sampleRecords = samples.map((s, i) => ({ ...s, id: `sample-${i}` }))
+      const total = sampleRecords.length
+      const thisMonth = new Date().toISOString().slice(0, 7)
+      const thisMonthCount = sampleRecords.filter(r => r.recordDate.startsWith(thisMonth)).length
+      const avgSDL = total > 0 ? Math.round(sampleRecords.reduce((s, r) => s + r.sdlScore, 0) / total) : 0
+      const highIntentCount = sampleRecords.filter(r =>
+        r.continuationIntent === '高（また来る）' || r.continuationIntent === '紹介あり'
+      ).length
+      const byType: Record<string, number> = {}
+      sampleRecords.forEach(r => { if (r.touchpointType) byType[r.touchpointType] = (byType[r.touchpointType] ?? 0) + 1 })
+      return NextResponse.json({
+        records: sampleRecords,
+        summary: { total, thisMonthCount, avgSDL, highIntentCount, byType },
+        source: 'sample',
+      })
+    }
 
     // Notion レコードを扱いやすい形に変換
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

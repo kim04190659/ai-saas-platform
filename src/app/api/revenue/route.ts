@@ -28,6 +28,42 @@ function notionHeaders(apiKey: string) {
   }
 }
 
+// ─── 自治体別サンプルデータ（Notion が空のときのフォールバック用）────
+
+/** 収益サンプル1件の型（id は動的生成） */
+interface SampleRevenue {
+  name: string; dataType: string; regionType: string; reliability: string;
+  value: number | null; baseValue: number | null; unit: string;
+  municipality: string; period: string; aiHint: string; recordDate: string;
+}
+
+/** 屋久島町の収益サンプル */
+const YAKUSHIMA_SAMPLE_REVENUES: SampleRevenue[] = [
+  { name: '観光入込客数（屋久島）',      dataType: '周遊パターン', regionType: 'タイプA:世界遺産・国立公園', reliability: '高：実測値', value: 320000,    baseValue: 295000,    unit: '人',     municipality: '屋久島町', period: '2025年度', aiHint: '世界遺産効果で前年比+8.5%。縄文杉トレッキング許可証の予約制導入が混雑緩和に寄与。',         recordDate: '2026-03-31' },
+  { name: '民宿・ホテル宿泊稼働率',      dataType: '宿泊稼働',    regionType: 'タイプA:世界遺産・国立公園', reliability: '高：実測値', value: 71,         baseValue: 65,        unit: '%',      municipality: '屋久島町', period: '2026年Q1', aiHint: '稼働率70%超えを達成。ハイシーズン（4-5月）は満室続出で機会損失あり。宿泊施設の新規誘致が急務。', recordDate: '2026-04-01' },
+  { name: 'ヤクスギ・特産品EC販売額',    dataType: '産品販売',    regionType: 'タイプA:世界遺産・国立公園', reliability: '中：推計値', value: 42000000,  baseValue: 35000000,  unit: '円',     municipality: '屋久島町', period: '2025年度', aiHint: 'EC経由の販売が前年比+20%。ヤクスギ工芸品・タンカン・サバ節の3商品が牽引。',               recordDate: '2026-03-31' },
+  { name: 'ふるさと納税受入額',          dataType: 'その他',      regionType: 'タイプA:世界遺産・国立公園', reliability: '高：実測値', value: 180000000, baseValue: 120000000, unit: '円',     municipality: '屋久島町', period: '2025年度', aiHint: '返礼品の屋久島体験ツアーが人気。前年比+50%の大幅増加。継続的な品揃え強化が必要。',           recordDate: '2026-03-31' },
+  { name: 'SNS観光関連エンゲージメント', dataType: 'SNS感情',     regionType: 'タイプA:世界遺産・国立公園', reliability: '中：推計値', value: 850000,    baseValue: 620000,    unit: 'いいね', municipality: '屋久島町', period: '2026年Q1', aiHint: 'Instagram・TikTokで縄文杉動画が拡散。海外からの問い合わせが前年比+35%増加。',               recordDate: '2026-04-01' },
+];
+
+/** 霧島市の収益サンプル */
+const KIRISHIMA_SAMPLE_REVENUES: SampleRevenue[] = [
+  { name: '霧島・温泉地への観光入込',    dataType: '周遊パターン', regionType: 'タイプC:温泉・文化観光', reliability: '高：実測値', value: 2500000,    baseValue: 2200000,   unit: '人', municipality: '霧島市', period: '2025年度', aiHint: '霧島神宮参拝者と温泉来訪者が増加。インバウンド回復が全体を押し上げた。',                     recordDate: '2026-03-31' },
+  { name: '霧島市内宿泊稼働率',          dataType: '宿泊稼働',    regionType: 'タイプC:温泉・文化観光', reliability: '高：実測値', value: 68,          baseValue: 62,        unit: '%', municipality: '霧島市', period: '2026年Q1', aiHint: '温泉旅館の稼働率が前年比+6pt改善。平日稼働率が低い課題は継続中。',                           recordDate: '2026-04-01' },
+  { name: '農産物販売額（霧島茶・黒豚）', dataType: '産品販売',    regionType: 'タイプB:農林水産業',     reliability: '高：実測値', value: 850000000,  baseValue: 800000000, unit: '円', municipality: '霧島市', period: '2025年度', aiHint: '霧島茶のブランド認知向上でギフト需要が拡大。黒豚は飲食店需要が堅調。',                       recordDate: '2026-03-31' },
+  { name: 'ふるさと納税受入額',           dataType: 'その他',      regionType: 'タイプC:温泉・文化観光', reliability: '高：実測値', value: 1200000000, baseValue: 980000000, unit: '円', municipality: '霧島市', period: '2025年度', aiHint: '返礼品の温泉宿泊券が人気1位。前年比+22%。さらなる返礼品多様化が成長余地。',                   recordDate: '2026-03-31' },
+  { name: '霧島神宮門前商店街売上',       dataType: '産品販売',    regionType: 'タイプC:温泉・文化観光', reliability: '中：推計値', value: 320000000,  baseValue: 280000000, unit: '円', municipality: '霧島市', period: '2025年度', aiHint: '参拝者の購買率が上昇。縁起物・地酒・黒豚加工品が好評。夜間営業拡充で機会拡大の余地あり。', recordDate: '2026-03-31' },
+];
+
+/** 自治体IDに応じた収益サンプルデータを返す */
+function getSampleRevenues(municipalityId: string): SampleRevenue[] {
+  const map: Record<string, SampleRevenue[]> = {
+    yakushima: YAKUSHIMA_SAMPLE_REVENUES,
+    kirishima: KIRISHIMA_SAMPLE_REVENUES,
+  }
+  return map[municipalityId] ?? YAKUSHIMA_SAMPLE_REVENUES
+}
+
 // ─── GET ─────────────────────────────────────────────
 
 // Sprint #35: NextRequest を受け取り municipalityId クエリを処理するように変更
@@ -60,6 +96,25 @@ export async function GET(req: NextRequest) {
     }
 
     const data = await res.json()
+
+    // Sprint #37: Notion が空の場合は自治体別サンプルデータにフォールバック
+    if (!data.results || data.results.length === 0) {
+      const sampleRecords = getSampleRevenues(municipalityId).map((s, i) => ({ ...s, id: `sample-${i}` }))
+      const total      = sampleRecords.length
+      const withAiHint = sampleRecords.filter(r => r.aiHint).length
+      const comparable = sampleRecords.filter(r => r.value !== null && r.baseValue !== null && r.baseValue !== 0)
+      const avgDeviation = comparable.length > 0
+        ? Math.round(comparable.reduce((s, r) => s + ((r.value! - r.baseValue!) / r.baseValue!) * 100, 0) / comparable.length)
+        : null
+      const byType: Record<string, number> = {}
+      sampleRecords.forEach(r => { if (r.dataType) byType[r.dataType] = (byType[r.dataType] ?? 0) + 1 })
+      return NextResponse.json({
+        records: sampleRecords,
+        summary: { total, withAiHint, avgDeviation, byType },
+        recentWithHint: sampleRecords.filter(r => r.aiHint).slice(0, 5),
+        source: 'sample',
+      })
+    }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const records = (data.results ?? []).map((r: any) => {

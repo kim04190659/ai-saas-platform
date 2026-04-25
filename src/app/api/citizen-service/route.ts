@@ -99,6 +99,67 @@ function calcWellbeingScore(record: CitizenServiceRecord): number {
   return Math.round(Math.min(100, Math.max(0, score)));
 }
 
+// ─── 自治体別サンプルデータ（Notion が空のときのフォールバック用）────
+
+/** サービスサンプル1件の型（id は動的生成） */
+type SampleService = Omit<CitizenServiceRecord, 'wellbeingScore'> & { wellbeingScore: number };
+
+/** 屋久島町の住民サービスサンプル */
+const YAKUSHIMA_SAMPLE_SERVICES: SampleService[] = [
+  { serviceName: '住民票・証明書交付窓口', municipality: '屋久島町', category: '窓口',   status: '稼働中', waitingMinutes: 20, satisfactionScore: 3.8, userCount: 280,  wellbeingScore: 72, recordDate: '2026-04-01', notes: '窓口は週3日（月水金）対応' },
+  { serviceName: '高齢者介護相談窓口',     municipality: '屋久島町', category: '福祉',   status: '稼働中', waitingMinutes: 10, satisfactionScore: 4.2, userCount: 95,   wellbeingScore: 80, recordDate: '2026-04-01', notes: '島内唯一の介護相談窓口' },
+  { serviceName: '国民健康保険窓口',       municipality: '屋久島町', category: '医療',   status: '稼働中', waitingMinutes: 15, satisfactionScore: 4.0, userCount: 120,  wellbeingScore: 76, recordDate: '2026-04-01' },
+  { serviceName: '観光・移住相談コーナー', municipality: '屋久島町', category: '窓口',   status: '稼働中', waitingMinutes: 5,  satisfactionScore: 4.5, userCount: 65,   wellbeingScore: 85, recordDate: '2026-04-01', notes: '移住希望者の問い合わせ増加中' },
+  { serviceName: '小中学校就学支援',       municipality: '屋久島町', category: '教育',   status: '稼働中', waitingMinutes: 0,  satisfactionScore: 4.3, userCount: 310,  wellbeingScore: 82, recordDate: '2026-04-01' },
+  { serviceName: '上下水道サービス',       municipality: '屋久島町', category: 'インフラ', status: '稼働中', waitingMinutes: 0,  satisfactionScore: 3.5, userCount: 4800, wellbeingScore: 68, recordDate: '2026-04-01', notes: '島内全域の水道普及率98%' },
+  { serviceName: '税務申告・納付窓口',     municipality: '屋久島町', category: '財政',   status: '稼働中', waitingMinutes: 25, satisfactionScore: 3.5, userCount: 180,  wellbeingScore: 63, recordDate: '2026-04-01' },
+];
+
+/** 霧島市の住民サービスサンプル */
+const KIRISHIMA_SAMPLE_SERVICES: SampleService[] = [
+  { serviceName: '住民票・証明書交付',         municipality: '霧島市', category: '窓口',   status: '稼働中', waitingMinutes: 18, satisfactionScore: 3.9, userCount: 1200,  wellbeingScore: 73, recordDate: '2026-04-01' },
+  { serviceName: '高齢者福祉サービス',         municipality: '霧島市', category: '福祉',   status: '稼働中', waitingMinutes: 8,  satisfactionScore: 4.3, userCount: 420,   wellbeingScore: 81, recordDate: '2026-04-01', notes: '在宅介護支援センター連携' },
+  { serviceName: '国保・後期高齢者医療窓口',   municipality: '霧島市', category: '医療',   status: '稼働中', waitingMinutes: 12, satisfactionScore: 4.1, userCount: 580,   wellbeingScore: 78, recordDate: '2026-04-01' },
+  { serviceName: '保育所・こども園',           municipality: '霧島市', category: '教育',   status: '稼働中', waitingMinutes: 0,  satisfactionScore: 4.4, userCount: 1350,  wellbeingScore: 83, recordDate: '2026-04-01', notes: '待機児童ゼロを達成' },
+  { serviceName: '水道サービス',               municipality: '霧島市', category: 'インフラ', status: '稼働中', waitingMinutes: 0,  satisfactionScore: 4.0, userCount: 18000, wellbeingScore: 76, recordDate: '2026-04-01' },
+  { serviceName: '市税申告・納付窓口',         municipality: '霧島市', category: '財政',   status: '稼働中', waitingMinutes: 22, satisfactionScore: 3.6, userCount: 850,   wellbeingScore: 65, recordDate: '2026-04-01' },
+  { serviceName: '霧島神宮・温泉地観光案内',   municipality: '霧島市', category: 'インフラ', status: '稼働中', waitingMinutes: 3,  satisfactionScore: 4.6, userCount: 2400,  wellbeingScore: 88, recordDate: '2026-04-01', notes: '年間来訪者250万人超' },
+];
+
+/** 自治体IDに応じたサンプルデータを返す */
+function getSampleServices(municipalityId: string): SampleService[] {
+  const map: Record<string, SampleService[]> = {
+    yakushima: YAKUSHIMA_SAMPLE_SERVICES,
+    kirishima: KIRISHIMA_SAMPLE_SERVICES,
+  };
+  return map[municipalityId] ?? YAKUSHIMA_SAMPLE_SERVICES;
+}
+
+/** サービス配列からサマリーを集計する（サンプル・Notionデータ共通） */
+function buildServiceSummary(services: (CitizenServiceRecord & { wellbeingScore?: number })[]) {
+  const categoryStats: Record<string, { count: number; avgScore: number }> = {};
+  services.forEach(svc => {
+    if (!categoryStats[svc.category]) {
+      categoryStats[svc.category] = { count: 0, avgScore: 0 };
+    }
+    categoryStats[svc.category].count++;
+    categoryStats[svc.category].avgScore += svc.wellbeingScore ?? 0;
+  });
+  Object.keys(categoryStats).forEach(cat => {
+    const s = categoryStats[cat];
+    s.avgScore = Math.round(s.avgScore / s.count);
+  });
+  const activeCount = services.filter(s => s.status === '稼働中').length;
+  const scoreList = services
+    .map(s => s.satisfactionScore)
+    .filter((s): s is number => s !== undefined);
+  const avgSatisfaction =
+    scoreList.length > 0
+      ? Math.round((scoreList.reduce((a, b) => a + b, 0) / scoreList.length) * 10) / 10
+      : null;
+  return { totalCount: services.length, activeCount, avgSatisfaction, categoryStats };
+}
+
 // ─── GETハンドラー ────────────────────────────────────────
 
 // Sprint #35: NextRequest を受け取り municipalityId クエリを処理するように変更
@@ -134,37 +195,22 @@ export async function GET(req: NextRequest) {
     }
 
     const data = await res.json();
+
+    // Sprint #37: Notion が空の場合は自治体別サンプルデータにフォールバック
+    if (!data.results || data.results.length === 0) {
+      const sampleServices = getSampleServices(municipalityId);
+      return NextResponse.json({
+        services: sampleServices.map((s, i) => ({ ...s, id: `sample-${i}` })),
+        summary:  buildServiceSummary(sampleServices),
+        source:   'sample',  // サンプルデータであることをフロントに伝える
+      });
+    }
+
     const services = data.results.map(extractService);
-
-    // カテゴリ別集計
-    const categoryStats: Record<string, { count: number; avgScore: number }> = {};
-    services.forEach((svc: CitizenServiceRecord) => {
-      if (!categoryStats[svc.category]) {
-        categoryStats[svc.category] = { count: 0, avgScore: 0 };
-      }
-      categoryStats[svc.category].count++;
-      categoryStats[svc.category].avgScore += svc.wellbeingScore ?? 0;
-    });
-    Object.keys(categoryStats).forEach(cat => {
-      const s = categoryStats[cat];
-      s.avgScore = Math.round(s.avgScore / s.count);
-    });
-
-    // 稼働中サービス数
-    const activeCount = services.filter((s: CitizenServiceRecord) => s.status === '稼働中').length;
-
-    // 平均満足度
-    const scoreList = services
-      .map((s: CitizenServiceRecord) => s.satisfactionScore)
-      .filter((s: number | undefined): s is number => s !== undefined);
-    const avgSatisfaction =
-      scoreList.length > 0
-        ? Math.round((scoreList.reduce((a: number, b: number) => a + b, 0) / scoreList.length) * 10) / 10
-        : null;
-
     return NextResponse.json({
       services,
-      summary: { totalCount: services.length, activeCount, avgSatisfaction, categoryStats },
+      summary: buildServiceSummary(services),
+      source:  'notion',
     });
   } catch (error) {
     console.error('[citizen-service GET] エラー:', error);
