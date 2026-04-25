@@ -17,6 +17,9 @@
     },
     "src/app/api/cron/satisfaction-monitor/route.ts": {
       "maxDuration": 60
+    },
+    "src/app/api/cron/citizen-radar/route.ts": {
+      "maxDuration": 60
     }
   },
   "crons": [
@@ -43,6 +46,10 @@
     {
       "path":     "/api/cron/satisfaction-monitor",
       "schedule": "0 23 * * 0"
+    },
+    {
+      "path":     "/api/cron/citizen-radar",
+      "schedule": "0 22 * * 0"
     }
   ]
 }

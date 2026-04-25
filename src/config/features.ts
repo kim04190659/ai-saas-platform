@@ -235,6 +235,14 @@ export const FEATURE_MODULES: FeatureModule[] = [
         status: 'active',
         description: 'インフラ老朽化・離職リスク1on1・住民満足度低下をAIが先回り検知。週次自動実行＋LINE通知でゼロ見逃しを実現',
       },
+      {
+        // Sprint #43 追加: 住民困り事レーダー
+        id: 'staff-citizen-radar',
+        label: '🎯 住民困り事レーダー',
+        href: '/gyosei/citizen-radar',
+        status: 'active',
+        description: 'Yahoo知恵袋・Google News・発言小町などから住民の困り事を自動収集。AIがカテゴリ分類・優先度付けしてNotionに蓄積する',
+      },
     ],
   },
 
