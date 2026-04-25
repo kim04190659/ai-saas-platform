@@ -19,8 +19,9 @@
 //    - スコアボタン（1〜5）で直感的に入力できるUI
 // =====================================================
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
+import { useMunicipality } from '@/contexts/MunicipalityContext'
 
 // ─── 型定義 ──────────────────────────────────────────
 
@@ -161,19 +162,27 @@ function WBScoreBadge({ score }: { score: number }) {
 // ─── メインコンポーネント ─────────────────────────────
 
 export default function StaffConditionPage() {
+  // Sprint #34: 選択中の自治体を Context から取得
+  const { municipalityId, municipality } = useMunicipality()
+
   // ── State ──
   const [records,  setRecords]  = useState<StaffRecord[]>([])
   const [summary,  setSummary]  = useState<Summary | null>(null)
-  const [form,     setForm]     = useState<FormState>(INITIAL_FORM)
+  // フォームの初期値に選択中の自治体名をセット
+  const [form,     setForm]     = useState<FormState>({
+    ...INITIAL_FORM,
+    municipalityName: municipality.shortName,
+  })
   const [loading,  setLoading]  = useState(false)
   const [fetching, setFetching] = useState(true)
   const [message,  setMessage]  = useState<{ text: string; ok: boolean } | null>(null)
 
-  // ── データ取得 ──
-  const fetchData = async () => {
+  // ── データ取得（municipalityId を渡してフィルタリング）──
+  const fetchData = useCallback(async () => {
     setFetching(true)
     try {
-      const res  = await fetch('/api/staff-condition')
+      // Sprint #34: municipalityId をクエリパラメータで渡す
+      const res  = await fetch(`/api/staff-condition?municipalityId=${municipalityId}`)
       const data = await res.json()
       if (!data.error) {
         setRecords(data.records ?? [])
@@ -184,9 +193,13 @@ export default function StaffConditionPage() {
     } finally {
       setFetching(false)
     }
-  }
+  }, [municipalityId])
 
-  useEffect(() => { fetchData() }, [])
+  // 自治体が切り替わったらデータを再取得し、フォームの自治体名も更新
+  useEffect(() => {
+    fetchData()
+    setForm(prev => ({ ...prev, municipalityName: municipality.shortName }))
+  }, [municipalityId, municipality.shortName, fetchData])
 
   // ── フォーム送信 ──
   const handleSubmit = async (e: React.FormEvent) => {
@@ -199,10 +212,11 @@ export default function StaffConditionPage() {
     setMessage(null)
 
     try {
+      // Sprint #34: municipalityId をボディに追加して自治体を特定させる
       const res  = await fetch('/api/staff-condition', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify(form),
+        body:    JSON.stringify({ ...form, municipalityId }),
       })
       const data = await res.json()
 
@@ -211,7 +225,8 @@ export default function StaffConditionPage() {
       } else {
         // 成功: フォームリセット・データ再取得
         setMessage({ text: data.message, ok: true })
-        setForm({ ...INITIAL_FORM, recordDate: new Date().toISOString().split('T')[0] })
+        // リセット時も選択中の自治体名を維持する
+        setForm({ ...INITIAL_FORM, municipalityName: municipality.shortName, recordDate: new Date().toISOString().split('T')[0] })
         await fetchData()
       }
     } catch {

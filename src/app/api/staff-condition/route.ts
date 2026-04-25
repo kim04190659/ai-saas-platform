@@ -20,6 +20,7 @@
 // =====================================================
 
 import { NextRequest, NextResponse } from 'next/server'
+import { getMunicipalityById } from '@/config/municipalities'
 
 const NOTION_API_BASE    = 'https://api.notion.com/v1'
 const NOTION_VERSION     = '2022-06-28'
@@ -102,6 +103,63 @@ const SAMPLE_DATA: Record<string, Array<{
   ],
 };
 
+
+// ─── 霧島市サンプルデータ ──────────────────────────────
+
+const KIRISHIMA_SAMPLE_DATA: typeof SAMPLE_DATA = {
+  gyosei: [
+    { id: 'k-g1', staffName: '坂元 一朗', municipalityName: '霧島市', department: '市民課',     healthScore: 4, workloadScore: 3, teamWellBeingScore: 4, wellbeingScore: calcWB(4,3,4), comment: '窓口DX化で業務が効率化されてきた', recordDate: '2026-04-17' },
+    { id: 'k-g2', staffName: '永田 恵子', municipalityName: '霧島市', department: '総務課',     healthScore: 3, workloadScore: 4, teamWellBeingScore: 3, wellbeingScore: calcWB(3,4,3), comment: '新年度の予算管理で多忙',           recordDate: '2026-04-17' },
+    { id: 'k-g3', staffName: '鎌田 洋介', municipalityName: '霧島市', department: '農林水産課', healthScore: 5, workloadScore: 2, teamWellBeingScore: 5, wellbeingScore: calcWB(5,2,5), comment: '茶・畜産の振興策が順調',           recordDate: '2026-04-16' },
+    { id: 'k-g4', staffName: '有馬 美佐', municipalityName: '霧島市', department: '観光課',     healthScore: 3, workloadScore: 5, teamWellBeingScore: 2, wellbeingScore: calcWB(3,5,2), comment: 'GW前の観光対応で繁忙期',           recordDate: '2026-04-16' },
+    { id: 'k-g5', staffName: '前田 誠', municipalityName: '霧島市', department: '情報政策課', healthScore: 4, workloadScore: 3, teamWellBeingScore: 4, wellbeingScore: calcWB(4,3,4), comment: 'RunWith導入プロジェクト推進中',       recordDate: '2026-04-15' },
+    { id: 'k-g6', staffName: '溝口 陽子', municipalityName: '霧島市', department: '企画課',     healthScore: 4, workloadScore: 3, teamWellBeingScore: 5, wellbeingScore: calcWB(4,3,5), comment: '霧島市総合計画の見直し作業中',     recordDate: '2026-04-15' },
+  ],
+  education: [
+    { id: 'k-e1', staffName: '上床 良子', municipalityName: '霧島市', department: '小学校',         healthScore: 3, workloadScore: 4, teamWellBeingScore: 3, wellbeingScore: calcWB(3,4,3), comment: '学習指導要領改定対応で多忙',        recordDate: '2026-04-17' },
+    { id: 'k-e2', staffName: '中馬 健', municipalityName: '霧島市', department: '中学校',         healthScore: 4, workloadScore: 3, teamWellBeingScore: 4, wellbeingScore: calcWB(4,3,4), comment: '部活動の地域移行が進んでいる',      recordDate: '2026-04-17' },
+    { id: 'k-e3', staffName: '日高 奈緒', municipalityName: '霧島市', department: '高等学校',       healthScore: 3, workloadScore: 4, teamWellBeingScore: 3, wellbeingScore: calcWB(3,4,3), comment: '大学進学指導で繁忙期',              recordDate: '2026-04-16' },
+    { id: 'k-e4', staffName: '園田 浩', municipalityName: '霧島市', department: '教育委員会事務局', healthScore: 4, workloadScore: 2, teamWellBeingScore: 5, wellbeingScore: calcWB(4,2,5), comment: '教育DX推進計画が順調',              recordDate: '2026-04-16' },
+    { id: 'k-e5', staffName: '池之上 智美', municipalityName: '霧島市', department: '給食センター', healthScore: 5, workloadScore: 3, teamWellBeingScore: 4, wellbeingScore: calcWB(5,3,4), comment: '地産地消メニューの導入準備中',      recordDate: '2026-04-15' },
+    { id: 'k-e6', staffName: '村永 誠司', municipalityName: '霧島市', department: '特別支援学校',   healthScore: 3, workloadScore: 4, teamWellBeingScore: 3, wellbeingScore: calcWB(3,4,3), comment: '支援計画の見直し中',                recordDate: '2026-04-15' },
+  ],
+  safety: [
+    { id: 'k-s1', staffName: '塩屋 剛', municipalityName: '霧島市', department: '消防署 本署', healthScore: 4, workloadScore: 4, teamWellBeingScore: 3, wellbeingScore: calcWB(4,4,3), comment: '山岳救助訓練が続いている',        recordDate: '2026-04-17' },
+    { id: 'k-s2', staffName: '岩川 誠', municipalityName: '霧島市', department: '警察署',       healthScore: 4, workloadScore: 3, teamWellBeingScore: 4, wellbeingScore: calcWB(4,3,4), comment: 'GW前の観光客増加に備えて警戒中',  recordDate: '2026-04-17' },
+    { id: 'k-s3', staffName: '米丸 勇', municipalityName: '霧島市', department: '救急隊',       healthScore: 3, workloadScore: 5, teamWellBeingScore: 3, wellbeingScore: calcWB(3,5,3), comment: '温泉地区の救急増加傾向あり',      recordDate: '2026-04-16' },
+    { id: 'k-s4', staffName: '北山 優子', municipalityName: '霧島市', department: '防災課',     healthScore: 5, workloadScore: 3, teamWellBeingScore: 4, wellbeingScore: calcWB(5,3,4), comment: '火山監視体制が整備されてきた',    recordDate: '2026-04-16' },
+    { id: 'k-s5', staffName: '福元 正', municipalityName: '霧島市', department: '地域安全課', healthScore: 4, workloadScore: 3, teamWellBeingScore: 5, wellbeingScore: calcWB(4,3,5), comment: '地域見守りネットワーク充実',        recordDate: '2026-04-15' },
+    { id: 'k-s6', staffName: '海江田 守', municipalityName: '霧島市', department: '交通課',    healthScore: 4, workloadScore: 4, teamWellBeingScore: 3, wellbeingScore: calcWB(4,4,3), comment: '霧島観光道路の安全対策中',          recordDate: '2026-04-15' },
+  ],
+  healthcare: [
+    { id: 'k-h1', staffName: '有村 幸子', municipalityName: '霧島市', department: '内科',               healthScore: 3, workloadScore: 4, teamWellBeingScore: 3, wellbeingScore: calcWB(3,4,3), comment: '温泉療養患者が増加傾向',          recordDate: '2026-04-17' },
+    { id: 'k-h2', staffName: '牧之内 誠', municipalityName: '霧島市', department: '救急',               healthScore: 4, workloadScore: 5, teamWellBeingScore: 4, wellbeingScore: calcWB(4,5,4), comment: '連続当直あり。人員確保が課題',    recordDate: '2026-04-17' },
+    { id: 'k-h3', staffName: '比良 美穂', municipalityName: '霧島市', department: '訪問診療',           healthScore: 4, workloadScore: 3, teamWellBeingScore: 4, wellbeingScore: calcWB(4,3,4), comment: '中山間地域への往診が増加',        recordDate: '2026-04-16' },
+    { id: 'k-h4', staffName: '植村 澄子', municipalityName: '霧島市', department: '老人保健施設',       healthScore: 2, workloadScore: 4, teamWellBeingScore: 3, wellbeingScore: calcWB(2,4,3), comment: '夜勤体制の見直しが必要',          recordDate: '2026-04-16' },
+    { id: 'k-h5', staffName: '新村 修', municipalityName: '霧島市', department: '地域包括支援センター', healthScore: 4, workloadScore: 3, teamWellBeingScore: 5, wellbeingScore: calcWB(4,3,5), comment: 'ケアネットワーク構築が進む',        recordDate: '2026-04-15' },
+    { id: 'k-h6', staffName: '古谷 幸恵', municipalityName: '霧島市', department: '居宅介護支援',       healthScore: 3, workloadScore: 4, teamWellBeingScore: 3, wellbeingScore: calcWB(3,4,3), comment: 'ケアマネ不足が深刻化している',    recordDate: '2026-04-15' },
+  ],
+  infrastructure: [
+    { id: 'k-i1', staffName: '川野 修一', municipalityName: '霧島市', department: '電気設備課', healthScore: 4, workloadScore: 3, teamWellBeingScore: 4, wellbeingScore: calcWB(4,3,4), comment: '地熱発電所の定期点検中',            recordDate: '2026-04-17' },
+    { id: 'k-i2', staffName: '松田 勝則', municipalityName: '霧島市', department: '上水道課',   healthScore: 3, workloadScore: 4, teamWellBeingScore: 3, wellbeingScore: calcWB(3,4,3), comment: '老朽化した配管の更新工事進行中',    recordDate: '2026-04-17' },
+    { id: 'k-i3', staffName: '宮内 武司', municipalityName: '霧島市', department: '道路維持課', healthScore: 4, workloadScore: 4, teamWellBeingScore: 3, wellbeingScore: calcWB(4,4,3), comment: '観光道路の舗装修繕が続いている',    recordDate: '2026-04-16' },
+    { id: 'k-i4', staffName: '山下 守', municipalityName: '霧島市', department: '下水道課',   healthScore: 5, workloadScore: 2, teamWellBeingScore: 5, wellbeingScore: calcWB(5,2,5), comment: '国庫補助事業の採択で予算確保',      recordDate: '2026-04-16' },
+    { id: 'k-i5', staffName: '古川 義則', municipalityName: '霧島市', department: '公園管理課', healthScore: 3, workloadScore: 3, teamWellBeingScore: 4, wellbeingScore: calcWB(3,3,4), comment: '霧島神宮周辺の整備作業中',          recordDate: '2026-04-15' },
+    { id: 'k-i6', staffName: '小牧 晴信', municipalityName: '霧島市', department: '橋梁管理課', healthScore: 4, workloadScore: 3, teamWellBeingScore: 4, wellbeingScore: calcWB(4,3,4), comment: '定期点検結果の報告書作成中',        recordDate: '2026-04-15' },
+  ],
+};
+
+/** 自治体IDと部署IDに応じたサンプルデータを返す */
+function getSampleData(municipalityId: string, deptId: string) {
+  const dataMap: Record<string, typeof SAMPLE_DATA> = {
+    yakushima: SAMPLE_DATA,
+    kirishima: KIRISHIMA_SAMPLE_DATA,
+    nec:       KIRISHIMA_SAMPLE_DATA,  // NEC は霧島市データを暫定利用
+  };
+  const data = dataMap[municipalityId] ?? SAMPLE_DATA;
+  return data[deptId] ?? data['gyosei'];
+}
+
 // ─── ヘルパー関数 ────────────────────────────────────
 
 function notionHeaders(apiKey: string) {
@@ -136,26 +194,32 @@ function buildSummary(records: typeof SAMPLE_DATA['gyosei']) {
 // ─── GET ハンドラ ────────────────────────────────────
 
 export async function GET(req: NextRequest) {
-  // deptId をクエリパラメータから取得（未指定は 'gyosei'）
-  const deptId = req.nextUrl.searchParams.get('deptId') ?? 'gyosei'
+  // クエリパラメータから deptId・municipalityId を取得
+  const deptId         = req.nextUrl.searchParams.get('deptId') ?? 'gyosei'
+  const municipalityId = req.nextUrl.searchParams.get('municipalityId') ?? 'kirishima'
+
+  // Sprint #34: 自治体IDから自治体オブジェクトを解決（shortName を Notion フィルターに使用）
+  const municipality     = getMunicipalityById(municipalityId)
+  const municipalityName = municipality.shortName
 
   const notionApiKey = process.env.NOTION_API_KEY
 
-  // Notion API キーが未設定 → サンプルデータを返す
+  // Notion API キーが未設定 → 自治体別サンプルデータを返す
   if (!notionApiKey) {
-    const records = SAMPLE_DATA[deptId] ?? SAMPLE_DATA['gyosei']
+    const records = getSampleData(municipalityId, deptId)
     return NextResponse.json({ records, summary: buildSummary(records), source: 'sample' })
   }
 
   try {
-    // Notion をクエリ。deptId プロパティでフィルタする。
-    // ※ Notion DB に 'deptId' プロパティがない場合はフィルタを外してJS側でフィルタする。
+    // Sprint #34: deptId × 自治体名の複合フィルター（AND条件）
     const body: Record<string, unknown> = {
       page_size: 100,
       sorts: [{ property: '記録日', direction: 'descending' }],
       filter: {
-        property: 'deptId',
-        rich_text: { equals: deptId },
+        and: [
+          { property: 'deptId',  rich_text: { equals: deptId } },
+          { property: '自治体名', rich_text: { contains: municipalityName } },
+        ],
       },
     }
 
@@ -179,7 +243,7 @@ export async function GET(req: NextRequest) {
       // deptId が完全一致するレコードのみ。未設定（古いデータ）は非表示。
       const filtered = allRecords.filter((r: { deptId?: string }) => r.deptId === deptId)
       // 一致するレコードがなければ部署別サンプルデータにフォールバック
-      const records = filtered.length > 0 ? filtered : (SAMPLE_DATA[deptId] ?? SAMPLE_DATA['gyosei'])
+      const records = filtered.length > 0 ? filtered : getSampleData(municipalityId, deptId)
       return NextResponse.json({ records, summary: buildSummary(records), source: filtered.length > 0 ? 'notion' : 'sample' })
     }
 
@@ -187,9 +251,9 @@ export async function GET(req: NextRequest) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const records = data.results?.map((r: any) => mapNotionRecord(r)) ?? []
 
-    // Notion に 0 件 → サンプルデータにフォールバック
+    // Notion に 0 件 → 自治体別サンプルデータにフォールバック
     if (records.length === 0) {
-      const sample = SAMPLE_DATA[deptId] ?? SAMPLE_DATA['gyosei']
+      const sample = getSampleData(municipalityId, deptId)
       return NextResponse.json({ records: sample, summary: buildSummary(sample), source: 'sample' })
     }
 
@@ -197,8 +261,8 @@ export async function GET(req: NextRequest) {
 
   } catch (err) {
     console.error('StaffCondition GET エラー:', err)
-    // エラー時もサンプルデータで返す（画面を壊さない）
-    const sample = SAMPLE_DATA[deptId] ?? SAMPLE_DATA['gyosei']
+    // エラー時も自治体別サンプルデータで返す（画面を壊さない）
+    const sample = getSampleData(municipalityId, deptId)
     return NextResponse.json({ records: sample, summary: buildSummary(sample), source: 'sample' })
   }
 }
