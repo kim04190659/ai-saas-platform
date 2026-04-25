@@ -20,6 +20,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { useMunicipality } from '@/contexts/MunicipalityContext'
 
 // ─── 型定義 ──────────────────────────────────────────
 
@@ -135,17 +136,26 @@ function CheckGroup({
 // ─── メインコンポーネント ─────────────────────────────
 
 export default function SettingsPage() {
+  // Sprint #38B: 選択中の自治体を取得
+  const { municipalityId, municipality } = useMunicipality()
+
   const [profile,  setProfile]  = useState<Profile>(EMPTY_PROFILE)
   const [saved,    setSaved]    = useState<Profile | null>(null)   // 保存済みプロフィール
   const [loading,  setLoading]  = useState(false)
   const [fetching, setFetching] = useState(true)
   const [message,  setMessage]  = useState<{ text: string; ok: boolean } | null>(null)
 
-  // ── 保存済みプロフィールを読み込む ──
+  // ── 保存済みプロフィールを読み込む（自治体切り替え時に再取得）──
   useEffect(() => {
+    setFetching(true)
+    setSaved(null)
+    setProfile(EMPTY_PROFILE)
+    setMessage(null)
+
     const load = async () => {
       try {
-        const res  = await fetch('/api/municipality-profile')
+        // Sprint #38B: municipalityId をクエリパラメータで渡す
+        const res  = await fetch(`/api/municipality-profile?municipalityId=${municipalityId}`)
         const data = await res.json()
         if (data.profile) {
           setProfile(data.profile)
@@ -158,7 +168,7 @@ export default function SettingsPage() {
       }
     }
     load()
-  }, [])
+  }, [municipalityId])  // 自治体が切り替わると再読み込み
 
   // ── フォーム保存 ──
   const handleSave = async (e: React.FormEvent) => {
@@ -174,7 +184,8 @@ export default function SettingsPage() {
       const res  = await fetch('/api/municipality-profile', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify(profile),
+        // Sprint #38B: municipalityId を一緒に送信
+        body:    JSON.stringify({ ...profile, municipalityId }),
       })
       const data = await res.json()
 
@@ -209,7 +220,7 @@ export default function SettingsPage() {
             ⚙️ 自治体プロフィール設定
           </h1>
           <p className="text-sm text-slate-500 mt-1">
-            選ぶだけでAI顧問の回答がこの自治体専用の言葉に変わります
+            {municipality.name} — 選ぶだけでAI顧問の回答がこの自治体専用の言葉に変わります
           </p>
           <div className="mt-3 flex gap-2 flex-wrap">
             <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">

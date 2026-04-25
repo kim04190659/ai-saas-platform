@@ -15,6 +15,7 @@ import { useState } from 'react';
 import { usePathname } from 'next/navigation';
 import Sidebar from '@/components/layout/Sidebar';
 import KirishimaSidebar from '@/components/layout/KirishimaSidebar';
+import YakushimaSidebar from '@/components/layout/YakushimaSidebar';
 import ChatPanel from '@/components/layout/ChatPanel';
 import KirishimaChatPanel from '@/components/layout/KirishimaChatPanel';
 import LanguageSwitcher from '@/components/common/LanguageSwitcher';
@@ -37,6 +38,48 @@ function DashboardLayoutInner({
 
   // /kirishima 配下かどうかを判定
   const isKirishima = pathname.startsWith('/kirishima');
+
+  // /yakushima 配下かどうかを判定
+  const isYakushima = pathname.startsWith('/yakushima');
+
+  // ─── 屋久島町専用レイアウト ─────────────────────────────
+  if (isYakushima) {
+    return (
+      <div className="flex h-screen">
+        <YakushimaSidebar />
+
+        <div className="flex-1 flex flex-col">
+          {/* 屋久島町専用ヘッダー */}
+          <header className="bg-white border-b border-gray-200 p-4 flex justify-between items-center">
+            <div>
+              <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                <span>🏝️</span>
+                屋久島町 RunWith
+              </h2>
+              <p className="text-xs text-emerald-600 ml-6">世界遺産 × 自然共生型DXプラットフォーム</p>
+            </div>
+            <div className="flex items-center gap-4">
+              <LanguageSwitcher />
+              <button
+                onClick={() => setChatOpen(!chatOpen)}
+                className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
+              >
+                <MessageSquare size={20} />
+                屋久島AIアドバイザー
+              </button>
+            </div>
+          </header>
+
+          <main className="flex-1 overflow-auto bg-gray-50">
+            {children}
+          </main>
+        </div>
+
+        {/* 屋久島町では共通チャットパネルを使用 */}
+        <ChatPanel isOpen={chatOpen} onClose={() => setChatOpen(false)} />
+      </div>
+    );
+  }
 
   // ─── 霧島市専用レイアウト ──────────────────────────────
   if (isKirishima) {

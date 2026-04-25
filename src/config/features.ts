@@ -796,8 +796,36 @@ export const FEATURE_MODULES: FeatureModule[] = [
     },
     pages: [
       {
+        id: 'yakushima-tourism',
+        label: '🌿 観光・エコツーリズム管理',
+        href: '/yakushima/tourism',
+        status: 'active',
+        description: '縄文杉・白谷雲水峡などの入込客数・環境負荷・満足度を管理。持続可能な世界遺産観光を実現',
+      },
+      {
+        id: 'yakushima-migration',
+        label: '🏡 移住・定住支援',
+        href: '/yakushima/migration',
+        status: 'active',
+        description: '移住相談から定住・就農・起業まで伴走支援。島外担い手確保を数値で追跡',
+      },
+      {
+        id: 'yakushima-revenue',
+        label: '💰 収益・財政データ',
+        href: '/gyosei/revenue',
+        status: 'active',
+        description: '観光入込・ふるさと納税・特産品EC（ヤクスギ・タンカン・サバ節）の収益データ分析',
+      },
+      {
+        id: 'yakushima-line',
+        label: '💬 LINE住民相談管理',
+        href: '/gyosei/line-consultation',
+        status: 'active',
+        description: '移住・子育て・観光に関する住民・移住検討者からのLINE相談を一元管理',
+      },
+      {
         id: 'yakushima-setup',
-        label: '🧠 組織設計ウィザード起動',
+        label: '🧠 組織設計ウィザード',
         href: '/runwith/org-wizard',
         status: 'coming',
         description: '組織設計ウィザードを使って屋久島町のNotionページを自動生成',
