@@ -840,6 +840,14 @@ export const FEATURE_MODULES: FeatureModule[] = [
         description: '移住・子育て・観光に関する住民・移住検討者からのLINE相談を一元管理',
       },
       {
+        // Sprint #46 追加: データ参照型AI施策エンジン
+        id: 'yakushima-policy-engine',
+        label: '🧩 データ参照型施策提案',
+        href: '/yakushima/policy-engine',
+        status: 'active',
+        description: '学校・ICT・人口・移住・観光の5本のNotionDBを読み込み、実際の数値を引用した施策提案とデータ不足の指摘を生成する屋久島町専用エンジン',
+      },
+      {
         id: 'yakushima-setup',
         label: '🧠 組織設計ウィザード',
         href: '/runwith/org-wizard',
