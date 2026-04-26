@@ -7,10 +7,12 @@
 //  メッセージを生成して住民WBコーチングDBに保存する。
 // =====================================================
 
-// ── DB定数 ─────────────────────────────────────────
-const CONSULTATION_DB_ID = 'a4826a3c83d24d74a6f60b955f87454a'   // 住民相談DB
-const COACHING_DB_ID     = 'a610367ac47b48a996eae41d72ac821e'   // 住民WBコーチングDB
-const NOTION_API         = 'https://api.notion.com/v1'
+// ── 設定インポート ──────────────────────────────────
+// municipalityId に応じて正しいDB IDを取得するための設定ファイル
+import { getMunicipalityDbConfig } from '@/config/municipality-db-config'
+import { getMunicipalityById }     from '@/config/municipalities'
+
+const NOTION_API = 'https://api.notion.com/v1'
 
 // ── 型定義 ─────────────────────────────────────────
 
@@ -97,10 +99,19 @@ function numberVal(prop: { number?: number | null } | undefined): number | null 
 
 // ── データ取得 ────────────────────────────────────
 
-/** 住民相談DB から全件取得 */
+/**
+ * 住民相談DB から全件取得
+ * @param municipalityId 自治体ID（省略時は 'yakushima'）
+ */
 export async function fetchAllConsultations(
-  notionKey: string
+  notionKey:      string,
+  municipalityId: string = 'yakushima'
 ): Promise<ConsultationRecord[]> {
+  // 自治体に対応するDB IDを設定ファイルから取得
+  const cfg = getMunicipalityDbConfig(municipalityId)
+  if (!cfg) return []
+  const consultationDbId = cfg.consultationDbId
+
   const results: ConsultationRecord[] = []
   let cursor: string | undefined
 
@@ -112,7 +123,7 @@ export async function fetchAllConsultations(
     }
     if (cursor) body.start_cursor = cursor
 
-    const res = await fetch(`${NOTION_API}/databases/${CONSULTATION_DB_ID}/query`, {
+    const res = await fetch(`${NOTION_API}/databases/${consultationDbId}/query`, {
       method: 'POST',
       headers: notionHeaders(notionKey),
       body: JSON.stringify(body),
@@ -152,11 +163,19 @@ export async function fetchAllConsultations(
   return results
 }
 
-/** 住民WBコーチングDB から全件取得 */
+/**
+ * 住民WBコーチングDB から全件取得
+ * @param municipalityId 自治体ID（省略時は 'yakushima'）
+ */
 export async function fetchResidents(
-  notionKey: string
+  notionKey:      string,
+  municipalityId: string = 'yakushima'
 ): Promise<ResidentRecord[]> {
-  const res = await fetch(`${NOTION_API}/databases/${COACHING_DB_ID}/query`, {
+  const cfg = getMunicipalityDbConfig(municipalityId)
+  if (!cfg) return []
+  const coachingDbId = cfg.coachingDbId
+
+  const res = await fetch(`${NOTION_API}/databases/${coachingDbId}/query`, {
     method: 'POST',
     headers: notionHeaders(notionKey),
     body: JSON.stringify({ page_size: 100 }),
@@ -195,11 +214,13 @@ export async function fetchResidents(
 /**
  * Claude Haiku に1住民分のコーチングを依頼する
  * 返却形式: { wbScore: number, 主な課題: string, coachingMessage: string }
+ * @param municipalityName 自治体名（プロンプトに埋め込む。例: '屋久島町'）
  */
 async function generateCoaching(
-  anthropicKey: string,
-  resident: ResidentRecord,
-  consultations: ConsultationRecord[]
+  anthropicKey:     string,
+  resident:         ResidentRecord,
+  consultations:    ConsultationRecord[],
+  municipalityName: string = '屋久島町'
 ): Promise<{ wbScore: number; 主な課題: string; coachingMessage: string } | null> {
 
   // 相談履歴をテキスト化（プロンプトに埋め込む）
@@ -210,7 +231,7 @@ async function generateCoaching(
   ).join('\n\n')
 
   const prompt = `
-あなたは屋久島町の住民Well-Being支援AIコーチです。
+あなたは${municipalityName}の住民Well-Being支援AIコーチです。
 以下の住民情報と相談履歴を分析し、JSON形式で回答してください。
 
 【住民情報】
@@ -317,17 +338,22 @@ async function updateResidentCoaching(
 
 /**
  * 1住民のコーチングを実行する
- * @param residentId 対象の住民ID（例: 'YAK-001'）
+ * @param residentId     対象の住民ID（例: 'YAK-001'）
+ * @param municipalityId 自治体ID（省略時は 'yakushima'）
  */
 export async function runCoachingForResident(
-  notionKey:    string,
-  anthropicKey: string,
-  residentId:   string
+  notionKey:      string,
+  anthropicKey:   string,
+  residentId:     string,
+  municipalityId: string = 'yakushima'
 ): Promise<CoachingResult> {
-  // 相談履歴と住民情報を並列取得
+  // 自治体名（プロンプト生成に使用）
+  const municipalityName = getMunicipalityById(municipalityId).shortName
+
+  // 相談履歴と住民情報を並列取得（自治体のDB IDを使用）
   const [consultations, residents] = await Promise.all([
-    fetchAllConsultations(notionKey),
-    fetchResidents(notionKey),
+    fetchAllConsultations(notionKey, municipalityId),
+    fetchResidents(notionKey, municipalityId),
   ])
 
   const resident = residents.find(r => r.住民ID === residentId)
@@ -337,8 +363,8 @@ export async function runCoachingForResident(
 
   const myConsultations = consultations.filter(c => c.住民ID === residentId)
 
-  // AIコーチング生成
-  const coaching = await generateCoaching(anthropicKey, resident, myConsultations)
+  // AIコーチング生成（自治体名をプロンプトに渡す）
+  const coaching = await generateCoaching(anthropicKey, resident, myConsultations, municipalityName)
   if (!coaching) {
     return { residentId, 住民名: resident.住民名, WBスコア: 0, 主な課題: '', AIコーチングメッセージ: '', success: false, error: 'AI生成に失敗' }
   }
@@ -367,14 +393,18 @@ export async function runCoachingForResident(
 /**
  * 全住民のコーチングを一括実行する
  * （API負荷軽減のため逐次処理）
+ * @param municipalityId 自治体ID（省略時は 'yakushima'）
  */
 export async function runCoachingForAll(
-  notionKey:    string,
-  anthropicKey: string
+  notionKey:      string,
+  anthropicKey:   string,
+  municipalityId: string = 'yakushima'
 ): Promise<RunCoachingResult> {
+  const municipalityName = getMunicipalityById(municipalityId).shortName
+
   const [consultations, residents] = await Promise.all([
-    fetchAllConsultations(notionKey),
-    fetchResidents(notionKey),
+    fetchAllConsultations(notionKey, municipalityId),
+    fetchResidents(notionKey, municipalityId),
   ])
 
   if (residents.length === 0) {
@@ -386,7 +416,7 @@ export async function runCoachingForAll(
   for (const resident of residents) {
     const myConsultations = consultations.filter(c => c.住民ID === resident.住民ID)
 
-    const coaching = await generateCoaching(anthropicKey, resident, myConsultations)
+    const coaching = await generateCoaching(anthropicKey, resident, myConsultations, municipalityName)
     if (!coaching) {
       results.push({
         residentId: resident.住民ID,

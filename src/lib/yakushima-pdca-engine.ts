@@ -13,10 +13,12 @@
 //    DS_ID : 736e5f07-94ac-4814-9949-51240ce7c23c
 // =====================================================
 
-// 施策実行記録DBのID
-const PDCA_DB_ID = 'b2685f135ee14a529041f2ebc178d048'
+// ── 設定インポート ──────────────────────────────────
+// municipalityId に応じた施策実行記録DB IDを取得するための設定ファイル
+import { getMunicipalityDbConfig } from '@/config/municipality-db-config'
+import { getMunicipalityById }     from '@/config/municipalities'
 
-// 屋久島向けデータDBのID（参照・効果測定に使用）
+// 屋久島専用データDBのID（参照・効果測定に使用。霧島市等には該当DBなし）
 const YAKUSHIMA_DB = {
   school:     '562a5136c2c64e42926c127df1ade099',
   ict:        '134897d2da734cff8f1bfcadcefe24db',
@@ -137,17 +139,23 @@ async function queryDb(
 
 /**
  * 施策実行記録DB から全件取得（ステータスでフィルタ可）
+ * @param municipalityId 自治体ID（省略時は 'yakushima'）
  */
 export async function fetchPolicies(
-  notionKey: string,
-  status?: string
+  notionKey:      string,
+  municipalityId: string = 'yakushima',
+  status?:        string
 ): Promise<PolicyRecord[]> {
+  const cfg = getMunicipalityDbConfig(municipalityId)
+  if (!cfg) return []
+  const pdcaDbId = cfg.pdcaDbId
+
   const filter = status ? {
     property: 'ステータス',
     select: { equals: status }
   } : undefined
 
-  const pages = await queryDb(notionKey, PDCA_DB_ID, filter)
+  const pages = await queryDb(notionKey, pdcaDbId, filter)
   return pages.map(p => ({
     id:               p.id,
     url:              p.url,
@@ -171,11 +179,17 @@ export async function fetchPolicies(
 /**
  * 施策実行記録DB に新しい施策を登録する
  * Sprint #46 エンジンの提案をワンクリックで登録できる
+ * @param municipalityId 自治体ID（省略時は 'yakushima'）
  */
 export async function registerPolicy(
-  notionKey: string,
-  policy: RegisterPolicyRequest
+  notionKey:      string,
+  policy:         RegisterPolicyRequest,
+  municipalityId: string = 'yakushima'
 ): Promise<{ success: boolean; pageId?: string; url?: string }> {
+  const cfg = getMunicipalityDbConfig(municipalityId)
+  if (!cfg) return { success: false }
+  const pdcaDbId = cfg.pdcaDbId
+
   const today = new Date().toISOString().split('T')[0] // YYYY-MM-DD
 
   const res = await fetch(`${NOTION_API_BASE}/pages`, {
@@ -186,7 +200,7 @@ export async function registerPolicy(
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      parent: { database_id: PDCA_DB_ID },
+      parent: { database_id: pdcaDbId },
       properties: {
         '施策名':    { title: [{ text: { content: policy.施策名 } }] },
         'ステータス': { select: { name: '検討中' } },
@@ -260,10 +274,17 @@ export async function updatePolicyStatus(
 /**
  * 5本のDBから「現在の主要指標」を取得してトレンド文を生成する
  * 実施前データ（文字列で保存）と比較するための最新スナップショット
+ *
+ * ※ 屋久島町専用。他の自治体では対応DBがないため空文字列を返す。
  */
 async function fetchCurrentDataSnapshot(
-  notionKey: string
+  notionKey:      string,
+  municipalityId: string = 'yakushima'
 ): Promise<{ school: string; ict: string; migration: string; tourism: string }> {
+  // 屋久島町以外はスナップショット機能なし（施策データだけで評価）
+  if (municipalityId !== 'yakushima') {
+    return { school: '', ict: '', migration: '', tourism: '' }
+  }
   // 学校DB: 安房小2025年の最新
   const schoolPages = await queryDb(notionKey, YAKUSHIMA_DB.school, {
     property: '学校名', title: { equals: '安房小学校' }
@@ -317,11 +338,13 @@ async function fetchCurrentDataSnapshot(
 /**
  * 完了済み施策・実施前後データをもとにClaudeが効果を評価し、
  * 次のアクションを提言する
+ * @param municipalityName 自治体名（プロンプトに埋め込む。例: '屋久島町'）
  */
 async function evaluatePdcaCycle(
   completedPolicies: PolicyRecord[],
-  currentSnapshot: { school: string; ict: string; migration: string; tourism: string },
-  anthropicKey: string,
+  currentSnapshot:   { school: string; ict: string; migration: string; tourism: string },
+  anthropicKey:      string,
+  municipalityName:  string = '屋久島町'
 ): Promise<{ summary: string; recommendations: string[] }> {
   if (!completedPolicies.length) {
     return {
@@ -341,17 +364,18 @@ async function evaluatePdcaCycle(
     `  効果スコア: ${p.効果スコア ?? '未評価'}/5`
   ).join('\n\n')
 
-  const prompt = `あなたは屋久島町のPDCAサイクルを評価するアドバイザーAIです。
+  // スナップショットが空でない場合のみデータセクションを追加
+  const hasSnapshot = currentSnapshot.school || currentSnapshot.ict ||
+                      currentSnapshot.migration || currentSnapshot.tourism
+  const snapshotSection = hasSnapshot
+    ? `\n## 現在のデータ（最新）\n${currentSnapshot.school}\n${currentSnapshot.ict}\n${currentSnapshot.migration}\n${currentSnapshot.tourism}`
+    : ''
+
+  const prompt = `あなたは${municipalityName}のPDCAサイクルを評価するアドバイザーAIです。
 以下の完了施策とデータの現状から、効果の評価と次のアクションを提言してください。
 
 ## 完了施策
-${policiesSummary}
-
-## 現在のデータ（最新）
-${currentSnapshot.school}
-${currentSnapshot.ict}
-${currentSnapshot.migration}
-${currentSnapshot.tourism}
+${policiesSummary}${snapshotSection}
 
 以下のJSON形式で回答してください（コードブロックなし）:
 {
@@ -394,16 +418,19 @@ ${currentSnapshot.tourism}
 /**
  * PDCA 効果測定を実行する
  * 完了施策の Before/After を分析し、AI が総括評価を生成
+ * @param municipalityId 自治体ID（省略時は 'yakushima'）
  */
 export async function runPdcaEvaluation(
-  notionKey: string,
-  anthropicKey: string,
+  notionKey:      string,
+  anthropicKey:   string,
+  municipalityId: string = 'yakushima'
 ): Promise<PdcaEvaluationResult> {
-  console.log('[pdca] PDCA 評価開始')
+  const municipalityName = getMunicipalityById(municipalityId).shortName
+  console.log(`[pdca] PDCA 評価開始 (${municipalityName})`)
 
   try {
     // ── STEP 1: 全施策を取得 ──────────────────────────────
-    const allPolicies = await fetchPolicies(notionKey)
+    const allPolicies = await fetchPolicies(notionKey, municipalityId)
     const completedPolicies = allPolicies.filter(p => p.ステータス === '完了')
 
     // 効果スコアの平均（登録済みのものだけ）
@@ -414,14 +441,15 @@ export async function runPdcaEvaluation(
       ? Math.round((scores.reduce((a, b) => a + b, 0) / scores.length) * 10) / 10
       : null
 
-    // ── STEP 2: 最新データのスナップショット取得 ──────────
-    const snapshot = await fetchCurrentDataSnapshot(notionKey)
+    // ── STEP 2: 最新データのスナップショット取得（屋久島専用） ──
+    const snapshot = await fetchCurrentDataSnapshot(notionKey, municipalityId)
 
     // ── STEP 3: Claude による PDCA 総括 ──────────────────
     const { summary, recommendations } = await evaluatePdcaCycle(
       completedPolicies,
       snapshot,
       anthropicKey,
+      municipalityName,
     )
 
     console.log(`[pdca] 完了施策${completedPolicies.length}件 / 全${allPolicies.length}件を評価`)

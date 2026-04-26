@@ -687,6 +687,22 @@ export const FEATURE_MODULES: FeatureModule[] = [
         status: 'active',
         description: '人口縮小に伴う収集路線の統廃合・焼却炉の広域化をAIが分析。3シナリオ（現状分析／路線統廃合／施設広域化）のコスト削減効果を試算し、Notionに提言レポートを保存',
       },
+      {
+        // Sprint #49 追加: 施策PDCA追跡（霧島市）
+        id: 'kirishima-pdca-tracking',
+        label: '📈 施策PDCA追跡',
+        href: '/kirishima/pdca-tracking',
+        status: 'active',
+        description: '廃棄物管理・道路・観光・高齢者支援の施策実行状況を検討中→実施中→完了のカンバンで追跡。AIが完了施策の実施前後データを分析して次のアクションを提言',
+      },
+      {
+        // Sprint #49 追加: 住民個人AIコーチ（霧島市）
+        id: 'kirishima-resident-coach',
+        label: '👤 住民個人AIコーチ',
+        href: '/kirishima/resident-coach',
+        status: 'active',
+        description: '住民のLINE相談履歴をAIが分析し、WBスコアと個別コーチングメッセージを生成。職員が住民に寄り添う次のアクションを提示（霧島市版）',
+      },
     ],
   },
 
