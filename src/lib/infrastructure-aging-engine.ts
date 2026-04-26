@@ -112,18 +112,20 @@ function buildPrompt(
   municipalityName: string,
 ): string {
 
-  // 施設データをテキスト化
+  // 健全度スコアが低い順に上位12件に絞る（トークン節約）
+  const topFacilities = [...facilities]
+    .sort((a, b) => a.score - b.score)
+    .slice(0, 12)
+
+  // 施設データをテキスト化（1行あたりの情報を最小限に）
   const dataText = [
-    `【${municipalityName} インフラ施設一覧（健全度スコア順）】`,
-    ...facilities
-      .sort((a, b) => a.score - b.score)  // 健全度が低い（危ない）順に並べる
-      .map(f =>
-        `${f.name}（${f.type}／${f.district}）: 築${f.age}年, 健全度${f.score}点, 修繕必要度:${f.urgency}, 修繕費見積:${f.repairCost.toLocaleString()}万円, 点検:${f.lastInspect}`
-      ),
+    `【${municipalityName} インフラ施設（健全度低い順・上位${topFacilities.length}件）】`,
+    ...topFacilities.map(f =>
+      `${f.name}|${f.type}|${f.district}|築${f.age}年|健全度${f.score}|${f.urgency}|${f.repairCost}万円`
+    ),
     '',
-    `緊急修繕対象: ${facilities.filter(f => f.urgency === '緊急修繕').length}件`,
-    `計画修繕対象: ${facilities.filter(f => f.urgency === '計画修繕').length}件`,
-    `修繕費見積合計: ${facilities.reduce((s, f) => s + f.repairCost, 0).toLocaleString()}万円`,
+    `全${facilities.length}件: 緊急${facilities.filter(f => f.urgency === '緊急修繕').length}件, 計画${facilities.filter(f => f.urgency === '計画修繕').length}件`,
+    `修繕費合計: ${facilities.reduce((s, f) => s + f.repairCost, 0).toLocaleString()}万円`,
   ].join('\n')
 
   // シナリオごとの指示
@@ -153,24 +155,20 @@ function buildPrompt(
   const scenarioInstruction = scenarioMap[scenario]
     ?? scenarioMap['urgent']
 
+  // ★開発ルール: Haiku max_tokens=4096 に収めるため出力を簡潔に制限する
   const outputFormat = [
-    '【出力形式（JSON）】',
+    '【出力形式（JSON）— 必ずこの形式のみで回答すること】',
     '{',
-    '  "summary": "全体サマリー（3〜4文）",',
-    '  "urgentItems": ["緊急対応が必要な施設・課題1", "2", "3"],',
-    '  "recommendations": [',
-    '    {',
-    '      "priority": "高|中|低",',
-    '      "title": "提言タイトル",',
-    '      "detail": "具体的な内容（2〜3文）",',
-    '      "timing": "実施目標時期",',
-    '      "costEffect": "コスト削減・リスク低減効果の概算"',
-    '    }',
+    '  "summary": "全体サマリー（2文以内）",',
+    '  "urgentItems": ["緊急対応施設・課題（最大3件）"],',
+    '  "recommendations": [最大4件。各フィールドは下記形式',
+    '    {"priority":"高|中|低","title":"20文字以内","detail":"1〜2文","timing":"時期","costEffect":"金額の概算"}',
     '  ],',
-    '  "totalRepairCost": "分析対象の修繕費総額（概算）",',
-    '  "totalCostReduction": "最適化による削減・回避効果（概算）",',
-    '  "risks": ["実施上のリスク1", "リスク2"]',
+    '  "totalRepairCost": "修繕費総額の概算（例: 約X億円）",',
+    '  "totalCostReduction": "削減・回避効果（例: 年間約X万円）",',
+    '  "risks": ["リスク（最大2件・1文以内）"]',
     '}',
+    '※ JSONのみ出力。説明文・コードブロック不要。簡潔さを最優先すること。',
   ].join('\n')
 
   return [

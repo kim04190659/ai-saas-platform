@@ -26,6 +26,10 @@ export type ConsultationRecord = {
   相談内容: string
   担当職員: string
   解決状況: string
+  /** Sprint #54追加: 緊急度（緊急／高／中／低） */
+  緊急度:   string
+  /** Sprint #54追加: 相談チャネル（LINE／窓口／電話／その他） */
+  相談チャネル: string
 }
 
 /** 住民WBコーチングDB の1レコード */
@@ -40,6 +44,12 @@ export type ResidentRecord = {
   AIコーチングメッセージ: string
   相談回数:   number | null
   コーチングステータス: string
+  /** Sprint #54追加: 年齢層（〜30代／40〜50代／60〜70代／80代以上） */
+  年齢層:     string
+  /** Sprint #54追加: 世帯状況（独居／核家族／三世代／施設入居） */
+  世帯状況:   string
+  /** Sprint #54追加: 移動手段（自家用車あり／バスのみ／移動困難） */
+  移動手段:   string
 }
 
 /** コーチング結果（1住民分） */
@@ -153,6 +163,9 @@ export async function fetchAllConsultations(
         相談内容:    richText(p['相談内容']),
         担当職員:    richText(p['担当職員']),
         解決状況:    selectVal(p['解決状況']),
+        // Sprint #54追加フィールド
+        緊急度:       selectVal(p['緊急度']),
+        相談チャネル: selectVal(p['相談チャネル']),
       })
     }
 
@@ -205,6 +218,10 @@ export async function fetchResidents(
       AIコーチングメッセージ: richText(p['AIコーチングメッセージ']),
       相談回数:    numberVal(p['相談回数']),
       コーチングステータス: selectVal(p['コーチングステータス']),
+      // Sprint #54追加フィールド
+      年齢層:      selectVal(p['年齢層']),
+      世帯状況:    selectVal(p['世帯状況']),
+      移動手段:    selectVal(p['移動手段']),
     }
   })
 }
@@ -224,9 +241,10 @@ async function generateCoaching(
 ): Promise<{ wbScore: number; 主な課題: string; coachingMessage: string } | null> {
 
   // 相談履歴をテキスト化（プロンプトに埋め込む）
+  // Sprint #54: 緊急度・チャネル情報も含める
   const consultationText = consultations.map((c, i) =>
     `[相談${i + 1}] ${c.相談日 ?? '日付不明'} ` +
-    `カテゴリ:${c.相談カテゴリ} 解決状況:${c.解決状況}\n` +
+    `カテゴリ:${c.相談カテゴリ} 緊急度:${c.緊急度 || '未設定'} チャネル:${c.相談チャネル || '未設定'} 解決状況:${c.解決状況}\n` +
     `内容: ${c.相談内容}`
   ).join('\n\n')
 
@@ -237,6 +255,9 @@ async function generateCoaching(
 【住民情報】
 - 住民ID: ${resident.住民ID}
 - 地区: ${resident.地区}
+- 年齢層: ${resident.年齢層 || '不明'}
+- 世帯状況: ${resident.世帯状況 || '不明'}（独居の場合は孤立リスクに注意）
+- 移動手段: ${resident.移動手段 || '不明'}（移動困難の場合は外出支援が必要）
 - 相談回数: ${consultations.length}回
 
 【相談履歴】
@@ -247,6 +268,9 @@ ${consultationText}
    - 解決済みの相談が多い → スコア高め
    - 継続中・複合的な問題 → スコア低め
    - メンタルヘルス系は特に低く評価
+   - 独居＋移動困難 → リスク要因として低め補正
+   - 80代以上の独居 → 特に低め補正
+   - 緊急度「緊急」の未解決相談がある → 大幅低め補正
 2. 主な課題（100字以内）: 最も優先度の高い課題を簡潔に記述
 3. コーチングメッセージ（200〜300字）:
    - 職員が住民に寄り添うための具体的な次のアクションを提案

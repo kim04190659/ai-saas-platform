@@ -186,3 +186,46 @@ page_size: 1
 - git push は Yoshitaka がターミナルから手動実行（sandbox から不可）
 - Notionページ削除は必ず確認を取ること
 - 新自治体追加は必ず上記「マルチテナント設計方針」に従うこと
+
+---
+
+## Claude API（Haiku）利用ルール（最重要）
+
+### モデル固定
+- 使用モデル: `claude-haiku-4-5-20251001`
+- max_tokens: **4096固定**（Haikuの最大出力上限）
+
+### JSON途中切れを防ぐための3原則
+
+**① 入力データは上位12件以内に絞る**
+```typescript
+// ✅ 健全度・コスト等でソートして上位12件のみ送る
+const topItems = [...allItems].sort(...).slice(0, 12)
+```
+
+**② 出力フォーマットを明示的に制限する**
+```
+提言は最大4件。各フィールドは下記形式:
+{"priority":"高|中|低","title":"20文字以内","detail":"1〜2文","timing":"時期","costEffect":"金額概算"}
+※ JSONのみ出力。説明文・コードブロック不要。簡潔さを最優先。
+```
+
+**③ stop_reason チェックでログ警告を出す**
+```typescript
+if (res.stop_reason === 'max_tokens') {
+  console.warn('[engine] max_tokens に達したため出力が途中で切れている可能性があります')
+}
+```
+
+### 新しいAIエンジンを作るときの標準テンプレート
+
+```typescript
+// ── プロンプト出力制限（必ずコピーして使う）──
+const outputFormat = [
+  '【出力形式（JSON）— 必ずこの形式のみで回答すること】',
+  '{"summary":"2文以内","urgentItems":["最大3件・1文以内"],"recommendations":[最大4件',
+  '  {"priority":"高|中|低","title":"20文字以内","detail":"1〜2文","timing":"時期","costEffect":"金額概算"}',
+  '],"totalCostReduction":"年間約X万円","risks":["最大2件・1文以内"]}',
+  '※ JSONのみ出力。説明文・コードブロック不要。簡潔さを最優先すること。',
+].join('\n')
+```

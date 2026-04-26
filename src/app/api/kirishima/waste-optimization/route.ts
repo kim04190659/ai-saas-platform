@@ -150,23 +150,19 @@ function buildPrompt(
   const scenarioInstruction = scenarioMap[scenario]
     ?? 'シナリオ: 現状分析\nこのデータをもとに廃棄物管理の課題と改善提言を行ってください。'
 
+  // ★開発ルール: Haiku max_tokens=4096 に収めるため出力を簡潔に制限する
   const outputFormat = [
-    '【出力形式（JSON）】',
+    '【出力形式（JSON）— 必ずこの形式のみで回答すること】',
     '{',
-    '  "summary": "全体サマリー（3〜4文）",',
-    '  "urgentIssues": ["緊急課題1", "緊急課題2", "緊急課題3"],',
-    '  "recommendations": [',
-    '    {',
-    '      "priority": "高|中|低",',
-    '      "title": "提言タイトル",',
-    '      "detail": "具体的な内容（2〜3文）",',
-    '      "timing": "実施目標時期",',
-    '      "costEffect": "コスト削減効果の概算"',
-    '    }',
+    '  "summary": "全体サマリー（2文以内）",',
+    '  "urgentIssues": ["緊急課題（最大3件・1文以内）"],',
+    '  "recommendations": [最大4件。各フィールドは下記形式',
+    '    {"priority":"高|中|低","title":"20文字以内","detail":"1〜2文","timing":"時期","costEffect":"金額の概算"}',
     '  ],',
-    '  "totalCostReduction": "全提言実施後の年間削減効果合計（概算）",',
-    '  "risks": ["実施リスク1", "実施リスク2"]',
+    '  "totalCostReduction": "年間削減効果合計（例: 年間約X万円）",',
+    '  "risks": ["リスク（最大2件・1文以内）"]',
     '}',
+    '※ JSONのみ出力。説明文・コードブロック不要。簡潔さを最優先すること。',
   ].join('\n')
 
   return [
