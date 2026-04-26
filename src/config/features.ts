@@ -335,6 +335,14 @@ export const FEATURE_MODULES: FeatureModule[] = [
         description: '全5部門のコンディションを集計しAIサマリーをNotionに保存。毎週月曜9時に自動実行、手動実行も可',
       },
       {
+        // Sprint #55 追加: 緊急時住民支援 優先順位システム
+        id: 'gyosei-emergency-support',
+        label: '🚨 緊急時住民支援',
+        href: '/gyosei/emergency-support',
+        status: 'active',
+        description: '台風・地震などの緊急時に「誰を優先して助けるか」「誰が助けに行けるか」をAIが計算。年齢層・世帯状況・移動手段・WBスコアから要支援スコアを算出し、地区別対応計画を生成',
+      },
+      {
         id: 'executive-risk-scoring',
         label: '🔴 離職リスクスコアリング',
         href: '/gyosei/risk-scoring',
