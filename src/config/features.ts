@@ -703,6 +703,14 @@ export const FEATURE_MODULES: FeatureModule[] = [
         status: 'active',
         description: '住民のLINE相談履歴をAIが分析し、WBスコアと個別コーチングメッセージを生成。職員が住民に寄り添う次のアクションを提示（霧島市版）',
       },
+      {
+        // Sprint #51 追加: インフラ老朽化管理（霧島市）
+        id: 'kirishima-infra-aging',
+        label: '🛣️ インフラ老朽化管理',
+        href: '/kirishima/infra-aging',
+        status: 'active',
+        description: '橋梁・市道・排水路・公共施設・上下水道の健全度スコアをAIが分析。緊急修繕・予算最適化・施設統廃合の3シナリオで修繕計画を提言',
+      },
     ],
   },
 

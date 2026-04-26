@@ -16,6 +16,8 @@ export type MunicipalityDbConfig = {
   consultationDbId: string
   /** 住民WBコーチングDB（WBスコア・コーチングメッセージ） */
   coachingDbId: string
+  /** インフラ老朽化DB（施設・橋梁・道路の健全度管理）— Sprint #51〜 */
+  infraDbId?: string
 }
 
 /**
@@ -42,6 +44,7 @@ export const MUNICIPALITY_DB_CONFIG: Record<string, MunicipalityDbConfig> = {
     pdcaDbId:         '1b2da85d1f9444a9ab69e1e78883ac84',  // 施策実行記録DB
     consultationDbId: '52035e8fa8cc4839ab54a83bf202c027',  // 住民相談DB
     coachingDbId:     '0cc71d5ee76244ad8a65a917be4f9fd3',  // 住民WBコーチングDB
+    infraDbId:        '941dfec2baa445cb9f79475f801d0083',  // インフラ施設DB（Sprint #51）
   },
 }
 
