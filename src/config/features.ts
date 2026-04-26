@@ -840,6 +840,14 @@ export const FEATURE_MODULES: FeatureModule[] = [
         description: '移住・子育て・観光に関する住民・移住検討者からのLINE相談を一元管理',
       },
       {
+        // Sprint #48 追加: 住民個人AIコーチ
+        id: 'yakushima-resident-coach',
+        label: '👤 住民個人AIコーチ',
+        href: '/yakushima/resident-coach',
+        status: 'active',
+        description: '住民のLINE相談履歴をAIが分析し、WBスコアと個別コーチングメッセージを生成。職員が住民に寄り添う次のアクションを提示',
+      },
+      {
         // Sprint #47 追加: 施策PDCA追跡
         id: 'yakushima-pdca-tracking',
         label: '📈 施策PDCA追跡',
