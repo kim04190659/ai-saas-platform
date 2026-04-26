@@ -39,6 +39,8 @@ export const MUNICIPALITY_DB_CONFIG: Record<string, MunicipalityDbConfig> = {
     pdcaDbId:         'b2685f135ee14a529041f2ebc178d048',  // 施策実行記録DB
     consultationDbId: 'a4826a3c83d24d74a6f60b955f87454a',  // 住民相談DB
     coachingDbId:     'a610367ac47b48a996eae41d72ac821e',  // 住民WBコーチングDB
+    fiscalDbId:       'b9359471ec62448eaf451c41e359ece1',  // 財政健全化指標DB（Sprint #57）
+    infraDbId:        '6f408b0e8f894ad7817935aea5234e37',  // インフラ老朽化DB（Sprint #57）
   },
 
   // ── 霧島市 ──────────────────────────────────────
