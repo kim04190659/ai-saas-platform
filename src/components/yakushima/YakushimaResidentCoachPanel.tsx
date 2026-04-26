@@ -112,17 +112,19 @@ export function YakushimaResidentCoachPanel() {
   const [allCoach,  setAllCoach]  = useState(false)   // 全住民一括中
   const [message,   setMessage]   = useState('')
 
-  // 住民一覧を取得
-  const load = useCallback(async () => {
+  // 住民一覧を取得する。
+  // keepSelectedId を渡すと、その住民IDの最新データで selected を更新する。
+  // useCallback の依存配列には含めず、引数で住民IDを受け取ることでクロージャ問題を回避。
+  const load = useCallback(async (keepSelectedId?: string) => {
     setLoading(true)
     try {
       const res  = await fetch('/api/yakushima/resident-coach')
       const data = await res.json() as { residents?: ResidentWithConsultations[] }
       const list = data.residents ?? []
       setResidents(list)
-      // 選択中の住民を最新データで更新
-      if (selected) {
-        const updated = list.find(r => r.住民ID === selected.住民ID)
+      // 引数で渡された住民IDをもとに selected を最新データで上書きする
+      if (keepSelectedId) {
+        const updated = list.find(r => r.住民ID === keepSelectedId)
         if (updated) setSelected(updated)
       }
     } catch {
@@ -130,26 +132,29 @@ export function YakushimaResidentCoachPanel() {
     } finally {
       setLoading(false)
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [])  // selected に依存しない設計のため空配列でOK
 
   useEffect(() => { load() }, [load])
 
   // 個別コーチング実行
   const handleCoachOne = async () => {
     if (!selected) return
+    // この時点の selected.住民ID をローカル変数に退避（非同期完了後も正確に参照できるよう）
+    const targetId   = selected.住民ID
+    const targetName = selected.住民名
     setCoaching(true)
     setMessage('')
     try {
       const res  = await fetch('/api/yakushima/resident-coach', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'coach_one', residentId: selected.住民ID }),
+        body: JSON.stringify({ action: 'coach_one', residentId: targetId }),
       })
       const data = await res.json() as { status: string; message?: string }
       if (data.status === 'success') {
-        setMessage(`${selected.住民名} のコーチングを更新しました`)
-        await load()
+        setMessage(`${targetName} のコーチングを更新しました`)
+        // keepSelectedId を渡すことで、load完了後に selected が最新データで上書きされる
+        await load(targetId)
       } else {
         setMessage(`エラー: ${data.message ?? '不明'}`)
       }
@@ -173,7 +178,8 @@ export function YakushimaResidentCoachPanel() {
       const data = await res.json() as { status: string; processed?: number; message?: string }
       if (data.status === 'success') {
         setMessage(`全住民コーチング完了（${data.processed ?? 0}名更新）`)
-        await load()
+        // 一括の場合も、選択中住民があればその最新データを表示する
+        await load(selected?.住民ID)
       } else {
         setMessage(`エラー: ${data.message ?? '不明'}`)
       }
