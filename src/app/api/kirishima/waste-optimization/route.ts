@@ -240,11 +240,13 @@ export async function POST(req: NextRequest) {
       `---\n分析日時: ${new Date().toLocaleString('ja-JP')}`,
     ].join('\n')
 
-    let notionPage = null
+    // Notion保存は非同期で実行（レスポンスを待たない）
+    // → Vercelタイムアウト対策としてバックグラウンドで保存
     if (notionKey) {
       const chunks: string[] = []
       for (let i = 0; i < content.length; i += 1900) chunks.push(content.slice(i, i + 1900))
-      const nr = await fetch(`${NOTION_API}/pages`, {
+      // awaitせず fire-and-forget で保存
+      fetch(`${NOTION_API}/pages`, {
         method:  'POST',
         headers: {
           'Authorization':  `Bearer ${notionKey}`,
@@ -260,13 +262,10 @@ export async function POST(req: NextRequest) {
             paragraph: { rich_text: [{ type: 'text', text: { content: c } }] },
           })),
         }),
-      })
-      if (nr.ok) {
-        const np = await nr.json()
-        notionPage = { id: np.id, url: np.url }
-      }
+      }).catch(err => console.error('[waste-optimization] Notion保存エラー:', err))
     }
 
+    // Notion保存を待たず、AI分析結果を即座に返す
     return NextResponse.json({
       status:    'success',
       scenario,
@@ -275,7 +274,7 @@ export async function POST(req: NextRequest) {
       recommendations:     parsed.recommendations,
       totalCostReduction:  parsed.totalCostReduction,
       risks:               parsed.risks,
-      notionPage,
+      notionPage:          null, // 非同期保存のためURLは返さない
     })
 
   } catch (e) {

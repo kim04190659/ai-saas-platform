@@ -117,6 +117,7 @@ export function KirishimaWastePanel() {
   const [routes, setRoutes]           = useState<CollectionRoute[]>([])
   const [aiLoading, setAiLoading]     = useState(false)
   const [aiResult, setAiResult]       = useState<AIResult | null>(null)
+  const [aiError, setAiError]         = useState<string | null>(null)
   const [scenario, setScenario]       = useState<'current' | 'merge_routes' | 'regionalize'>('current')
 
   // データ取得
@@ -136,16 +137,23 @@ export function KirishimaWastePanel() {
   async function runAI() {
     setAiLoading(true)
     setAiResult(null)
+    setAiError(null)
     try {
       const res  = await fetch('/api/kirishima/waste-optimization', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({ scenario }),
       })
-      const data = await res.json() as AIResult
+      const data = await res.json() as AIResult & { status?: string; message?: string }
+      // APIがエラーを返した場合
+      if (data.status === 'error') {
+        setAiError(data.message ?? 'AI分析中にエラーが発生しました')
+        return
+      }
       setAiResult(data)
     } catch (e) {
-      console.error(e)
+      console.error('[waste-optimization] フロントエラー:', e)
+      setAiError('通信エラーが発生しました。しばらく待ってから再試行してください。')
     } finally {
       setAiLoading(false)
     }
@@ -448,8 +456,14 @@ export function KirishimaWastePanel() {
                   disabled={aiLoading}
                   className="w-full sm:w-auto px-6 py-2.5 bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-60"
                 >
-                  {aiLoading ? '🔄 AI分析中（15〜30秒）…' : '🤖 AIに分析・提言を依頼する'}
+                  {aiLoading ? '🔄 AI分析中（20〜40秒かかります）…' : '🤖 AIに分析・提言を依頼する'}
                 </button>
+                {/* エラー表示 */}
+                {aiError && (
+                  <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+                    ⚠️ {aiError}
+                  </div>
+                )}
               </div>
 
               {/* AI結果 */}
