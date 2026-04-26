@@ -840,6 +840,14 @@ export const FEATURE_MODULES: FeatureModule[] = [
         description: '移住・子育て・観光に関する住民・移住検討者からのLINE相談を一元管理',
       },
       {
+        // Sprint #47 追加: 施策PDCA追跡
+        id: 'yakushima-pdca-tracking',
+        label: '📈 施策PDCA追跡',
+        href: '/yakushima/pdca-tracking',
+        status: 'active',
+        description: 'AIが提案した施策の実行状況を検討中→実施中→完了のカンバンで追跡。完了施策の実施前後データを突合してRunWithの導入効果をROIで可視化',
+      },
+      {
         // Sprint #46 追加: データ参照型AI施策エンジン
         id: 'yakushima-policy-engine',
         label: '🧩 データ参照型施策提案',
