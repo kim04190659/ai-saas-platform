@@ -20,6 +20,10 @@ export type MunicipalityDbConfig = {
   infraDbId?: string
   /** 財政健全化指標DB（健全化判断比率・財政構造指標等）— Sprint #52〜 */
   fiscalDbId?: string
+  /** 観光管理DB（入込客数・混雑度・環境負荷・ガイド予約）— Sprint #59〜 */
+  tourismDbId?: string
+  /** 移住相談DB（相談者情報・進捗・定住状況）— Sprint #59〜 */
+  migrationDbId?: string
 }
 
 /**
@@ -41,6 +45,8 @@ export const MUNICIPALITY_DB_CONFIG: Record<string, MunicipalityDbConfig> = {
     coachingDbId:     'a610367ac47b48a996eae41d72ac821e',  // 住民WBコーチングDB
     fiscalDbId:       'b9359471ec62448eaf451c41e359ece1',  // 財政健全化指標DB（Sprint #57）
     infraDbId:        '6f408b0e8f894ad7817935aea5234e37',  // インフラ老朽化DB（Sprint #57）
+    tourismDbId:      '8ecf873915ac4ee1a7f4a662f790ae46',  // 観光管理DB（Sprint #59）
+    migrationDbId:    'dbf5cbe558a04a48ba1c21cbb25d22c0',  // 移住相談DB（Sprint #59）
   },
 
   // ── 霧島市 ──────────────────────────────────────

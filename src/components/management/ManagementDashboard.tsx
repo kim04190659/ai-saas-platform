@@ -58,14 +58,33 @@ interface WbSummary {
   recentAlerts: Array<{ name: string; score: number }>
 }
 
+// 屋久島固有KPI（Sprint #59）
+interface TourismKpi {
+  totalVisitors:  number
+  highCongestion: number
+  envWarning:     number
+  guideShortage:  number
+}
+
+interface MigrationKpi {
+  total:          number
+  settled:        number
+  inProgress:     number
+  dropped:        number
+  subsidyGranted: number
+}
+
 interface ManagementSummaryResponse {
   status: string
   municipal: string
   updatedAt: string
-  fiscal: FiscalSummary | null
-  infra: InfraSummary | null
-  pdca: PdcaSummary | null
-  wb: WbSummary | null
+  fiscal:    FiscalSummary | null
+  infra:     InfraSummary | null
+  pdca:      PdcaSummary | null
+  wb:        WbSummary | null
+  // 屋久島固有（他自治体では null）
+  tourism:   TourismKpi | null
+  migration: MigrationKpi | null
 }
 
 // ─── ユーティリティ ───────────────────────────────────
@@ -329,6 +348,79 @@ function WbCard({ data }: { data: WbSummary }) {
   )
 }
 
+// ─── 観光KPIカード（屋久島専用）─────────────────────────
+
+function TourismCard({ data }: { data: TourismKpi }) {
+  const alertCount = data.highCongestion + data.envWarning + data.guideShortage
+  return (
+    <KpiCard title="観光・エコツーリズム" icon="🌿" alert={alertCount > 0 ? alertCount : undefined} href="/yakushima/tourism">
+      <div className="text-center mb-4">
+        <div className="text-3xl font-bold text-green-700">{data.totalVisitors.toLocaleString()}</div>
+        <div className="text-xs text-gray-400 mt-1">今月 総入込数（人）</div>
+      </div>
+      <div className="grid grid-cols-3 gap-2">
+        <div className={`rounded-lg p-2 text-center ${data.highCongestion > 0 ? 'bg-red-50' : 'bg-gray-50'}`}>
+          <div className={`text-lg font-bold ${data.highCongestion > 0 ? 'text-red-600' : 'text-gray-400'}`}>
+            {data.highCongestion}
+          </div>
+          <div className="text-xs text-gray-500">高混雑</div>
+        </div>
+        <div className={`rounded-lg p-2 text-center ${data.envWarning > 0 ? 'bg-orange-50' : 'bg-gray-50'}`}>
+          <div className={`text-lg font-bold ${data.envWarning > 0 ? 'text-orange-600' : 'text-gray-400'}`}>
+            {data.envWarning}
+          </div>
+          <div className="text-xs text-gray-500">環境警告</div>
+        </div>
+        <div className={`rounded-lg p-2 text-center ${data.guideShortage > 0 ? 'bg-yellow-50' : 'bg-gray-50'}`}>
+          <div className={`text-lg font-bold ${data.guideShortage > 0 ? 'text-yellow-600' : 'text-gray-400'}`}>
+            {data.guideShortage}
+          </div>
+          <div className="text-xs text-gray-500">ガイド不足</div>
+        </div>
+      </div>
+    </KpiCard>
+  )
+}
+
+// ─── 移住KPIカード（屋久島専用）─────────────────────────
+
+function MigrationCard({ data }: { data: MigrationKpi }) {
+  const settleRate = data.total > 0 ? Math.round((data.settled / data.total) * 100) : 0
+  return (
+    <KpiCard title="移住・定住支援" icon="🏡" href="/yakushima/migration">
+      <div className="flex items-center gap-4 mb-4">
+        <div className="text-center">
+          <div className="text-3xl font-bold text-emerald-700">{settleRate}%</div>
+          <div className="text-xs text-gray-400">定住達成率</div>
+        </div>
+        <div className="flex-1 space-y-1 text-xs">
+          <div className="flex justify-between">
+            <span className="text-gray-500">✅ 定住達成</span>
+            <span className="font-bold text-emerald-700">{data.settled}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-500">🔄 進行中</span>
+            <span className="font-bold text-blue-600">{data.inProgress}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-500">❌ 断念</span>
+            <span className={`font-bold ${data.dropped > 0 ? 'text-red-600' : 'text-gray-400'}`}>{data.dropped}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-500">💴 補助金決定</span>
+            <span className="font-bold text-green-700">{data.subsidyGranted}</span>
+          </div>
+        </div>
+      </div>
+      {data.dropped > 0 && (
+        <div className="bg-orange-50 rounded-lg px-3 py-2 text-xs text-orange-700">
+          ⚠ 断念{data.dropped}件 — 就職・コワーキング環境の整備が課題
+        </div>
+      )}
+    </KpiCard>
+  )
+}
+
 // ─── メインコンポーネント ─────────────────────────────
 
 export function ManagementDashboard({
@@ -423,12 +515,15 @@ export function ManagementDashboard({
             </div>
           )}
 
-          {/* 4領域KPIカード */}
+          {/* 4領域KPIカード（+ 屋久島固有2領域） */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {data.fiscal && <FiscalCard data={data.fiscal} />}
-            {data.infra   && <InfraCard  data={data.infra}  />}
-            {data.pdca    && <PdcaCard   data={data.pdca}   />}
-            {data.wb      && <WbCard     data={data.wb}     />}
+            {data.fiscal    && <FiscalCard    data={data.fiscal}    />}
+            {data.infra     && <InfraCard     data={data.infra}     />}
+            {data.pdca      && <PdcaCard      data={data.pdca}      />}
+            {data.wb        && <WbCard        data={data.wb}        />}
+            {/* 屋久島専用KPI（tourism/migration が null でない場合のみ表示） */}
+            {data.tourism   && <TourismCard   data={data.tourism}   />}
+            {data.migration && <MigrationCard data={data.migration} />}
           </div>
 
           {/* フッター注記 */}

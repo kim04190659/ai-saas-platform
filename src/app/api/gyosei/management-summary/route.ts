@@ -1,14 +1,15 @@
 // =====================================================
 //  src/app/api/gyosei/management-summary/route.ts
 //  経営ダッシュボード 集約API — Sprint #56（/kirishima から昇格）
+//                               Sprint #59 屋久島向けKPI追加
 //
 //  ■ GET  /api/gyosei/management-summary?municipalityId=kirishima
 //    → 財政健全化・インフラ老朽化・PDCA進捗・住民WBの
 //      4領域のKPIサマリーを並列取得してまとめて返す
 //
-//  ■ 変更点（kirishima版との違い）
-//    MUNICIPALITY_ID をハードコードせず、
-//    クエリパラメータから動的に取得する
+//  ■ Sprint #59 追加（屋久島のみ）
+//    municipalityId=yakushima の場合に
+//    観光管理KPI・移住支援KPIを追加返却する
 // =====================================================
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -17,6 +18,94 @@ import { fetchInfraFacilities }    from '@/lib/infrastructure-aging-engine'
 import { fetchPolicies }           from '@/lib/yakushima-pdca-engine'
 import { fetchResidents }          from '@/lib/yakushima-resident-coach-engine'
 import { getMunicipalityById }     from '@/config/municipalities'
+import { getMunicipalityDbConfig } from '@/config/municipality-db-config'
+
+const NOTION_API = 'https://api.notion.com/v1'
+const NOTION_VER = '2022-06-28'
+
+// ─── 共通型・ヘルパー ─────────────────────────────────
+
+type NProps = Record<string, Record<string, unknown>>
+const nSelect = (p: NProps, k: string) => (p[k]?.select as {name:string})?.name ?? ''
+const nNumber = (p: NProps, k: string) => (p[k]?.number as number) ?? 0
+const nDate   = (p: NProps, k: string) => ((p[k]?.date as {start:string})?.start ?? '').slice(0, 7)
+
+// ─── 屋久島向け観光KPI取得 ───────────────────────────
+
+interface TourismKpi {
+  totalVisitors:  number
+  highCongestion: number
+  envWarning:     number
+  guideShortage:  number
+}
+
+async function fetchTourismKpi(notionKey: string): Promise<TourismKpi | null> {
+  const dbConf = getMunicipalityDbConfig('yakushima')
+  if (!dbConf?.tourismDbId) return null
+
+  const res = await fetch(`${NOTION_API}/databases/${dbConf.tourismDbId}/query`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${notionKey}`,
+      'Content-Type': 'application/json',
+      'Notion-Version': NOTION_VER,
+    },
+    body: JSON.stringify({ sorts: [{ property: '年月', direction: 'descending' }], page_size: 30 }),
+  })
+  if (!res.ok) return null
+
+  const data    = await res.json()
+  const rows    = (data.results ?? []) as Array<{ properties: NProps }>
+  if (rows.length === 0) return null
+
+  // 最新月のみ集計
+  const latestMonth = nDate(rows[0].properties, '年月')
+  const lr          = rows.filter(r => nDate(r.properties, '年月') === latestMonth)
+
+  return {
+    totalVisitors:  lr.reduce((s, r) => s + nNumber(r.properties, '入込客数'), 0),
+    highCongestion: lr.filter(r => nSelect(r.properties, '混雑度') === '高混雑').length,
+    envWarning:     lr.filter(r => ['危険', '注意'].includes(nSelect(r.properties, '環境負荷レベル'))).length,
+    guideShortage:  lr.filter(r => nNumber(r.properties, 'ガイド予約数') > 0 && nNumber(r.properties, 'ガイド充足率') < 0.9).length,
+  }
+}
+
+// ─── 屋久島向け移住KPI取得 ───────────────────────────
+
+interface MigrationKpi {
+  total:          number
+  settled:        number
+  inProgress:     number
+  dropped:        number
+  subsidyGranted: number
+}
+
+async function fetchMigrationKpi(notionKey: string): Promise<MigrationKpi | null> {
+  const dbConf = getMunicipalityDbConfig('yakushima')
+  if (!dbConf?.migrationDbId) return null
+
+  const res = await fetch(`${NOTION_API}/databases/${dbConf.migrationDbId}/query`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${notionKey}`,
+      'Content-Type': 'application/json',
+      'Notion-Version': NOTION_VER,
+    },
+    body: JSON.stringify({ page_size: 50 }),
+  })
+  if (!res.ok) return null
+
+  const data  = await res.json()
+  const rows  = (data.results ?? []) as Array<{ properties: NProps }>
+
+  return {
+    total:          rows.length,
+    settled:        rows.filter(r => ['移住済み', '定住確定'].includes(nSelect(r.properties, '進捗ステータス'))).length,
+    inProgress:     rows.filter(r => ['相談中', '見学予定', '移住準備中'].includes(nSelect(r.properties, '進捗ステータス'))).length,
+    dropped:        rows.filter(r => nSelect(r.properties, '進捗ステータス') === '断念').length,
+    subsidyGranted: rows.filter(r => nSelect(r.properties, '定住補助金申請') === '支給決定').length,
+  }
+}
 
 export async function GET(req: NextRequest) {
   const notionKey = process.env.NOTION_API_KEY ?? ''
@@ -28,13 +117,18 @@ export async function GET(req: NextRequest) {
   const municipality = getMunicipalityById(municipalityId)
   const municipalName = municipality?.shortName ?? municipalityId
 
+  // 屋久島町かどうかのフラグ（観光・移住KPIを追加取得するため）
+  const isYakushima = municipalityId === 'yakushima'
+
   try {
-    // 4領域のデータを並列取得（Vercelタイムアウト対策）
-    const [fiscalData, infraData, pdcaData, wbData] = await Promise.allSettled([
+    // 基本4領域 + 屋久島固有2領域を並列取得（Vercelタイムアウト対策）
+    const [fiscalData, infraData, pdcaData, wbData, tourismData, migrationData] = await Promise.allSettled([
       fetchFiscalIndicators(notionKey, municipalityId),
       fetchInfraFacilities(notionKey, municipalityId),
       fetchPolicies(notionKey, municipalityId),
       fetchResidents(notionKey, municipalityId),
+      isYakushima ? fetchTourismKpi(notionKey) : Promise.resolve(null),
+      isYakushima ? fetchMigrationKpi(notionKey) : Promise.resolve(null),
     ])
 
     // ─── 財政健全化 サマリー ─────────────────────────
@@ -143,6 +237,18 @@ export async function GET(req: NextRequest) {
       }
     })()
 
+    // ─── 観光KPI（屋久島のみ）────────────────────────
+    const tourism = (() => {
+      if (!isYakushima || tourismData.status !== 'fulfilled') return null
+      return tourismData.value
+    })()
+
+    // ─── 移住KPI（屋久島のみ）────────────────────────
+    const migration = (() => {
+      if (!isYakushima || migrationData.status !== 'fulfilled') return null
+      return migrationData.value
+    })()
+
     return NextResponse.json({
       status: 'success',
       municipalityId,
@@ -152,6 +258,9 @@ export async function GET(req: NextRequest) {
       infra,
       pdca,
       wb,
+      // 屋久島固有KPI（他自治体では null が返る）
+      tourism,
+      migration,
     })
 
   } catch (e) {
