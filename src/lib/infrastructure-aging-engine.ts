@@ -210,12 +210,19 @@ export async function runInfraAnalysis(
 
   const res = await anthropic.messages.create({
     model:      'claude-haiku-4-5-20251001',
-    max_tokens: 3000,
+    max_tokens: 4096, // 3000→4096（Haikuの上限。18施設分の詳細JSONが途中で切れる対策）
     messages:   [{ role: 'user', content: prompt }],
   })
 
-  const raw    = res.content[0].type === 'text' ? res.content[0].text.trim() : '{}'
-  const match  = raw.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim().match(/\{[\s\S]*\}/)
+  const raw     = res.content[0].type === 'text' ? res.content[0].text.trim() : '{}'
+  const stripped = raw.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()
+  const match    = stripped.match(/\{[\s\S]*\}/)
+
+  // stop_reason が 'max_tokens' の場合は途中切れの警告を出す
+  if (res.stop_reason === 'max_tokens') {
+    console.warn('[infra-engine] max_tokens に達したため出力が途中で切れている可能性があります')
+  }
+
   const parsed = JSON.parse(match ? match[0] : '{}') as Partial<InfraAnalysisResult>
 
   return {
