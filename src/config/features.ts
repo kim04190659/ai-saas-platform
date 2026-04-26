@@ -349,6 +349,30 @@ export const FEATURE_MODULES: FeatureModule[] = [
         status: 'active',
         description: '過去4週間のWBスコア推移を職員ごとに分析。低下傾向・危険水準を自動検知しNotionにリスクレポートを保存',
       },
+      {
+        // Sprint #56 昇格: 財政健全化管理（霧島市固有 → 共通）
+        id: 'gyosei-fiscal-health',
+        label: '💴 財政健全化管理',
+        href: '/gyosei/fiscal-health',
+        status: 'active',
+        description: '財政健全化法に基づく実質公債費比率・将来負担比率・経常収支比率等をAIが分析。選択中の自治体データを自動切り替え',
+      },
+      {
+        // Sprint #56 昇格: インフラ老朽化管理（霧島市固有 → 共通）
+        id: 'gyosei-infra-aging',
+        label: '🏗️ インフラ老朽化管理',
+        href: '/gyosei/infra-aging',
+        status: 'active',
+        description: '橋梁・市道・排水路・公共施設の健全度スコアをAIが分析。緊急修繕・予算最適化・施設統廃合の3シナリオで修繕計画を提言',
+      },
+      {
+        // Sprint #56 昇格: 経営ダッシュボード（霧島市固有 → 共通）
+        id: 'gyosei-management-dashboard',
+        label: '🏛️ 経営ダッシュボード',
+        href: '/gyosei/management-dashboard',
+        status: 'active',
+        description: '財政健全化・インフラ老朽化・PDCA進捗・住民WBスコアの4領域を1画面に集約。市長・幹部向け総合KPIビュー（全自治体共通）',
+      },
     ],
   },
 

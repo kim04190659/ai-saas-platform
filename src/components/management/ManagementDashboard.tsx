@@ -331,13 +331,19 @@ function WbCard({ data }: { data: WbSummary }) {
 
 // ─── メインコンポーネント ─────────────────────────────
 
-export function ManagementDashboard({ municipalityName }: { municipalityName: string }) {
+export function ManagementDashboard({
+  municipalityName,
+  apiBase = '/api/kirishima/management-summary',  // デフォルトは霧島市API（後方互換）
+}: {
+  municipalityName: string
+  apiBase?: string
+}) {
   const [data, setData]       = useState<ManagementSummaryResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError]     = useState<string | null>(null)
 
   useEffect(() => {
-    fetch('/api/kirishima/management-summary')
+    fetch(apiBase)
       .then(r => r.json())
       .then((json: ManagementSummaryResponse) => {
         if (json.status !== 'success') throw new Error('データ取得に失敗しました')
