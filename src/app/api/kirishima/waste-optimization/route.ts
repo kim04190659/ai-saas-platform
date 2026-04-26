@@ -196,12 +196,15 @@ export async function POST(req: NextRequest) {
     const anthropic = new Anthropic({ apiKey: anthropicKey })
     const res = await anthropic.messages.create({
       model:      'claude-haiku-4-5-20251001',
-      max_tokens: 1500,
+      max_tokens: 3000, // 1500→3000に増量（JSON途中切れ対策）
       messages:   [{ role: 'user', content: prompt }],
     })
 
     const raw     = res.content[0].type === 'text' ? res.content[0].text.trim() : '{}'
-    const jsonStr = raw.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()
+    // コードブロック除去 → JSON部分を正規表現で抽出
+    const stripped = raw.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()
+    const match    = stripped.match(/\{[\s\S]*\}/)
+    const jsonStr  = match ? match[0] : stripped
     const parsed  = JSON.parse(jsonStr) as {
       summary:            string
       urgentIssues:       string[]
