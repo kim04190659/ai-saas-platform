@@ -343,6 +343,10 @@ export function ManagementDashboard({
   const [error, setError]     = useState<string | null>(null)
 
   useEffect(() => {
+    // apiBase（自治体切り替え）が変わるたびに再取得する
+    setLoading(true)
+    setError(null)
+    setData(null)
     fetch(apiBase)
       .then(r => r.json())
       .then((json: ManagementSummaryResponse) => {
@@ -351,7 +355,7 @@ export function ManagementDashboard({
       })
       .catch(e => setError(e instanceof Error ? e.message : String(e)))
       .finally(() => setLoading(false))
-  }, [])
+  }, [apiBase])  // ← apiBase を依存配列に追加（自治体切り替え時に再フェッチ）
 
   const updatedAt = data?.updatedAt
     ? new Date(data.updatedAt).toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })
