@@ -711,6 +711,14 @@ export const FEATURE_MODULES: FeatureModule[] = [
         status: 'active',
         description: '橋梁・市道・排水路・公共施設・上下水道の健全度スコアをAIが分析。緊急修繕・予算最適化・施設統廃合の3シナリオで修繕計画を提言',
       },
+      {
+        // Sprint #52 追加: 財政健全化管理（霧島市）
+        id: 'kirishima-fiscal-health',
+        label: '💴 財政健全化管理',
+        href: '/kirishima/fiscal-health',
+        status: 'active',
+        description: '財政健全化法に基づく実質公債費比率・将来負担比率・経常収支比率等をAIが分析。歳出最適化・中長期財政計画の3シナリオで改善提言を生成',
+      },
     ],
   },
 

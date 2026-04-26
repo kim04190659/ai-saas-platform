@@ -18,6 +18,8 @@ export type MunicipalityDbConfig = {
   coachingDbId: string
   /** インフラ老朽化DB（施設・橋梁・道路の健全度管理）— Sprint #51〜 */
   infraDbId?: string
+  /** 財政健全化指標DB（健全化判断比率・財政構造指標等）— Sprint #52〜 */
+  fiscalDbId?: string
 }
 
 /**
@@ -45,6 +47,7 @@ export const MUNICIPALITY_DB_CONFIG: Record<string, MunicipalityDbConfig> = {
     consultationDbId: '52035e8fa8cc4839ab54a83bf202c027',  // 住民相談DB
     coachingDbId:     '0cc71d5ee76244ad8a65a917be4f9fd3',  // 住民WBコーチングDB
     infraDbId:        '941dfec2baa445cb9f79475f801d0083',  // インフラ施設DB（Sprint #51）
+    fiscalDbId:       '6b4381510d7f4182b5249284024f6622',  // 財政健全化指標DB（Sprint #52）
   },
 }
 
