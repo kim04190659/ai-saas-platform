@@ -402,14 +402,19 @@ ${policiesSummary}${snapshotSection}
   const data = await res.json() as { content: Array<{ text: string }> }
   const text = data.content?.[0]?.text ?? '{}'
 
+  // コードブロック（```json ... ```）がある場合でも正しくJSONを取り出す
+  // generateCoaching と同じパターンを採用
+  const match = text.match(/\{[\s\S]*\}/)
+  if (!match) return { summary: text.slice(0, 300), recommendations: [] }
+
   try {
-    const parsed = JSON.parse(text) as { summary?: string; recommendations?: string[] }
+    const parsed = JSON.parse(match[0]) as { summary?: string; recommendations?: string[] }
     return {
       summary: parsed.summary ?? 'AI評価を生成できませんでした',
       recommendations: parsed.recommendations ?? [],
     }
   } catch {
-    return { summary: text.slice(0, 200), recommendations: [] }
+    return { summary: text.slice(0, 300), recommendations: [] }
   }
 }
 
