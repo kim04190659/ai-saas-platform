@@ -373,6 +373,14 @@ export const FEATURE_MODULES: FeatureModule[] = [
         status: 'active',
         description: '財政健全化・インフラ老朽化・PDCA進捗・住民WBスコアの4領域を1画面に集約。市長・幹部向け総合KPIビュー（全自治体共通）',
       },
+      {
+        // Sprint #60 追加: DX効果測定ダッシュボード
+        id: 'gyosei-dx-effectiveness',
+        label: '🔍 DX効果測定ダッシュボード',
+        href: '/gyosei/dx-effectiveness',
+        status: 'active',
+        description: '住民相談チャネル（LINE/窓口/電話）をカテゴリ別に集計。デジタル化率が低いサービスほど改善余地が大きいと判定し、AIが優先DX施策を提案する',
+      },
     ],
   },
 
@@ -842,6 +850,14 @@ export const FEATURE_MODULES: FeatureModule[] = [
       sidebarDot: 'bg-purple-400',
     },
     pages: [
+      {
+        // Sprint #61 追加: 生活困り解決ダッシュボード
+        id: 'personal-coarc-worries',
+        label: '📋 生活困り解決ダッシュボード',
+        href: '/personal-coarc/worries',
+        status: 'active',
+        description: '共働き子育て・一人暮らし・シニア・フリーランスなど6タイプの生活困りをAI解決策付きで一覧表示。実装状況・生活領域でフィルタリング可能',
+      },
       {
         id: 'personal-coarc-admin',
         label: '⚙️ 管理者セットアップ',
