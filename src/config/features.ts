@@ -389,6 +389,14 @@ export const FEATURE_MODULES: FeatureModule[] = [
         status: 'active',
         description: 'ISO 23592「エクセレントサービス」4側面×9要素で自治体の現在地をスコアリング。PDCA・WB・財政・インフラの蓄積データをAIが横断分析し、首長・議会への説明資料を自動生成',
       },
+      {
+        // Sprint #64 追加: 移住定着リスクAI（農山村・限界集落型自治体向け）
+        id: 'gyosei-migration-risk',
+        label: '🏡 移住定着リスクAI',
+        href: '/gyosei/migration-risk',
+        status: 'active',
+        description: '移住相談DBの各レコードに「定着リスクスコア」を算出。就業・世帯・補助金・動機の5要素で0〜100点スコアリングし、担当職員が早期フォローすべき移住者を特定する',
+      },
     ],
   },
 
