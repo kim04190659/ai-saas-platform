@@ -265,6 +265,21 @@ export function FarmMatchingPanel() {
 
   // ─── エラー ───────────────────────────────────────────
   if (error) {
+    // 西粟倉村専用機能のため、他の自治体では friendly メッセージを表示
+    if (error.includes('農地情報DBまたは移住就農希望者DBが設定されていません')) {
+      return (
+        <div className="max-w-2xl mx-auto mt-8 p-8 bg-amber-50 border border-amber-200 rounded-xl text-center">
+          <p className="text-3xl mb-3">🌾</p>
+          <p className="text-amber-800 font-semibold mb-2">
+            この機能は西粟倉村（農業担い手マッチング）のデモ専用です
+          </p>
+          <p className="text-sm text-amber-600">
+            ヘッダーの自治体セレクターで「西粟倉村」に切り替えると農地マッチングデータを確認できます。
+          </p>
+        </div>
+      );
+    }
+    // その他のエラーは従来通り赤いエラーボックスを表示
     return (
       <div className="max-w-2xl mx-auto mt-8 p-6 bg-red-50 border border-red-200 rounded-xl text-center">
         <p className="text-red-700 font-semibold">⚠️ データ取得エラー</p>

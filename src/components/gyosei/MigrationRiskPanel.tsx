@@ -230,7 +230,20 @@ export function MigrationRiskPanel() {
           📊 リスクスコアを分析する
         </button>
         {error && (
-          <p className="mt-4 text-xs text-red-500">エラー: {error}</p>
+          error.includes('移住相談DBが設定されていません') ? (
+            // 海士町専用機能のため、他の自治体では friendly メッセージを表示
+            <div className="mt-6 bg-cyan-50 border border-cyan-200 rounded-xl p-6 text-center max-w-md">
+              <p className="text-2xl mb-2">🏡</p>
+              <p className="text-cyan-800 font-semibold mb-1">
+                この機能は海士町（移住定着リスクAI）のデモ専用です
+              </p>
+              <p className="text-xs text-cyan-600">
+                ヘッダーの自治体セレクターで「海士町」に切り替えると移住定着リスクデータを確認できます。
+              </p>
+            </div>
+          ) : (
+            <p className="mt-4 text-xs text-red-500">エラー: {error}</p>
+          )
         )}
       </div>
     )

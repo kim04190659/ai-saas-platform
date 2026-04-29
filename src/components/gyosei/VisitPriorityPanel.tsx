@@ -216,7 +216,22 @@ export function VisitPriorityPanel() {
         >
           📊 往診優先順位を分析する
         </button>
-        {error && <p className="mt-4 text-xs text-red-500">エラー: {error}</p>}
+        {error && (
+          error.includes('往診管理DBが設定されていません') ? (
+            // 五島市専用機能のため、他の自治体では friendly メッセージを表示
+            <div className="mt-6 bg-rose-50 border border-rose-200 rounded-xl p-6 text-center max-w-md">
+              <p className="text-2xl mb-2">🏥</p>
+              <p className="text-rose-800 font-semibold mb-1">
+                この機能は五島市（離島医療）のデモ専用です
+              </p>
+              <p className="text-xs text-rose-600">
+                ヘッダーの自治体セレクターで「五島市」に切り替えると往診優先順位データを確認できます。
+              </p>
+            </div>
+          ) : (
+            <p className="mt-4 text-xs text-red-500">エラー: {error}</p>
+          )
+        )}
       </div>
     )
   }
