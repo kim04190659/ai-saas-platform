@@ -430,6 +430,14 @@ export const FEATURE_MODULES: FeatureModule[] = [
         description: '農地情報DBと移住就農希望者DBをAIがクロス分析。作物経験・家族構成・規模・補助金・移住時期の6要素でマッチングスコアを算出し、「どの農地とどの担い手が最も相性が良いか」を一目で把握できるようにする',
       },
       {
+        // Sprint #70 追加: 地場産業6次産業化支援AI（地場産業衰退・後継者断絶型自治体向け）
+        id: 'gyosei-local-industry',
+        label: '🏭 地場産業6次産業化支援AI',
+        href: '/gyosei/local-industry',
+        status: 'active',
+        description: '地場産業台帳DBの各産業に「後継者空白リスクスコア」を算出。水産・農業・林業・食品加工・工芸の産業種別に後継者有無・事業者平均年齢・年商・6次産業化状況を可視化し、Claude Haikuが「5年後に消えるリスクがある産業×支援施策」を産業ごとに提言する。気仙沼市の水産業衰退問題をモデルに設計。',
+      },
+      {
         // Sprint #69 追加: 子育て世帯流出リスク検知AI（少子化・子育て世帯流出型自治体向け）
         id: 'gyosei-childcare-risk',
         label: '👶 子育て流出リスクAI',
@@ -1234,6 +1242,43 @@ export const FEATURE_MODULES: FeatureModule[] = [
         href: '/gyosei/childcare-risk',
         status: 'active',
         description: '子育て相談DB（10件・保育所待機・医療・転出相談等）の転出懸念スコアをAIが分析。転出リスクが高い世帯と担当職員が今すぐ動くべき施策を一目で把握できる',
+      },
+    ],
+  },
+
+  // ══════════════════════════════════════
+  //  🐟 気仙沼市 RunWith（自治体展開）
+  //  宮城県気仙沼市 — 人口約6.1万人・三陸沿岸の水産業都市
+  //  カツオ一本釣り・フカヒレ世界シェア70%・カキ養殖など多様な水産資源を持つ
+  //  Sprint #70 追加: 地場産業6次産業化支援AI の事例自治体
+  //  アクセントカラー: red（赤：海の力強さ・情熱をイメージ）
+  // ══════════════════════════════════════
+  {
+    id: 'kesennuma',
+    group: 'municipality',
+    icon: MapPin,
+    emoji: '🐟',
+    label: '気仙沼市 RunWith',
+    badge: '気仙沼市',
+    description: '宮城県気仙沼市向けRunWith展開ページ。地場産業6次産業化支援AIで「後継者がいなくて5年後に消えそうな産業」を早期検知し、水産業の衰退を止める支援施策を提言する。',
+    accent: {
+      bg: 'bg-red-50',
+      border: 'border-red-200',
+      icon: 'bg-red-100 text-red-600',
+      text: 'text-red-700',
+      badge: 'bg-red-100 text-red-700',
+      button: 'bg-red-600 hover:bg-red-700 text-white',
+      sidebarActive: 'bg-red-600 text-white',
+      sidebarDot: 'bg-red-400',
+    },
+    pages: [
+      {
+        // Sprint #70: 地場産業6次産業化支援AI（気仙沼市事例）
+        id: 'kesennuma-local-industry',
+        label: '🏭 地場産業6次産業化支援AI',
+        href: '/gyosei/local-industry',
+        status: 'active',
+        description: '地場産業台帳DB（12産業・水産・食品加工・観光等）の後継者リスクをAIが分析。5年以内に消えるリスクがある産業を担当職員が一目で把握できる',
       },
     ],
   },

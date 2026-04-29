@@ -36,6 +36,8 @@ export type MunicipalityDbConfig = {
   carbonDbId?: string
   /** 子育て相談DB（転出懸念フラグ・スコア・相談カテゴリ）— Sprint #69〜 */
   childcareDbId?: string
+  /** 地場産業台帳DB（産業種・事業者数・後継者有無・年商・販路・6次産業化状況）— Sprint #70〜 */
+  localIndustryDbId?: string
 }
 
 /**
@@ -119,6 +121,16 @@ export const MUNICIPALITY_DB_CONFIG: Record<string, MunicipalityDbConfig> = {
     consultationDbId: '',                                   // 未設定（将来追加）
     coachingDbId:     '',                                   // 未設定（将来追加）
     carbonDbId:       '30179aa96448400399ccc069e0f10b29',  // CO2削減活動DB（Sprint #68）
+  },
+
+  // ── 気仙沼市（宮城県）── Sprint #70 追加 ──────────────
+  // 地場産業6次産業化支援AI の事例自治体。
+  // 水産業都市・人口約6.1万人・フカヒレ世界シェア70%を誇る三陸沿岸の中核都市。
+  kesennuma: {
+    pdcaDbId:            '',                                   // 未設定（将来追加）
+    consultationDbId:    '',                                   // 未設定（将来追加）
+    coachingDbId:        '',                                   // 未設定（将来追加）
+    localIndustryDbId:   '154df0b60fce4695a0a2a1548e8e2b0e',  // 地場産業台帳DB（Sprint #70）
   },
 
   // ── 霧島市 ──────────────────────────────────────

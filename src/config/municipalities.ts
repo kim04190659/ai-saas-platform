@@ -166,6 +166,19 @@ export const MUNICIPALITIES: Municipality[] = [
     ],
   },
   {
+    // Sprint #70 追加: 気仙沼市（宮城県）— 地場産業6次産業化支援AI 事例自治体
+    // 三陸沿岸の水産業都市。人口約6.1万人・カツオ一本釣り水揚げ量日本一・フカヒレ世界シェア70%
+    id:           'kesennuma',
+    name:         '気仙沼市役所',
+    shortName:    '気仙沼市',
+    notionPageId: '351960a91e238178a388c3e3c2bf38a9',
+    color:        'red',
+    status:       'active',
+    implementedFeatures: [
+      { emoji: '🏭', label: '地場産業6次産業化AI' },
+    ],
+  },
+  {
     id:           'nec',
     name:         'NEC コーポレートIT部門',
     shortName:    'NEC',
