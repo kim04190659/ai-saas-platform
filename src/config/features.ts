@@ -406,6 +406,14 @@ export const FEATURE_MODULES: FeatureModule[] = [
         description: '往診管理DBの各患者に「優先度スコア」を算出。年齢・基礎疾患・世帯状況・要介護度・緊急フラグ・前回往診日の6要素で0〜100点スコアリングし、限られた医師が今週訪問すべき患者を一目で把握できるようにする',
       },
       {
+        // Sprint #67 追加: 復興進捗ダッシュボード（被災自治体向け）
+        id: 'gyosei-recovery-dashboard',
+        label: '🏗️ 復興進捗ダッシュボード',
+        href: '/gyosei/recovery-dashboard',
+        status: 'active',
+        description: '復興事業進捗DBの全案件を可視化。住宅再建・インフラ・産業・医療・教育・コミュニティの6カテゴリ別に進捗率・予算執行率・遅延リスクをスコアリングし、首長・復興推進課が今週対応すべき案件を一目で把握できるようにする',
+      },
+      {
         // Sprint #66 追加: 農業担い手マッチングAI（農山村・農業後継者不足型自治体向け）
         id: 'gyosei-farm-matching',
         label: '🌾 農業担い手マッチングAI',
@@ -1062,6 +1070,43 @@ export const FEATURE_MODULES: FeatureModule[] = [
         href: '/gyosei/visit-priority',
         status: 'active',
         description: '往診管理DB（12件・福江・玉之浦・富江地区等）の優先度スコアをAIが分析。今週訪問すべき患者を担当医が一目で把握できる',
+      },
+    ],
+  },
+
+  // ══════════════════════════════════════
+  //  🌊 輪島市 RunWith（自治体展開）
+  //  石川県輪島市 — 人口約2.4万人（地震前）・能登半島の中心都市
+  //  2024年1月1日 能登半島地震で甚大な被害
+  //  Sprint #67 追加: 復興進捗ダッシュボード の事例自治体
+  //  アクセントカラー: orange（橙：復興の炎・活力をイメージ）
+  // ══════════════════════════════════════
+  {
+    id: 'wajima',
+    group: 'municipality',
+    icon: MapPin,
+    emoji: '🌊',
+    label: '輪島市 RunWith',
+    badge: '輪島市',
+    description: '石川県輪島市向けRunWith展開ページ。復興進捗ダッシュボードで能登半島地震からの復興事業を一元管理。遅延リスクをAIが自動検知する。',
+    accent: {
+      bg: 'bg-orange-50',
+      border: 'border-orange-200',
+      icon: 'bg-orange-100 text-orange-600',
+      text: 'text-orange-700',
+      badge: 'bg-orange-100 text-orange-700',
+      button: 'bg-orange-600 hover:bg-orange-700 text-white',
+      sidebarActive: 'bg-orange-600 text-white',
+      sidebarDot: 'bg-orange-400',
+    },
+    pages: [
+      {
+        // Sprint #67: 復興進捗ダッシュボード（輪島市事例）
+        id: 'wajima-recovery-dashboard',
+        label: '🏗️ 復興進捗ダッシュボード',
+        href: '/gyosei/recovery-dashboard',
+        status: 'active',
+        description: '復興事業進捗DB（12件・住宅再建・インフラ・漆器産業等）の進捗をAIが分析。遅延中案件を担当課が一目で把握できる',
       },
     ],
   },

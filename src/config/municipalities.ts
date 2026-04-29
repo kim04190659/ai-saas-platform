@@ -114,6 +114,19 @@ export const MUNICIPALITIES: Municipality[] = [
     ],
   },
   {
+    // Sprint #67 追加: 輪島市（復興進捗ダッシュボード 事例自治体）
+    // 石川県輪島市 — 2024年能登半島地震で甚大な被害を受けた能登半島の中心都市
+    id:           'wajima',
+    name:         '輪島市役所',
+    shortName:    '輪島市',
+    notionPageId: '351960a91e238197805fe4d2509db486',
+    color:        'orange',
+    status:       'active',
+    implementedFeatures: [
+      { emoji: '🏗️', label: '復興進捗ダッシュボード' },
+    ],
+  },
+  {
     // Sprint #66 追加: 西粟倉村（農業担い手マッチングAI 事例自治体）
     // 岡山県英田郡・人口約1,400人・「百年の森林」で知られる山村
     id:           'nishiawakura',

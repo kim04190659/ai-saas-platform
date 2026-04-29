@@ -30,6 +30,8 @@ export type MunicipalityDbConfig = {
   farmDbId?: string
   /** 移住就農希望者DB（候補者・経験・世帯構成・移住希望時期）— Sprint #66〜 */
   farmerDbId?: string
+  /** 復興事業進捗DB（案件・進捗率・予算・遅延フラグ）— Sprint #67〜 */
+  recoveryDbId?: string
 }
 
 /**
@@ -72,6 +74,16 @@ export const MUNICIPALITY_DB_CONFIG: Record<string, MunicipalityDbConfig> = {
     consultationDbId: '',                                   // 未設定（将来追加）
     coachingDbId:     '',                                   // 未設定（将来追加）
     visitDbId:        'dd61e9fcdee44c48880ab26cc1d8675d',  // 往診管理DB（Sprint #65）
+  },
+
+  // ── 輪島市（石川県）── Sprint #67 追加 ──────────────
+  // 復興進捗ダッシュボード の事例自治体。
+  // 2024年1月1日 能登半島地震で甚大な被害。復興事業進捗DBのみ設定。
+  wajima: {
+    pdcaDbId:         '',                                   // 未設定（将来追加）
+    consultationDbId: '',                                   // 未設定（将来追加）
+    coachingDbId:     '',                                   // 未設定（将来追加）
+    recoveryDbId:     '1c408ef7dfe945aa8df1bb8e867a4315',  // 復興事業進捗DB（Sprint #67）
   },
 
   // ── 西粟倉村（岡山県英田郡）── Sprint #66 追加 ──────
