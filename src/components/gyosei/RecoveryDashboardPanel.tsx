@@ -300,6 +300,23 @@ export function RecoveryDashboardPanel() {
 
   // ─── エラー ──────────────────────────────────────────
   if (error) {
+    // recoveryDbId 未設定の場合は「準備中」案内を表示（赤エラーではなく）
+    const isNotConfigured = error.includes('recoveryDbId が設定されていません')
+    if (isNotConfigured) {
+      return (
+        <div className="bg-orange-50 border border-orange-200 rounded-xl p-8 text-center">
+          <p className="text-3xl mb-3">🏗️</p>
+          <p className="text-orange-800 font-semibold mb-2">
+            この機能は輪島市（能登半島地震復興）のデモ専用です
+          </p>
+          <p className="text-sm text-orange-600">
+            ヘッダーの自治体セレクターで「輪島市」に切り替えると<br />
+            復興事業進捗データを確認できます。
+          </p>
+        </div>
+      )
+    }
+
     return (
       <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
         <p className="text-red-700 font-medium mb-2">データ取得エラー</p>
