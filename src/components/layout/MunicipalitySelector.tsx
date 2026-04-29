@@ -30,6 +30,7 @@ const colorDotMap: Record<string, string> = {
   violet:  'bg-violet-500',
   amber:   'bg-amber-500',
   cyan:    'bg-cyan-500',
+  rose:    'bg-rose-500',
 };
 
 const colorTextMap: Record<string, string> = {
@@ -39,6 +40,7 @@ const colorTextMap: Record<string, string> = {
   violet:  'text-violet-700',
   amber:   'text-amber-700',
   cyan:    'text-cyan-700',
+  rose:    'text-rose-700',
 };
 
 const colorBgMap: Record<string, string> = {
@@ -48,6 +50,7 @@ const colorBgMap: Record<string, string> = {
   violet:  'bg-violet-50 border-violet-200',
   amber:   'bg-amber-50 border-amber-200',
   cyan:    'bg-cyan-50 border-cyan-200',
+  rose:    'bg-rose-50 border-rose-200',
 };
 
 // 実装済み機能バッジの背景色マップ
@@ -58,6 +61,7 @@ const colorFeatureBadgeMap: Record<string, string> = {
   violet:  'bg-violet-100 text-violet-700',
   amber:   'bg-amber-100 text-amber-700',
   cyan:    'bg-cyan-100 text-cyan-700',
+  rose:    'bg-rose-100 text-rose-700',
 };
 
 // ─── サブコンポーネント：選択肢の1行 ─────────────────

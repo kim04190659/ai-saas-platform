@@ -101,6 +101,19 @@ export const MUNICIPALITIES: Municipality[] = [
     ],
   },
   {
+    // Sprint #65 追加: 五島市（往診優先順位AI 事例自治体）
+    // 長崎県・五島列島。人口約3.2万人・高齢化率約40%・医師不足が深刻な離島自治体
+    id:           'goto',
+    name:         '五島市役所',
+    shortName:    '五島市',
+    notionPageId: '351960a91e2381e8abb4de89c3cdd85f',
+    color:        'rose',
+    status:       'active',
+    implementedFeatures: [
+      { emoji: '🏥', label: '往診優先順位AI' },
+    ],
+  },
+  {
     id:           'nec',
     name:         'NEC コーポレートIT部門',
     shortName:    'NEC',

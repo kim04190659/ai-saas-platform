@@ -397,6 +397,14 @@ export const FEATURE_MODULES: FeatureModule[] = [
         status: 'active',
         description: '移住相談DBの各レコードに「定着リスクスコア」を算出。就業・世帯・補助金・動機の5要素で0〜100点スコアリングし、担当職員が早期フォローすべき移住者を特定する',
       },
+      {
+        // Sprint #65 追加: 往診優先順位AI（離島・高齢化型自治体向け）
+        id: 'gyosei-visit-priority',
+        label: '🏥 往診優先順位AI',
+        href: '/gyosei/visit-priority',
+        status: 'active',
+        description: '往診管理DBの各患者に「優先度スコア」を算出。年齢・基礎疾患・世帯状況・要介護度・緊急フラグ・前回往診日の6要素で0〜100点スコアリングし、限られた医師が今週訪問すべき患者を一目で把握できるようにする',
+      },
     ],
   },
 
@@ -1010,6 +1018,42 @@ export const FEATURE_MODULES: FeatureModule[] = [
         href: '/gyosei/migration-risk',
         status: 'active',
         description: '移住相談DB（12件・岩牡蠣漁業・隠岐牛農業・テレワーク等）のリスクスコアをAIが分析。要フォロー移住者を担当職員が一目で把握できる',
+      },
+    ],
+  },
+
+  // ══════════════════════════════════════
+  //  🏝️ 五島市 RunWith（自治体展開）
+  //  長崎県・五島列島 — 人口約3.2万人・高齢化率約40%・深刻な医師不足
+  //  Sprint #65 追加: 往診優先順位AI の事例自治体
+  //  アクセントカラー: rose（ローズ）
+  // ══════════════════════════════════════
+  {
+    id: 'goto',
+    group: 'municipality',
+    icon: MapPin,
+    emoji: '🏝️',
+    label: '五島市 RunWith',
+    badge: '五島市',
+    description: '長崎県五島列島・五島市向けRunWith展開ページ。往診優先順位AIで「誰を今週最優先で診るか」を限られた医師が即座に判断できるようにする。',
+    accent: {
+      bg: 'bg-rose-50',
+      border: 'border-rose-200',
+      icon: 'bg-rose-100 text-rose-600',
+      text: 'text-rose-700',
+      badge: 'bg-rose-100 text-rose-700',
+      button: 'bg-rose-600 hover:bg-rose-700 text-white',
+      sidebarActive: 'bg-rose-600 text-white',
+      sidebarDot: 'bg-rose-400',
+    },
+    pages: [
+      {
+        // Sprint #65: 往診優先順位AI（五島市事例）
+        id: 'goto-visit-priority',
+        label: '🏥 往診優先順位AI',
+        href: '/gyosei/visit-priority',
+        status: 'active',
+        description: '往診管理DB（12件・福江・玉之浦・富江地区等）の優先度スコアをAIが分析。今週訪問すべき患者を担当医が一目で把握できる',
       },
     ],
   },

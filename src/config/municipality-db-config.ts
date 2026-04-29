@@ -24,6 +24,8 @@ export type MunicipalityDbConfig = {
   tourismDbId?: string
   /** 移住相談DB（相談者情報・進捗・定住状況）— Sprint #59〜 */
   migrationDbId?: string
+  /** 往診管理DB（患者情報・前回往診日・要介護度・緊急フラグ）— Sprint #65〜 */
+  visitDbId?: string
 }
 
 /**
@@ -56,6 +58,16 @@ export const MUNICIPALITY_DB_CONFIG: Record<string, MunicipalityDbConfig> = {
     consultationDbId: '',                                   // 未設定（将来追加）
     coachingDbId:     '',                                   // 未設定（将来追加）
     migrationDbId:    'a0b7e20ffe2f46f890f152982a08e101',  // 移住相談DB（Sprint #64）
+  },
+
+  // ── 五島市（長崎県）── Sprint #65 追加 ──────────────
+  // 往診優先順位AI の事例自治体。往診管理DBのみ設定。
+  // 離島・人口約3.2万人・高齢化率約40%・医師不足が深刻
+  goto: {
+    pdcaDbId:         '',                                   // 未設定（将来追加）
+    consultationDbId: '',                                   // 未設定（将来追加）
+    coachingDbId:     '',                                   // 未設定（将来追加）
+    visitDbId:        'dd61e9fcdee44c48880ab26cc1d8675d',  // 往診管理DB（Sprint #65）
   },
 
   // ── 霧島市 ──────────────────────────────────────
