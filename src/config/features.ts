@@ -381,6 +381,14 @@ export const FEATURE_MODULES: FeatureModule[] = [
         status: 'active',
         description: '住民相談チャネル（LINE/窓口/電話）をカテゴリ別に集計。デジタル化率が低いサービスほど改善余地が大きいと判定し、AIが優先DX施策を提案する',
       },
+      {
+        // Sprint #63 追加: 四半期AI分析レポート（ISO 23592×9要素スコアリング）
+        id: 'gyosei-quarterly-report',
+        label: '📊 四半期AI分析レポート',
+        href: '/gyosei/quarterly-report',
+        status: 'active',
+        description: 'ISO 23592「エクセレントサービス」4側面×9要素で自治体の現在地をスコアリング。PDCA・WB・財政・インフラの蓄積データをAIが横断分析し、首長・議会への説明資料を自動生成',
+      },
     ],
   },
 
