@@ -114,6 +114,19 @@ export const MUNICIPALITIES: Municipality[] = [
     ],
   },
   {
+    // Sprint #66 追加: 西粟倉村（農業担い手マッチングAI 事例自治体）
+    // 岡山県英田郡・人口約1,400人・「百年の森林」で知られる山村
+    id:           'nishiawakura',
+    name:         '西粟倉村役場',
+    shortName:    '西粟倉村',
+    notionPageId: '351960a91e23819cbd28ca3db3112c87',
+    color:        'amber',
+    status:       'active',
+    implementedFeatures: [
+      { emoji: '🌾', label: '農業担い手マッチング' },
+    ],
+  },
+  {
     id:           'nec',
     name:         'NEC コーポレートIT部門',
     shortName:    'NEC',

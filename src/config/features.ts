@@ -405,6 +405,14 @@ export const FEATURE_MODULES: FeatureModule[] = [
         status: 'active',
         description: '往診管理DBの各患者に「優先度スコア」を算出。年齢・基礎疾患・世帯状況・要介護度・緊急フラグ・前回往診日の6要素で0〜100点スコアリングし、限られた医師が今週訪問すべき患者を一目で把握できるようにする',
       },
+      {
+        // Sprint #66 追加: 農業担い手マッチングAI（農山村・農業後継者不足型自治体向け）
+        id: 'gyosei-farm-matching',
+        label: '🌾 農業担い手マッチングAI',
+        href: '/gyosei/farm-matching',
+        status: 'active',
+        description: '農地情報DBと移住就農希望者DBをAIがクロス分析。作物経験・家族構成・規模・補助金・移住時期の6要素でマッチングスコアを算出し、「どの農地とどの担い手が最も相性が良いか」を一目で把握できるようにする',
+      },
     ],
   },
 
@@ -1054,6 +1062,43 @@ export const FEATURE_MODULES: FeatureModule[] = [
         href: '/gyosei/visit-priority',
         status: 'active',
         description: '往診管理DB（12件・福江・玉之浦・富江地区等）の優先度スコアをAIが分析。今週訪問すべき患者を担当医が一目で把握できる',
+      },
+    ],
+  },
+
+  // ══════════════════════════════════════
+  //  🌾 西粟倉村 RunWith（自治体展開）
+  //  岡山県英田郡西粟倉村 — 人口約1,400人・「百年の森林」の村
+  //  森林再生で有名だが農業後継者不足も深刻な課題
+  //  Sprint #66 追加: 農業担い手マッチングAI の事例自治体
+  //  アクセントカラー: amber（琥珀：黄金色の稲穂をイメージ）
+  // ══════════════════════════════════════
+  {
+    id: 'nishiawakura',
+    group: 'municipality',
+    icon: MapPin,
+    emoji: '🌾',
+    label: '西粟倉村 RunWith',
+    badge: '西粟倉村',
+    description: '岡山県英田郡・西粟倉村向けRunWith展開ページ。農業担い手マッチングAIで「後継者がいなくて耕作放棄地になる」課題を解決する。',
+    accent: {
+      bg: 'bg-amber-50',
+      border: 'border-amber-200',
+      icon: 'bg-amber-100 text-amber-600',
+      text: 'text-amber-700',
+      badge: 'bg-amber-100 text-amber-700',
+      button: 'bg-amber-600 hover:bg-amber-700 text-white',
+      sidebarActive: 'bg-amber-600 text-white',
+      sidebarDot: 'bg-amber-400',
+    },
+    pages: [
+      {
+        // Sprint #66: 農業担い手マッチングAI（西粟倉村事例）
+        id: 'nishiawakura-farm-matching',
+        label: '🌾 農業担い手マッチングAI',
+        href: '/gyosei/farm-matching',
+        status: 'active',
+        description: '農地情報DB（10件・棚田・黒大豆・しいたけ等）と移住就農希望者DB（10件）をAIがクロス分析。最もマッチする農地×担い手ペアをスコア順で表示',
       },
     ],
   },

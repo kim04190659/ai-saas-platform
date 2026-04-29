@@ -26,6 +26,10 @@ export type MunicipalityDbConfig = {
   migrationDbId?: string
   /** 往診管理DB（患者情報・前回往診日・要介護度・緊急フラグ）— Sprint #65〜 */
   visitDbId?: string
+  /** 農地情報DB（農地・作物・規模・補助金対象・農地状態）— Sprint #66〜 */
+  farmDbId?: string
+  /** 移住就農希望者DB（候補者・経験・世帯構成・移住希望時期）— Sprint #66〜 */
+  farmerDbId?: string
 }
 
 /**
@@ -68,6 +72,17 @@ export const MUNICIPALITY_DB_CONFIG: Record<string, MunicipalityDbConfig> = {
     consultationDbId: '',                                   // 未設定（将来追加）
     coachingDbId:     '',                                   // 未設定（将来追加）
     visitDbId:        'dd61e9fcdee44c48880ab26cc1d8675d',  // 往診管理DB（Sprint #65）
+  },
+
+  // ── 西粟倉村（岡山県英田郡）── Sprint #66 追加 ──────
+  // 農業担い手マッチングAI の事例自治体。
+  // 「百年の森林」で全国的に知られる村だが農業後継者不足も深刻。
+  nishiawakura: {
+    pdcaDbId:         '',                                   // 未設定（将来追加）
+    consultationDbId: '',                                   // 未設定（将来追加）
+    coachingDbId:     '',                                   // 未設定（将来追加）
+    farmDbId:         '8c77f269212f4ac4a0527f99bd5f4c1d',  // 農地情報DB（Sprint #66）
+    farmerDbId:       '2f633b13b9314ea48642ae33ad72ff6e',  // 移住就農希望者DB（Sprint #66）
   },
 
   // ── 霧島市 ──────────────────────────────────────
