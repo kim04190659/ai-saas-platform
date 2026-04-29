@@ -130,7 +130,7 @@ export const MUNICIPALITY_DB_CONFIG: Record<string, MunicipalityDbConfig> = {
     pdcaDbId:            '',                                   // 未設定（将来追加）
     consultationDbId:    '',                                   // 未設定（将来追加）
     coachingDbId:        '',                                   // 未設定（将来追加）
-    localIndustryDbId:   '154df0b60fce4695a0a2a1548e8e2b0e',  // 地場産業台帳DB（Sprint #70）
+    localIndustryDbId:   '8fcf8d3e7c084d34904df8b5468b8f91',  // 地場産業台帳DB（Sprint #70）
   },
 
   // ── 霧島市 ──────────────────────────────────────
