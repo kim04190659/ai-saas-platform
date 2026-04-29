@@ -49,6 +49,15 @@ export const MUNICIPALITY_DB_CONFIG: Record<string, MunicipalityDbConfig> = {
     migrationDbId:    'dbf5cbe558a04a48ba1c21cbb25d22c0',  // 移住相談DB（Sprint #59）
   },
 
+  // ── 海士町（島根県隠岐諸島）── Sprint #64 追加 ──────
+  // 移住定着リスクAI の事例自治体。移住相談DBのみ設定。
+  amacho: {
+    pdcaDbId:         '',                                   // 未設定（将来追加）
+    consultationDbId: '',                                   // 未設定（将来追加）
+    coachingDbId:     '',                                   // 未設定（将来追加）
+    migrationDbId:    'a0b7e20ffe2f46f890f152982a08e101',  // 移住相談DB（Sprint #64）
+  },
+
   // ── 霧島市 ──────────────────────────────────────
   kirishima: {
     pdcaDbId:         '1b2da85d1f9444a9ab69e1e78883ac84',  // 施策実行記録DB

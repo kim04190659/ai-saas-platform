@@ -57,6 +57,15 @@ export const MUNICIPALITIES: Municipality[] = [
     status:       'active',  // Sprint #32: ダッシュボードデータ実装済みのため active に変更
   },
   {
+    // Sprint #64 追加: 海士町（移住定着リスクAI 事例自治体）
+    id:           'amacho',
+    name:         '海士町役場',
+    shortName:    '海士町',
+    notionPageId: '351960a91e2381bb9fdee42be45613be',
+    color:        'cyan',
+    status:       'active',
+  },
+  {
     id:           'nec',
     name:         'NEC コーポレートIT部門',
     shortName:    'NEC',

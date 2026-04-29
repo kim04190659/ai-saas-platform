@@ -978,6 +978,43 @@ export const FEATURE_MODULES: FeatureModule[] = [
   },
 
   // ══════════════════════════════════════
+  //  🏝️ 海士町 RunWith（自治体展開）
+  //  島根県隠岐郡海士町 — 人口約2,300人・隠岐諸島の中ノ島
+  //  全国的な移住誘致先進事例でありながら定着率に課題
+  //  Sprint #64 追加: 移住定着リスクAI の事例自治体
+  //  アクセントカラー: cyan（シアン）
+  // ══════════════════════════════════════
+  {
+    id: 'amacho',
+    group: 'municipality',
+    icon: MapPin,
+    emoji: '🏝️',
+    label: '海士町 RunWith',
+    badge: '海士町',
+    description: '島根県隠岐諸島・海士町向けRunWith展開ページ。移住定着リスクAIで「せっかく来てくれたのに1年で離島する」課題を解決する。',
+    accent: {
+      bg: 'bg-cyan-50',
+      border: 'border-cyan-200',
+      icon: 'bg-cyan-100 text-cyan-600',
+      text: 'text-cyan-700',
+      badge: 'bg-cyan-100 text-cyan-700',
+      button: 'bg-cyan-600 hover:bg-cyan-700 text-white',
+      sidebarActive: 'bg-cyan-600 text-white',
+      sidebarDot: 'bg-cyan-400',
+    },
+    pages: [
+      {
+        // Sprint #64: 移住定着リスクAI（海士町事例）
+        id: 'amacho-migration-risk',
+        label: '🏡 移住定着リスクAI',
+        href: '/gyosei/migration-risk',
+        status: 'active',
+        description: '移住相談DB（12件・岩牡蠣漁業・隠岐牛農業・テレワーク等）のリスクスコアをAIが分析。要フォロー移住者を担当職員が一目で把握できる',
+      },
+    ],
+  },
+
+  // ══════════════════════════════════════
   //  🏢 NEC コーポレートIT RunWith（自治体展開・準備中）
   //  NEC コーポレートIT部門向け展開ページ
   //  アクセントカラー: slate（スレート）
