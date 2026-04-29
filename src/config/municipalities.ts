@@ -140,6 +140,19 @@ export const MUNICIPALITIES: Municipality[] = [
     ],
   },
   {
+    // Sprint #69 追加: 神埼市（佐賀県）— 子育て世帯流出リスク検知AI 事例自治体
+    // 人口約29,000人・少子化・子育て世帯の福岡・佐賀市への流出が課題
+    id:           'kanzaki',
+    name:         '神埼市役所',
+    shortName:    '神埼市',
+    notionPageId: '351960a91e2381bea5aaea91c2c862ad',
+    color:        'pink',
+    status:       'active',
+    implementedFeatures: [
+      { emoji: '👶', label: '子育て流出リスクAI' },
+    ],
+  },
+  {
     // Sprint #68 追加: 上勝町（徳島県勝浦郡）— CO2削減進捗トラッカー 事例自治体
     // 人口約1,500人・「ゼロ・ウェイスト宣言」で全国的に知られ、2020年にゼロカーボン宣言
     id:           'kamikatsu',

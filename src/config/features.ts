@@ -429,6 +429,14 @@ export const FEATURE_MODULES: FeatureModule[] = [
         status: 'active',
         description: '農地情報DBと移住就農希望者DBをAIがクロス分析。作物経験・家族構成・規模・補助金・移住時期の6要素でマッチングスコアを算出し、「どの農地とどの担い手が最も相性が良いか」を一目で把握できるようにする',
       },
+      {
+        // Sprint #69 追加: 子育て世帯流出リスク検知AI（少子化・子育て世帯流出型自治体向け）
+        id: 'gyosei-childcare-risk',
+        label: '👶 子育て流出リスクAI',
+        href: '/gyosei/childcare-risk',
+        status: 'active',
+        description: '子育て相談DBの各世帯に「転出懸念スコア」を算出。保育所待機・医療・経済支援・発達支援など6カテゴリの相談傾向をAIが分析し、転出しそうな世帯を早期検知。Claude HaikuがカテゴリBESTフォロー施策を3件提言する。神埼市の少子化対策をモデルに設計。',
+      },
     ],
   },
 
@@ -1189,6 +1197,43 @@ export const FEATURE_MODULES: FeatureModule[] = [
         href: '/gyosei/carbon-tracker',
         status: 'active',
         description: 'CO2削減活動DB（再エネ・EV・廃棄物・森林吸収・省エネ）をカテゴリ別に集計。ゼロカーボン達成スコアをゲージで表示し、Claude HaikuがAI四半期総括を生成',
+      },
+    ],
+  },
+
+  // ══════════════════════════════════════
+  //  👶 神埼市 RunWith（自治体展開）
+  //  佐賀県神埼市 — 人口約29,000人・少子化が深刻な中規模市
+  //  福岡・佐賀市への子育て世帯流出が課題
+  //  Sprint #69 追加: 子育て世帯流出リスク検知AI の事例自治体
+  //  アクセントカラー: pink（ピンク：子育て・子どもをイメージ）
+  // ══════════════════════════════════════
+  {
+    id: 'kanzaki',
+    group: 'municipality',
+    icon: MapPin,
+    emoji: '👶',
+    label: '神埼市 RunWith',
+    badge: '神埼市',
+    description: '佐賀県神埼市向けRunWith展開ページ。子育て世帯流出リスク検知AIで「保育所が足りない・医療が遠い・経済的に苦しい」を理由に転出しそうな子育て世帯を早期発見し、引き止め施策を提言する。',
+    accent: {
+      bg: 'bg-pink-50',
+      border: 'border-pink-200',
+      icon: 'bg-pink-100 text-pink-600',
+      text: 'text-pink-700',
+      badge: 'bg-pink-100 text-pink-700',
+      button: 'bg-pink-600 hover:bg-pink-700 text-white',
+      sidebarActive: 'bg-pink-600 text-white',
+      sidebarDot: 'bg-pink-400',
+    },
+    pages: [
+      {
+        // Sprint #69: 子育て流出リスクAI（神埼市事例）
+        id: 'kanzaki-childcare-risk',
+        label: '👶 子育て流出リスクAI',
+        href: '/gyosei/childcare-risk',
+        status: 'active',
+        description: '子育て相談DB（10件・保育所待機・医療・転出相談等）の転出懸念スコアをAIが分析。転出リスクが高い世帯と担当職員が今すぐ動くべき施策を一目で把握できる',
       },
     ],
   },

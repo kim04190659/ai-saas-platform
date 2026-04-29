@@ -33,6 +33,7 @@ const colorDotMap: Record<string, string> = {
   rose:    'bg-rose-500',
   orange:  'bg-orange-500',
   green:   'bg-green-500',   // Sprint #68 上勝町
+  pink:    'bg-pink-500',    // Sprint #69 神埼市
 };
 
 const colorTextMap: Record<string, string> = {
@@ -45,6 +46,7 @@ const colorTextMap: Record<string, string> = {
   rose:    'text-rose-700',
   orange:  'text-orange-700',
   green:   'text-green-700',   // Sprint #68 上勝町
+  pink:    'text-pink-700',    // Sprint #69 神埼市
 };
 
 const colorBgMap: Record<string, string> = {
@@ -57,6 +59,7 @@ const colorBgMap: Record<string, string> = {
   rose:    'bg-rose-50 border-rose-200',
   orange:  'bg-orange-50 border-orange-200',
   green:   'bg-green-50 border-green-200',   // Sprint #68 上勝町
+  pink:    'bg-pink-50 border-pink-200',     // Sprint #69 神埼市
 };
 
 // 実装済み機能バッジの背景色マップ
@@ -70,6 +73,7 @@ const colorFeatureBadgeMap: Record<string, string> = {
   rose:    'bg-rose-100 text-rose-700',
   orange:  'bg-orange-100 text-orange-700',
   green:   'bg-green-100 text-green-700',   // Sprint #68 上勝町
+  pink:    'bg-pink-100 text-pink-700',     // Sprint #69 神埼市
 };
 
 // ─── サブコンポーネント：選択肢の1行 ─────────────────

@@ -34,6 +34,8 @@ export type MunicipalityDbConfig = {
   recoveryDbId?: string
   /** CO2削減活動DB（再エネ・EV・廃棄物・森林カテゴリ別削減量）— Sprint #68〜 */
   carbonDbId?: string
+  /** 子育て相談DB（転出懸念フラグ・スコア・相談カテゴリ）— Sprint #69〜 */
+  childcareDbId?: string
 }
 
 /**
@@ -97,6 +99,16 @@ export const MUNICIPALITY_DB_CONFIG: Record<string, MunicipalityDbConfig> = {
     coachingDbId:     '',                                   // 未設定（将来追加）
     farmDbId:         '8c77f269212f4ac4a0527f99bd5f4c1d',  // 農地情報DB（Sprint #66）
     farmerDbId:       '2f633b13b9314ea48642ae33ad72ff6e',  // 移住就農希望者DB（Sprint #66）
+  },
+
+  // ── 神埼市（佐賀県）── Sprint #69 追加 ──────────────
+  // 子育て世帯流出リスク検知AI の事例自治体。
+  // 佐賀県中東部・人口約29,000人・少子化が深刻で年間出生数が激減中。
+  kanzaki: {
+    pdcaDbId:         '',                                   // 未設定（将来追加）
+    consultationDbId: '',                                   // 未設定（将来追加）
+    coachingDbId:     '',                                   // 未設定（将来追加）
+    childcareDbId:    '465b6d131ed04e67a3ced4708c8f40d0',  // 子育て相談DB（Sprint #69）
   },
 
   // ── 上勝町（徳島県）── Sprint #68 追加 ──────────────
