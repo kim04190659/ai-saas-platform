@@ -140,6 +140,19 @@ export const MUNICIPALITIES: Municipality[] = [
     ],
   },
   {
+    // Sprint #68 追加: 上勝町（徳島県勝浦郡）— CO2削減進捗トラッカー 事例自治体
+    // 人口約1,500人・「ゼロ・ウェイスト宣言」で全国的に知られ、2020年にゼロカーボン宣言
+    id:           'kamikatsu',
+    name:         '上勝町役場',
+    shortName:    '上勝町',
+    notionPageId: '351960a91e2381e2805ec9ad52ed5e26',
+    color:        'green',
+    status:       'active',
+    implementedFeatures: [
+      { emoji: '🌱', label: 'CO2削減トラッカー' },
+    ],
+  },
+  {
     id:           'nec',
     name:         'NEC コーポレートIT部門',
     shortName:    'NEC',

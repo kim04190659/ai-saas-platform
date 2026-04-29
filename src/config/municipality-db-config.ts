@@ -32,6 +32,8 @@ export type MunicipalityDbConfig = {
   farmerDbId?: string
   /** 復興事業進捗DB（案件・進捗率・予算・遅延フラグ）— Sprint #67〜 */
   recoveryDbId?: string
+  /** CO2削減活動DB（再エネ・EV・廃棄物・森林カテゴリ別削減量）— Sprint #68〜 */
+  carbonDbId?: string
 }
 
 /**
@@ -95,6 +97,16 @@ export const MUNICIPALITY_DB_CONFIG: Record<string, MunicipalityDbConfig> = {
     coachingDbId:     '',                                   // 未設定（将来追加）
     farmDbId:         '8c77f269212f4ac4a0527f99bd5f4c1d',  // 農地情報DB（Sprint #66）
     farmerDbId:       '2f633b13b9314ea48642ae33ad72ff6e',  // 移住就農希望者DB（Sprint #66）
+  },
+
+  // ── 上勝町（徳島県）── Sprint #68 追加 ──────────────
+  // CO2削減進捗トラッカー の事例自治体。
+  // 「ゼロ・ウェイスト宣言」で全国的に知られる。2020年にゼロカーボン宣言。
+  kamikatsu: {
+    pdcaDbId:         '',                                   // 未設定（将来追加）
+    consultationDbId: '',                                   // 未設定（将来追加）
+    coachingDbId:     '',                                   // 未設定（将来追加）
+    carbonDbId:       '30179aa96448400399ccc069e0f10b29',  // CO2削減活動DB（Sprint #68）
   },
 
   // ── 霧島市 ──────────────────────────────────────

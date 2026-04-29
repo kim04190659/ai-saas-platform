@@ -406,6 +406,14 @@ export const FEATURE_MODULES: FeatureModule[] = [
         description: '往診管理DBの各患者に「優先度スコア」を算出。年齢・基礎疾患・世帯状況・要介護度・緊急フラグ・前回往診日の6要素で0〜100点スコアリングし、限られた医師が今週訪問すべき患者を一目で把握できるようにする',
       },
       {
+        // Sprint #68 追加: CO2削減進捗トラッカー（ゼロカーボン推進型自治体向け）
+        id: 'gyosei-carbon-tracker',
+        label: '🌱 CO2削減進捗トラッカー',
+        href: '/gyosei/carbon-tracker',
+        status: 'active',
+        description: 'ゼロカーボン宣言自治体の削減活動（再エネ・EV・廃棄物・森林吸収・省エネ）をカテゴリ別に可視化。達成スコアをゲージで表示し、Claude HaikuがAI四半期総括を自動生成。上勝町のゼロカーボン推進をモデルに設計。',
+      },
+      {
         // Sprint #67 追加: 復興進捗ダッシュボード（被災自治体向け）
         id: 'gyosei-recovery-dashboard',
         label: '🏗️ 復興進捗ダッシュボード',
@@ -1144,6 +1152,43 @@ export const FEATURE_MODULES: FeatureModule[] = [
         href: '/gyosei/farm-matching',
         status: 'active',
         description: '農地情報DB（10件・棚田・黒大豆・しいたけ等）と移住就農希望者DB（10件）をAIがクロス分析。最もマッチする農地×担い手ペアをスコア順で表示',
+      },
+    ],
+  },
+
+  // ══════════════════════════════════════
+  //  🌿 上勝町 RunWith（自治体展開）
+  //  徳島県勝浦郡上勝町 — 人口約1,500人・「ゼロ・ウェイスト宣言」で有名
+  //  2020年にゼロカーボン宣言。45種類分別リサイクルで全国最高水準を誇る
+  //  Sprint #68 追加: CO2削減進捗トラッカーの事例自治体
+  //  アクセントカラー: green（緑：森と環境をイメージ）
+  // ══════════════════════════════════════
+  {
+    id: 'kamikatsu',
+    group: 'municipality',
+    icon: MapPin,
+    emoji: '🌿',
+    label: '上勝町 RunWith',
+    badge: '上勝町',
+    description: '徳島県勝浦郡・上勝町向けRunWith展開ページ。CO2削減進捗トラッカーでゼロカーボン宣言の達成状況を可視化し、AI四半期総括で次の一手を提言する。',
+    accent: {
+      bg: 'bg-green-50',
+      border: 'border-green-200',
+      icon: 'bg-green-100 text-green-600',
+      text: 'text-green-700',
+      badge: 'bg-green-100 text-green-700',
+      button: 'bg-green-600 hover:bg-green-700 text-white',
+      sidebarActive: 'bg-green-600 text-white',
+      sidebarDot: 'bg-green-400',
+    },
+    pages: [
+      {
+        // Sprint #68: CO2削減進捗トラッカー（上勝町事例）
+        id: 'kamikatsu-carbon-tracker',
+        label: '🌱 CO2削減進捗トラッカー',
+        href: '/gyosei/carbon-tracker',
+        status: 'active',
+        description: 'CO2削減活動DB（再エネ・EV・廃棄物・森林吸収・省エネ）をカテゴリ別に集計。ゼロカーボン達成スコアをゲージで表示し、Claude HaikuがAI四半期総括を生成',
       },
     ],
   },
