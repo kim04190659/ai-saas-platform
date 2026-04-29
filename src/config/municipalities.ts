@@ -19,6 +19,14 @@
 //    'demo'    → デモ専用（選択可能だがデモデータのみ）
 // =====================================================
 
+/** 実装済み機能フラグ（セレクターやダッシュボードに表示） */
+export type ImplementedFeature = {
+  /** 絵文字アイコン */
+  emoji: string;
+  /** 短い機能名（10文字以内推奨） */
+  label: string;
+};
+
 /** 展開済み自治体の型定義 */
 export type Municipality = {
   /** 英字ID（クエリパラメータ等に使用。例: 'kirishima'） */
@@ -33,6 +41,12 @@ export type Municipality = {
   color: string;
   /** 運用状況 */
   status: 'active' | 'coming' | 'demo';
+  /**
+   * 実装済み機能フラグ（オプション）
+   * セレクタードロップダウン・ダッシュボードにバッジで表示する
+   * 新機能を追加したときにここも更新すること
+   */
+  implementedFeatures?: ImplementedFeature[];
 };
 
 /**
@@ -47,6 +61,15 @@ export const MUNICIPALITIES: Municipality[] = [
     notionPageId: '33e960a91e23811184acf4044da2dd1b',
     color:        'teal',
     status:       'active',
+    implementedFeatures: [
+      { emoji: '♻️', label: '廃棄物最適化' },
+      { emoji: '🛣️', label: '道路修復AI' },
+      { emoji: '🏗️', label: 'インフラ老朽化' },
+      { emoji: '💴', label: '財政健全化' },
+      { emoji: '📈', label: '施策PDCA' },
+      { emoji: '👤', label: '住民AIコーチ' },
+      { emoji: '🏛️', label: '経営ダッシュボード' },
+    ],
   },
   {
     id:           'yakushima',
@@ -54,7 +77,16 @@ export const MUNICIPALITIES: Municipality[] = [
     shortName:    '屋久島町',
     notionPageId: '347960a91e2381ac9999d0bad0d8646e',
     color:        'emerald',
-    status:       'active',  // Sprint #32: ダッシュボードデータ実装済みのため active に変更
+    status:       'active',
+    implementedFeatures: [
+      { emoji: '🌿', label: '観光管理' },
+      { emoji: '🏡', label: '移住支援' },
+      { emoji: '🏗️', label: 'インフラ老朽化' },
+      { emoji: '💴', label: '財政健全化' },
+      { emoji: '📈', label: '施策PDCA' },
+      { emoji: '👤', label: '住民AIコーチ' },
+      { emoji: '🔍', label: 'DX効果測定' },
+    ],
   },
   {
     // Sprint #64 追加: 海士町（移住定着リスクAI 事例自治体）
@@ -64,6 +96,9 @@ export const MUNICIPALITIES: Municipality[] = [
     notionPageId: '351960a91e2381bb9fdee42be45613be',
     color:        'cyan',
     status:       'active',
+    implementedFeatures: [
+      { emoji: '🏡', label: '移住定着リスクAI' },
+    ],
   },
   {
     id:           'nec',

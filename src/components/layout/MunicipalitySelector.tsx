@@ -29,6 +29,7 @@ const colorDotMap: Record<string, string> = {
   blue:    'bg-blue-500',
   violet:  'bg-violet-500',
   amber:   'bg-amber-500',
+  cyan:    'bg-cyan-500',
 };
 
 const colorTextMap: Record<string, string> = {
@@ -37,6 +38,7 @@ const colorTextMap: Record<string, string> = {
   blue:    'text-blue-700',
   violet:  'text-violet-700',
   amber:   'text-amber-700',
+  cyan:    'text-cyan-700',
 };
 
 const colorBgMap: Record<string, string> = {
@@ -45,6 +47,17 @@ const colorBgMap: Record<string, string> = {
   blue:    'bg-blue-50 border-blue-200',
   violet:  'bg-violet-50 border-violet-200',
   amber:   'bg-amber-50 border-amber-200',
+  cyan:    'bg-cyan-50 border-cyan-200',
+};
+
+// 実装済み機能バッジの背景色マップ
+const colorFeatureBadgeMap: Record<string, string> = {
+  teal:    'bg-teal-100 text-teal-700',
+  emerald: 'bg-emerald-100 text-emerald-700',
+  blue:    'bg-blue-100 text-blue-700',
+  violet:  'bg-violet-100 text-violet-700',
+  amber:   'bg-amber-100 text-amber-700',
+  cyan:    'bg-cyan-100 text-cyan-700',
 };
 
 // ─── サブコンポーネント：選択肢の1行 ─────────────────
@@ -58,8 +71,9 @@ function MunicipalityOption({
   isSelected: boolean;
   onSelect: () => void;
 }) {
-  const isDisabled = m.status === 'coming';
-  const dotColor   = colorDotMap[m.color] ?? 'bg-gray-400';
+  const isDisabled   = m.status === 'coming';
+  const dotColor     = colorDotMap[m.color]          ?? 'bg-gray-400';
+  const featureBadge = colorFeatureBadgeMap[m.color] ?? 'bg-gray-100 text-gray-600';
 
   // アイコンの選択（自治体か企業か）
   const Icon = m.id === 'nec' ? Building2 : MapPin;
@@ -69,7 +83,7 @@ function MunicipalityOption({
       onClick={isDisabled ? undefined : onSelect}
       disabled={isDisabled}
       className={[
-        'w-full text-left px-4 py-3 flex items-center gap-3 transition-colors',
+        'w-full text-left px-4 py-3 flex items-start gap-3 transition-colors',
         isDisabled
           ? 'opacity-40 cursor-not-allowed'
           : 'hover:bg-gray-50 cursor-pointer',
@@ -77,25 +91,42 @@ function MunicipalityOption({
       ].join(' ')}
     >
       {/* ステータスドット */}
-      <span className={`w-2 h-2 rounded-full flex-shrink-0 ${dotColor}`} />
+      <span className={`w-2 h-2 rounded-full flex-shrink-0 mt-1.5 ${dotColor}`} />
 
       {/* アイコン */}
-      <Icon size={16} className="text-gray-400 flex-shrink-0" />
+      <Icon size={16} className="text-gray-400 flex-shrink-0 mt-0.5" />
 
-      {/* 自治体名 */}
+      {/* 自治体名 + 実装済み機能フラグ */}
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium text-gray-800 truncate">{m.name}</p>
+
+        {/* ステータス表示 */}
         {m.status === 'coming' && (
           <p className="text-xs text-gray-400">準備中</p>
         )}
         {m.status === 'demo' && (
           <p className="text-xs text-amber-500">デモ</p>
         )}
+
+        {/* 実装済み機能バッジ */}
+        {m.implementedFeatures && m.implementedFeatures.length > 0 && (
+          <div className="flex flex-wrap gap-1 mt-1.5">
+            {m.implementedFeatures.map((f) => (
+              <span
+                key={f.label}
+                className={`inline-flex items-center gap-0.5 text-xs px-1.5 py-0.5 rounded-full font-medium ${featureBadge}`}
+              >
+                <span>{f.emoji}</span>
+                <span>{f.label}</span>
+              </span>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* 選択中チェック */}
       {isSelected && (
-        <span className="text-xs font-bold text-gray-500">✓</span>
+        <span className="text-xs font-bold text-gray-500 flex-shrink-0">✓</span>
       )}
     </button>
   );
@@ -154,7 +185,7 @@ export default function MunicipalitySelector() {
           />
 
           {/* ドロップダウン本体 */}
-          <div className="absolute right-0 mt-1 w-64 bg-white border border-gray-200 rounded-xl shadow-lg z-20 overflow-hidden">
+          <div className="absolute right-0 mt-1 w-80 bg-white border border-gray-200 rounded-xl shadow-lg z-20 overflow-hidden">
             {/* ヘッダー */}
             <div className="px-4 py-2 border-b border-gray-100 bg-gray-50">
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
