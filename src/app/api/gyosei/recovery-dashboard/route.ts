@@ -180,8 +180,8 @@ async function fetchProjectsFromNotion(
   recoveryDbId: string,
   municipalityShortName: string
 ): Promise<RecoveryProject[]> {
-  const notionToken = process.env.NOTION_TOKEN
-  if (!notionToken) throw new Error('NOTION_TOKEN が設定されていません')
+  const notionToken = process.env.NOTION_API_KEY
+  if (!notionToken) throw new Error('NOTION_API_KEY が設定されていません')
 
   const res = await fetch(`https://api.notion.com/v1/databases/${recoveryDbId}/query`, {
     method: 'POST',
