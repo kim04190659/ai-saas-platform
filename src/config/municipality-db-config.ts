@@ -83,7 +83,7 @@ export const MUNICIPALITY_DB_CONFIG: Record<string, MunicipalityDbConfig> = {
     pdcaDbId:         '',                                   // 未設定（将来追加）
     consultationDbId: '',                                   // 未設定（将来追加）
     coachingDbId:     '',                                   // 未設定（将来追加）
-    recoveryDbId:     '1c408ef7dfe945aa8df1bb8e867a4315',  // 復興事業進捗DB（Sprint #67）
+    recoveryDbId:     'ff40f22ee2b749819fe2790cf071e1f8',  // 復興事業進捗DB（Sprint #67）
   },
 
   // ── 西粟倉村（岡山県英田郡）── Sprint #66 追加 ──────
