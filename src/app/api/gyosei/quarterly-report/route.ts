@@ -162,7 +162,7 @@ async function generateAiAnalysis(
       },
       body: JSON.stringify({
         model:      'claude-haiku-4-5-20251001',
-        max_tokens: 400,
+        max_tokens: 4096,  // Haiku最大出力上限（CLAUDE.md ルール準拠）
         system:     systemPrompt,
         messages:   [{ role: 'user', content: userPrompt }],
       }),
