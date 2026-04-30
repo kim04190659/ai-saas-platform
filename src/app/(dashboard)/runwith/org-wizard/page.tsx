@@ -45,6 +45,7 @@ import {
   Check,
 } from 'lucide-react';
 import type { RoadmapData } from '@/app/api/runwith/roadmap-ai/route';
+import { BASIC_FEATURES, EXTENDED_FEATURES } from '@/config/feature-catalog';
 
 // ─── 定数：課題一覧 ────────────────────────────────────
 
@@ -232,10 +233,16 @@ type HearingData = {
   d3_vision:       string;
   d_it_count:      string;  // IT担当者数（新規）
   d_it_level:      string;  // IT技術レベル（新規）
+  // Step 8: 拡張AI機能選択（Sprint #71）
+  selectedExtensions: string[];  // 選択した拡張機能IDのリスト
 };
 
-/** ウィザードのステップ（0=スタート、1〜5=BlockA〜D+E、6=ロードマップ、7=完了） */
-type WizardStep = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
+/**
+ * ウィザードのステップ定義（Sprint #71 拡張）
+ *   0=スタート、1〜5=BlockA〜D+E、6=ロードマップ
+ *   7=基本機能確認（NEW）、8=拡張AI機能選択（NEW）、9=完了
+ */
+type WizardStep = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
 
 /** ロードマップ保存後のNotionリンクセット */
 type NotionLinks = {
@@ -260,6 +267,7 @@ export default function OrgWizardPage() {
     c1_data_sources: '', c2_team_status: '', c3_kpi: '',
     d1_background: '', d2_stakeholders: '', d3_vision: '',
     d_it_count: '', d_it_level: '初中級',
+    selectedExtensions: [],  // Sprint #71: 拡張AI機能の選択（Step 8）
   });
 
   const [roadmap,      setRoadmap]      = useState<RoadmapData | null>(null);
@@ -292,7 +300,9 @@ export default function OrgWizardPage() {
     if (step === 3) return data.b1_channels.trim() !== '';
     if (step === 4) return data.c1_data_sources.trim() !== '';
     if (step === 5) return data.d1_background.trim() !== '';
-    if (step === 6) return roadmap !== null; // ロードマップ生成済みなら保存可能
+    if (step === 6) return roadmap !== null; // ロードマップ生成済みなら次へ可能
+    if (step === 7) return true;             // 基本機能確認（表示のみ）
+    if (step === 8) return true;             // 拡張機能は0件でも可
     return true;
   };
 
@@ -341,7 +351,7 @@ export default function OrgWizardPage() {
   const handleSubmit = async () => {
     setIsSubmitting(true);
     setError(null);
-    setStep(7);
+    setStep(9); // Sprint #71: 完了画面は Step 9 に移動
 
     try {
       const res = await fetch('/api/notion/create-hearing', {
@@ -370,7 +380,7 @@ export default function OrgWizardPage() {
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       setError(msg);
-      setStep(6); // エラー時はロードマップ画面に戻す
+      setStep(8); // エラー時は拡張機能選択画面に戻す
     } finally {
       setIsSubmitting(false);
     }
@@ -383,8 +393,12 @@ export default function OrgWizardPage() {
       setStep((prev) => (prev + 1) as WizardStep);
     } else if (step === 5) {
       generateRoadmap(); // AIロードマップ生成 → Step 6へ
+    } else if (step === 6) {
+      setStep(7); // ロードマップ確認 → 基本機能確認（Step 7）
+    } else if (step === 7) {
+      setStep(8); // 基本機能確認 → 拡張AI機能選択（Step 8）
     }
-    // Step 6の「保存」は handleSubmit() を直接呼ぶ
+    // Step 8の「Notionに保存」は handleSubmit() を直接呼ぶ
   };
 
   const goBack = () => {
@@ -413,7 +427,7 @@ export default function OrgWizardPage() {
         </div>
       </div>
 
-      {/* ── ステップインジケーター（Step 1〜5） ──────────── */}
+      {/* ── ステップインジケーター（Step 1〜5、および 6〜8 の段階も表示） ── */}
       {step >= 1 && step <= 5 && (
         <div className="flex items-center gap-1 mb-8 overflow-x-auto pb-1">
           {BLOCKS.map((block, idx) => {
@@ -1217,30 +1231,27 @@ export default function OrgWizardPage() {
                 </ul>
               </div>
 
-              {/* 保存エラー */}
+              {/* エラー表示 */}
               {error && (
                 <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
                   <p className="text-sm text-red-700">{error}</p>
                 </div>
               )}
 
-              {/* Notionに保存ボタン */}
+              {/* 次へボタン（Sprint #71: 機能選択ステップへ進む） */}
               <button
-                onClick={handleSubmit}
-                disabled={isSubmitting}
+                onClick={goNext}
+                disabled={!canProceed()}
                 className={`w-full flex items-center justify-center gap-2 py-3.5 font-semibold rounded-xl transition-colors
-                  ${!isSubmitting
+                  ${canProceed()
                     ? 'bg-orange-600 hover:bg-orange-700 text-white'
                     : 'bg-gray-300 text-gray-500 cursor-not-allowed'}`}
               >
-                {isSubmitting ? (
-                  <><Loader2 size={18} className="animate-spin" /> Notionに保存中...</>
-                ) : (
-                  <><Database size={18} /> 仕様書をNotionに保存して自治体ページを作成</>
-                )}
+                <CheckCircle size={18} />
+                次へ：搭載機能を確認する
               </button>
               <p className="text-center text-xs text-gray-400 mt-2">
-                Notionに自治体ページ・ロードマップ仕様書が作成されます。DB作成・アプリ画面追加は次のステップで行います。
+                次のステップで基本機能の確認と、追加AI機能の選択を行います。
               </p>
             </>
           )}
@@ -1248,9 +1259,191 @@ export default function OrgWizardPage() {
       )}
 
       {/* ════════════════════════════════════════════════ */}
-      {/* STEP 7: 完了画面                                 */}
+      {/* STEP 7: 基本機能確認（Sprint #71 NEW）            */}
       {/* ════════════════════════════════════════════════ */}
       {step === 7 && (
+        <div className="bg-white rounded-xl shadow-sm border border-green-200 p-6">
+          <div className="flex items-center gap-3 mb-6 pb-4 border-b border-green-100">
+            <div className="p-2 bg-green-100 rounded-lg">
+              <CheckCircle size={20} className="text-green-600" />
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-green-600 uppercase tracking-wide">STEP 7 · 基本機能確認</p>
+              <h2 className="text-lg font-bold text-gray-900">標準搭載の基本機能</h2>
+              <p className="text-sm text-gray-500">全自治体に共通して搭載される機能です（選択不要）</p>
+            </div>
+          </div>
+
+          {/* 基本機能カード一覧 */}
+          <div className="space-y-3 mb-6">
+            {BASIC_FEATURES.map((feature) => (
+              <div key={feature.id}
+                className="flex items-start gap-3 p-4 bg-green-50 border border-green-200 rounded-lg">
+                <span className="text-2xl flex-shrink-0">{feature.icon}</span>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <p className="text-sm font-semibold text-gray-800">{feature.name}</p>
+                    <span className="text-xs px-2 py-0.5 bg-green-200 text-green-800 rounded-full">
+                      ✅ 標準搭載
+                    </span>
+                    <span className="text-xs px-1.5 py-0.5 bg-gray-100 text-gray-500 rounded">
+                      Sprint #{feature.sprint}
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-600 mb-2">{feature.description}</p>
+                  <p className="text-xs text-green-700">
+                    事例：{feature.sampleMunicipality}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg mb-6">
+            <p className="text-xs text-blue-700">
+              💡 次のステップで、地域の課題に特化した <strong>拡張AI機能</strong>（Sprint #64〜#70）を
+              追加選択できます。0件でもRunWithをすぐに使い始めることができます。
+            </p>
+          </div>
+
+          {/* ナビゲーション */}
+          <div className="flex gap-3">
+            <button onClick={goBack}
+              className="flex items-center gap-1 px-4 py-2.5 border border-gray-300 text-gray-600 rounded-lg text-sm hover:bg-gray-50">
+              <ChevronLeft size={16} /> 戻る
+            </button>
+            <button onClick={goNext}
+              className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-orange-600 hover:bg-orange-700 text-white font-semibold rounded-lg text-sm transition-colors">
+              次へ：追加AI機能を選択 <ChevronRight size={16} />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ════════════════════════════════════════════════ */}
+      {/* STEP 8: 拡張AI機能選択（Sprint #71 NEW）          */}
+      {/* ════════════════════════════════════════════════ */}
+      {step === 8 && (
+        <div className="bg-white rounded-xl shadow-sm border border-violet-200 p-6">
+          <div className="flex items-center gap-3 mb-6 pb-4 border-b border-violet-100">
+            <div className="p-2 bg-violet-100 rounded-lg">
+              <Sparkles size={20} className="text-violet-600" />
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-violet-600 uppercase tracking-wide">STEP 8 · 拡張AI機能選択</p>
+              <h2 className="text-lg font-bold text-gray-900">地域特化AI機能を選ぶ</h2>
+              <p className="text-sm text-gray-500">
+                地域の課題に合わせて追加する機能を選択してください（0件でも可）
+              </p>
+            </div>
+          </div>
+
+          {/* 選択中バッジ */}
+          <div className="flex items-center gap-2 mb-4">
+            <span className="text-xs text-gray-500">選択中：</span>
+            <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${
+              data.selectedExtensions.length > 0
+                ? 'bg-violet-100 text-violet-700'
+                : 'bg-gray-100 text-gray-500'
+            }`}>
+              {data.selectedExtensions.length}件
+            </span>
+            {data.selectedExtensions.length === 0 && (
+              <span className="text-xs text-gray-400">（0件でも続行できます）</span>
+            )}
+          </div>
+
+          {/* 拡張AI機能カード一覧 */}
+          <div className="space-y-3 mb-6">
+            {EXTENDED_FEATURES.map((feature) => {
+              const isSelected = data.selectedExtensions.includes(feature.id);
+              return (
+                <button
+                  key={feature.id}
+                  onClick={() => {
+                    setData((prev) => {
+                      const current = prev.selectedExtensions;
+                      return {
+                        ...prev,
+                        selectedExtensions: isSelected
+                          ? current.filter((id) => id !== feature.id)
+                          : [...current, feature.id],
+                      };
+                    });
+                  }}
+                  className={`w-full text-left flex items-start gap-3 p-4 border rounded-lg transition-all ${
+                    isSelected
+                      ? 'ring-2 ring-violet-500 border-violet-400 bg-violet-50'
+                      : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
+                  }`}
+                >
+                  <span className="text-2xl flex-shrink-0">{feature.icon}</span>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <p className="text-sm font-semibold text-gray-800">{feature.name}</p>
+                      {isSelected && (
+                        <span className="text-xs px-2 py-0.5 bg-violet-200 text-violet-800 rounded-full">
+                          ✅ 選択済み
+                        </span>
+                      )}
+                      <span className="text-xs px-1.5 py-0.5 bg-gray-100 text-gray-500 rounded">
+                        Sprint #{feature.sprint}
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-600 mb-1">{feature.description}</p>
+                    <p className="text-xs text-gray-400">事例：{feature.sampleMunicipality}</p>
+                  </div>
+                  <div className={`w-5 h-5 rounded-full border-2 flex-shrink-0 mt-0.5 flex items-center justify-center ${
+                    isSelected
+                      ? 'bg-violet-500 border-violet-500'
+                      : 'border-gray-300'
+                  }`}>
+                    {isSelected && <Check size={12} className="text-white" />}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* 保存エラー */}
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-sm text-red-700">{error}</p>
+            </div>
+          )}
+
+          {/* ナビゲーション */}
+          <div className="flex gap-3">
+            <button onClick={goBack}
+              className="flex items-center gap-1 px-4 py-2.5 border border-gray-300 text-gray-600 rounded-lg text-sm hover:bg-gray-50">
+              <ChevronLeft size={16} /> 戻る
+            </button>
+            <button
+              onClick={handleSubmit}
+              disabled={isSubmitting}
+              className={`flex-1 flex items-center justify-center gap-2 py-2.5 font-semibold rounded-lg text-sm transition-colors ${
+                !isSubmitting
+                  ? 'bg-orange-600 hover:bg-orange-700 text-white'
+                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              }`}
+            >
+              {isSubmitting ? (
+                <><Loader2 size={16} className="animate-spin" /> Notionに保存中...</>
+              ) : (
+                <><Database size={16} /> Notionに保存して自治体ページを作成</>
+              )}
+            </button>
+          </div>
+          <p className="text-center text-xs text-gray-400 mt-2">
+            選択した機能設定とロードマップがNotionに保存されます。
+          </p>
+        </div>
+      )}
+
+      {/* ════════════════════════════════════════════════ */}
+      {/* STEP 9: 完了画面（Sprint #71: Step 7 から移動）  */}
+      {/* ════════════════════════════════════════════════ */}
+      {step === 9 && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center">
 
           {/* 保存中 */}
@@ -1338,6 +1531,7 @@ export default function OrgWizardPage() {
                     c1_data_sources: '', c2_team_status: '', c3_kpi: '',
                     d1_background: '', d2_stakeholders: '', d3_vision: '',
                     d_it_count: '', d_it_level: '初中級',
+                    selectedExtensions: [],
                   });
                 }}
                 className="text-sm text-gray-400 hover:text-gray-600 underline"

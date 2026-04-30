@@ -17,6 +17,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
+import { EXTENDED_FEATURES } from '@/config/feature-catalog'
 
 // ─── 課題マスタ ────────────────────────────────────────
 
@@ -152,13 +153,14 @@ export interface RoadmapData {
 // ─── リクエスト型 ──────────────────────────────────────
 
 interface RequestBody {
-  orgName:        string
-  challenges:     string[]
-  priorityReason: string
-  orgContext:     string
-  itCount:        string
-  itLevel:        string
-  vision:         string
+  orgName:             string
+  challenges:          string[]
+  priorityReason:      string
+  orgContext:          string
+  itCount:             string
+  itLevel:             string
+  vision:              string
+  selectedExtensions?: string[]  // Sprint #71: 選択した拡張AI機能IDリスト（Step 8）
 }
 
 // ─── メインハンドラ ────────────────────────────────────
@@ -185,6 +187,15 @@ export async function POST(req: NextRequest) {
     ].join('\n')
   })
 
+  // 拡張AI機能リストをプロンプト用テキストに変換（Sprint #71）
+  const extensionLines = (body.selectedExtensions ?? [])
+    .map((id) => {
+      const feat = EXTENDED_FEATURES.find((f) => f.id === id)
+      return feat
+        ? `・${feat.name}（Sprint #${feat.sprint}）: ${feat.description}`
+        : `・${id}`
+    })
+
   const prompt = [
     'あなたはRunWith Platformの導入設計の専門家です。',
     '以下の自治体情報をもとに、DB作成・View設計・AI機能・アプリ画面を含む',
@@ -195,6 +206,9 @@ export async function POST(req: NextRequest) {
     `【半年後のビジョン】${body.vision || '未記入'}`,
     `【課題背景】${body.orgContext || '未記入'}`,
     '',
+    ...(extensionLines.length > 0
+      ? [`【導入する拡張AI機能（Phase 2〜3 で優先的に組み込むこと）】`, ...extensionLines, '']
+      : []),
     `【優先課題と利用可能リソース】`,
     ...challengeLines,
     '',
