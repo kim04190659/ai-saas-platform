@@ -239,12 +239,12 @@ type HearingData = {
 };
 
 /**
- * ウィザードのステップ定義（Sprint #72 拡張）
+ * ウィザードのステップ定義（Sprint #73 拡張）
  *   0=スタート、1〜5=BlockA〜D+E、6=ロードマップ
  *   7=基本機能確認、8=拡張AI機能選択
- *   9=テストデータ入力（NEW）、10=完了
+ *   9=テストデータ入力、10=Notion自動プロビジョニング（NEW）、11=完了
  */
-type WizardStep = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
+type WizardStep = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11;
 
 /** ロードマップ保存後のNotionリンクセット */
 type NotionLinks = {
@@ -279,10 +279,23 @@ export default function OrgWizardPage() {
   const [error,        setError]        = useState<string | null>(null);
 
   // Sprint #72: テストデータ入力状態
-  // featureId + dbKey → 入力行の配列
   const [testDataByKey, setTestDataByKey] = useState<Record<string, Record<string, string>[]>>({});
   const [isSeedingData, setIsSeedingData] = useState(false);
   const [seedResults, setSeedResults]     = useState<Record<string, { success: boolean; message: string }>>({});
+
+  // Sprint #73: 自動プロビジョニング状態
+  const [municipalityId,    setMunicipalityId]    = useState('');
+  const [orgShortName,      setOrgShortName]      = useState('');
+  const [provisionColor,    setProvisionColor]    = useState('teal');
+  const [isProvisioning,    setIsProvisioning]    = useState(false);
+  const [provisionResult,   setProvisionResult]   = useState<{
+    success:           boolean;
+    createdDbs:        { dbKey: string; dbName: string; success: boolean; error?: string }[];
+    municipalitiesCode: string;
+    dbConfigCode:      string;
+    message:           string;
+  } | null>(null);
+  const [provisionError,    setProvisionError]    = useState<string | null>(null);
 
   // ── ヘルパー ───────────────────────────────────────────
   const update = (key: keyof HearingData, value: string) =>
@@ -311,7 +324,8 @@ export default function OrgWizardPage() {
     if (step === 6) return roadmap !== null; // ロードマップ生成済みなら次へ可能
     if (step === 7) return true;             // 基本機能確認（表示のみ）
     if (step === 8) return true;             // 拡張機能は0件でも可
-    if (step === 9) return true;             // テストデータは任意入力
+    if (step === 9)  return true;  // テストデータは任意入力
+    if (step === 10) return municipalityId.trim() !== '' && orgShortName.trim() !== '';
     return true;
   };
 
@@ -1717,9 +1731,265 @@ export default function OrgWizardPage() {
       )}
 
       {/* ════════════════════════════════════════════════ */}
-      {/* STEP 10: 完了画面（Sprint #72: Step 9 から移動） */}
+      {/* STEP 10: Notion自動プロビジョニング（Sprint #73） */}
       {/* ════════════════════════════════════════════════ */}
       {step === 10 && (
+        <div className="bg-white rounded-xl shadow-sm border border-orange-200 p-6">
+          <div className="flex items-center gap-3 mb-6 pb-4 border-b border-orange-100">
+            <div className="p-2 bg-orange-100 rounded-lg">
+              <Sparkles size={20} className="text-orange-600" />
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-orange-600 uppercase tracking-wide">STEP 10 · 自動プロビジョニング</p>
+              <h2 className="text-lg font-bold text-gray-900">NotionDBを自動作成する</h2>
+              <p className="text-sm text-gray-500">
+                選択した機能に必要なDBをNotionに一括作成します
+              </p>
+            </div>
+          </div>
+
+          {/* 未実行：入力フォーム */}
+          {!provisionResult && (
+            <>
+              {/* 自治体設定入力 */}
+              <div className="space-y-4 mb-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    自治体ID（英字・小文字）
+                    <span className="ml-1 text-xs text-gray-400">コードで使う識別子</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={municipalityId}
+                    onChange={(e) => setMunicipalityId(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
+                    placeholder="例：shimanto"
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-400 focus:border-transparent"
+                  />
+                  <p className="text-xs text-gray-400 mt-1">英字・数字・アンダースコアのみ使用可</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    自治体短縮名
+                    <span className="ml-1 text-xs text-gray-400">DBの「自治体名」カラムに入る値</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={orgShortName}
+                    onChange={(e) => setOrgShortName(e.target.value)}
+                    placeholder="例：四万十市"
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-400 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    テーマカラー
+                  </label>
+                  <div className="flex gap-2 flex-wrap">
+                    {['teal', 'blue', 'emerald', 'violet', 'rose', 'amber', 'orange', 'indigo'].map((c) => (
+                      <button key={c}
+                        onClick={() => setProvisionColor(c)}
+                        className={`px-3 py-1 text-xs rounded-full border transition-all ${
+                          provisionColor === c
+                            ? 'border-orange-500 bg-orange-50 text-orange-700 font-semibold'
+                            : 'border-gray-300 text-gray-600 hover:border-gray-400'
+                        }`}>
+                        {c}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* 作成予定DBの一覧 */}
+              {notionLinks && (
+                <div className="mb-6 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                  <p className="text-xs font-semibold text-gray-500 mb-2">作成予定のNotionDB</p>
+                  <div className="space-y-1">
+                    {[
+                      ...BASIC_FEATURES,
+                      ...EXTENDED_FEATURES.filter((f) => data.selectedExtensions.includes(f.id)),
+                    ]
+                      .flatMap((f) => f.dbKeys)
+                      .filter((k, i, arr) => arr.indexOf(k) === i)
+                      .map((dbKey) => {
+                        const schema = DB_SCHEMAS[dbKey];
+                        return (
+                          <div key={dbKey} className="flex items-center gap-2 text-xs text-gray-600">
+                            <span className="text-gray-300">📋</span>
+                            <span className="font-medium">{schema?.name ?? dbKey}</span>
+                            <span className="text-gray-400">({schema?.properties.length ?? 0}カラム)</span>
+                          </div>
+                        );
+                      })
+                    }
+                  </div>
+                </div>
+              )}
+
+              {provisionError && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-sm text-red-700">{provisionError}</p>
+                </div>
+              )}
+
+              {/* 自動構築ボタン */}
+              <button
+                onClick={async () => {
+                  if (!notionLinks?.municipalityUrl) return;
+                  // NotionページIDをURLから抽出
+                  const match = notionLinks.municipalityUrl.match(/\/p\/([a-f0-9]{32})/);
+                  const municipalityPageId = match ? match[1] : '';
+                  if (!municipalityPageId) {
+                    setProvisionError('自治体ページIDを取得できませんでした。Notionページが作成済みか確認してください。');
+                    return;
+                  }
+
+                  const allFeatureIds = [
+                    ...BASIC_FEATURES.map((f) => f.id),
+                    ...data.selectedExtensions,
+                  ];
+
+                  setIsProvisioning(true);
+                  setProvisionError(null);
+
+                  try {
+                    const res = await fetch('/api/runwith/provision', {
+                      method:  'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        municipalityId,
+                        orgName:            data.a2_org_name,
+                        orgShortName,
+                        selectedFeatureIds: allFeatureIds,
+                        municipalityPageId,
+                        color:              provisionColor,
+                      }),
+                    });
+                    const json = await res.json() as {
+                      success: boolean;
+                      createdDbs: { dbKey: string; dbName: string; success: boolean; error?: string }[];
+                      municipalitiesCode: string;
+                      dbConfigCode: string;
+                      message: string;
+                      error?: string;
+                    };
+                    if (!res.ok) throw new Error(json.error ?? '構築に失敗しました');
+                    setProvisionResult(json);
+                  } catch (err) {
+                    setProvisionError(err instanceof Error ? err.message : String(err));
+                  } finally {
+                    setIsProvisioning(false);
+                  }
+                }}
+                disabled={isProvisioning || !municipalityId || !orgShortName || !notionLinks}
+                className={`w-full flex items-center justify-center gap-2 py-3 font-semibold rounded-xl text-sm transition-colors ${
+                  !isProvisioning && municipalityId && orgShortName && notionLinks
+                    ? 'bg-orange-600 hover:bg-orange-700 text-white'
+                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                }`}
+              >
+                {isProvisioning ? (
+                  <><Loader2 size={16} className="animate-spin" /> DB作成中...（しばらくお待ちください）</>
+                ) : (
+                  <><Sparkles size={16} /> 自動構築を開始</>
+                )}
+              </button>
+              {!notionLinks && (
+                <p className="text-center text-xs text-red-400 mt-2">
+                  Notionページが未作成です。Step 8 に戻ってください。
+                </p>
+              )}
+            </>
+          )}
+
+          {/* 構築完了：コード表示 */}
+          {provisionResult && (
+            <>
+              {/* 結果サマリー */}
+              <div className={`flex items-center gap-2 p-3 rounded-lg mb-6 ${
+                provisionResult.success
+                  ? 'bg-green-50 border border-green-200'
+                  : 'bg-amber-50 border border-amber-200'
+              }`}>
+                <span>{provisionResult.success ? '✅' : '⚠️'}</span>
+                <p className="text-sm font-medium text-gray-700">{provisionResult.message}</p>
+              </div>
+
+              {/* 作成DB一覧 */}
+              <div className="mb-6">
+                <p className="text-xs font-semibold text-gray-500 mb-2">作成されたNotionDB</p>
+                <div className="space-y-1">
+                  {provisionResult.createdDbs.map((db) => (
+                    <div key={db.dbKey} className="flex items-center gap-2 text-xs">
+                      <span>{db.success ? '✅' : '❌'}</span>
+                      <span className="font-medium text-gray-700">{db.dbName}</span>
+                      {db.success
+                        ? <span className="text-gray-400 font-mono">{db.dbKey}</span>
+                        : <span className="text-red-500">{db.error}</span>
+                      }
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* municipalities.ts コード */}
+              <div className="mb-4">
+                <div className="flex items-center justify-between mb-1">
+                  <p className="text-xs font-semibold text-gray-600">
+                    ① <code className="bg-gray-100 px-1 rounded">src/config/municipalities.ts</code> に追加
+                  </p>
+                  <button
+                    onClick={() => navigator.clipboard.writeText(provisionResult.municipalitiesCode)}
+                    className="text-xs px-2 py-1 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded flex items-center gap-1"
+                  >
+                    <Check size={10} /> コピー
+                  </button>
+                </div>
+                <pre className="bg-gray-900 text-green-400 text-xs p-3 rounded-lg overflow-x-auto whitespace-pre">
+                  {provisionResult.municipalitiesCode}
+                </pre>
+              </div>
+
+              {/* municipality-db-config.ts コード */}
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-1">
+                  <p className="text-xs font-semibold text-gray-600">
+                    ② <code className="bg-gray-100 px-1 rounded">src/config/municipality-db-config.ts</code> に追加
+                  </p>
+                  <button
+                    onClick={() => navigator.clipboard.writeText(provisionResult.dbConfigCode)}
+                    className="text-xs px-2 py-1 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded flex items-center gap-1"
+                  >
+                    <Check size={10} /> コピー
+                  </button>
+                </div>
+                <pre className="bg-gray-900 text-green-400 text-xs p-3 rounded-lg overflow-x-auto whitespace-pre">
+                  {provisionResult.dbConfigCode}
+                </pre>
+              </div>
+
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg mb-6">
+                <p className="text-xs text-blue-700">
+                  💡 上記2箇所のコードをコピーしてファイルに貼り付け、<strong>git push</strong> するだけで
+                  {orgShortName}の機能がアプリで使えるようになります。
+                </p>
+              </div>
+
+              <button
+                onClick={() => setStep(11)}
+                className="w-full flex items-center justify-center gap-2 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl text-sm"
+              >
+                <CheckCircle size={16} /> 完了へ
+              </button>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* ════════════════════════════════════════════════ */}
+      {/* STEP 11: 完了画面（Sprint #73: Step 10 から移動）*/}
+      {/* ════════════════════════════════════════════════ */}
+      {step === 11 && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center">
 
           {/* 保存中 */}
@@ -1800,6 +2070,12 @@ export default function OrgWizardPage() {
                   setError(null);
                   setTestDataByKey({});
                   setSeedResults({});
+                  // Sprint #73: プロビジョニング状態をリセット
+                  setMunicipalityId('');
+                  setOrgShortName('');
+                  setProvisionColor('teal');
+                  setProvisionResult(null);
+                  setProvisionError(null);
                   setData({
                     a1_end_user: '', a1_count: '', a1_relation: '直接',
                     a2_org_name: '', a2_count: '', a2_services: '',
