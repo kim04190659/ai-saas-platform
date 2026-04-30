@@ -5,13 +5,22 @@
  * Sprint #3  : 初期実装（屋久島固定）
  * Sprint #32 : useMunicipality() で自治体切り替えに対応
  *              霧島市データを追加、全表示を動的化
+ * Sprint #74 : useSearchParams() でURLパラメータから自動切り替え対応
  *
  * ■ データ方針
  *   各自治体の診断データはこのファイルの MUNICIPALITY_DATA に静的定義する。
  *   将来的に Notion DB 化する場合は getDataForMunicipality() を API 呼び出しに差し替えればよい。
+ *
+ * ■ dynamic = 'force-dynamic' について
+ *   useSearchParams() はブラウザ側でしか動作しないため、
+ *   Next.js のビルド時プリレンダリングをスキップする必要がある。
+ *   このページはログイン後のダッシュボードなので静的生成不要。
  */
 
 'use client';
+
+// ルートセグメント設定：プリレンダリングを無効化（useSearchParams使用のため必須）
+export const dynamic = 'force-dynamic';
 
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';  // Sprint #74: URLパラメータ監視
