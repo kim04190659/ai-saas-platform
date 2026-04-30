@@ -133,6 +133,16 @@ export const MUNICIPALITY_DB_CONFIG: Record<string, MunicipalityDbConfig> = {
     localIndustryDbId:   '8fcf8d3e7c084d34904df8b5468b8f91',  // 地場産業台帳DB（Sprint #70）
   },
 
+  // ── 四万十市（高知県）── Sprint #73 自動プロビジョニングで作成 ──
+  // オンボーディングウィザード Step 10 で自動生成。基本3機能＋移住定着・往診AI。
+  shimanto: {
+    consultationDbId: '352960a91e23811db515c59977be6661',  // 住民相談DB
+    pdcaDbId:         '352960a91e23817eb3c2f9e7ca59e6fd',  // 施策実行記録DB
+    coachingDbId:     '352960a91e23818b9c8af83d335febd9',  // 住民WBコーチングDB
+    migrationDbId:    '352960a91e238139a6c1c8ee3c3e79bd',  // 移住相談DB
+    visitDbId:        '352960a91e23813e8addd2ea840e3b3b',  // 往診管理DB
+  },
+
   // ── 霧島市 ──────────────────────────────────────
   kirishima: {
     pdcaDbId:         '1b2da85d1f9444a9ab69e1e78883ac84',  // 施策実行記録DB

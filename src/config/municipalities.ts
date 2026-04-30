@@ -179,6 +179,22 @@ export const MUNICIPALITIES: Municipality[] = [
     ],
   },
   {
+    // Sprint #73 追加: 四万十市（高知県）— オンボーディングウィザードで自動プロビジョニング
+    // 高知県西部の市。四万十川流域の自然豊かな地域。人口約3.1万人。農業・林業・観光が主要産業。
+    id:           'shimanto',
+    name:         '四万十市役所',
+    shortName:    '四万十市',
+    notionPageId: '352960a91e23811cb11ce59e815d2fed',
+    color:        'teal',
+    status:       'active',
+    implementedFeatures: [
+      { emoji: '💬', label: 'LINE住民相談AI' },
+      { emoji: '📊', label: 'WB+PDCAダッシュボード' },
+      { emoji: '🏠', label: '移住定着リスクAI' },
+      { emoji: '🏥', label: '往診優先順位AI' },
+    ],
+  },
+  {
     id:           'nec',
     name:         'NEC コーポレートIT部門',
     shortName:    'NEC',
