@@ -228,7 +228,9 @@ export async function GET(req: NextRequest) {
         'Notion-Version': NOTION_VER,
       },
       body: JSON.stringify({
-        sorts:     [{ property: '相談日', direction: 'descending' }],
+        // ※ '相談日'（旧手動作成DB）はウィザード自動作成DBに存在しないため
+        //   created_time でソート。最終的な表示順序は riskScore 降順で決まるため問題なし。
+        sorts:     [{ timestamp: 'created_time', direction: 'descending' }],
         page_size: 50,
       }),
     })
@@ -241,7 +243,8 @@ export async function GET(req: NextRequest) {
     // ── レコードをリスクスコア付きで変換 ────────────────
     const records: MigrationRiskRecord[] = rows.map(r => {
       const p           = r.properties
-      const status      = getSelect(p, '進捗ステータス')
+      // ウィザード自動作成DB（shimanto等）と手動作成DB（yakushima/amacho）の両プロパティ名に対応
+      const status      = getSelect(p, '進捗ステータス') || getSelect(p, '定住状況')
       const occupation  = getSelect(p, '就農・就業状況')
       const household   = getSelect(p, '世帯構成')
       const subsidy     = getSelect(p, '定住補助金申請')
@@ -251,8 +254,8 @@ export async function GET(req: NextRequest) {
 
       return {
         id:            r.id,
-        name:          getTitle(p,  '相談者名'),
-        consultDate:   getDate(p,   '相談日'),
+        name:          getTitle(p,  '相談者名') || getTitle(p, '氏名'),  // 旧DB: 相談者名 / 新DB: 氏名
+        consultDate:   getDate(p,   '相談日')   || getDate(p, '移住時期'), // 旧DB: 相談日 / 新DB: 移住時期
         origin:        getRich(p,   '出身地'),
         ageGroup:      getSelect(p, '年代'),
         householdType: household,
