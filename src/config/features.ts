@@ -1284,6 +1284,63 @@ export const FEATURE_MODULES: FeatureModule[] = [
   },
 
   // ══════════════════════════════════════
+  //  🏙️ 四万十市 RunWith（自治体展開）
+  //  高知県四万十市 — 人口約3.1万人・四万十川流域の自然豊かな地域
+  //  農業・林業・観光が主要産業。高齢化率が高く医療・移住促進が課題。
+  //  Sprint #73 追加: オンボーディングウィザード2.0 で自動プロビジョニング
+  //  アクセントカラー: teal（四万十川の清流をイメージ）
+  // ══════════════════════════════════════
+  {
+    id: 'shimanto',
+    group: 'municipality',
+    icon: MapPin,
+    emoji: '🏙️',
+    label: '四万十市 RunWith',
+    badge: '四万十市',
+    description: '高知県四万十市向けRunWith展開ページ。LINE住民相談AI・WB+PDCAダッシュボード・移住定着リスクAI・往診優先順位AIの4機能をウィザードで自動プロビジョニング済み。',
+    accent: {
+      bg: 'bg-teal-50',
+      border: 'border-teal-200',
+      icon: 'bg-teal-100 text-teal-600',
+      text: 'text-teal-700',
+      badge: 'bg-teal-100 text-teal-700',
+      button: 'bg-teal-600 hover:bg-teal-700 text-white',
+      sidebarActive: 'bg-teal-600 text-white',
+      sidebarDot: 'bg-teal-400',
+    },
+    pages: [
+      {
+        id: 'shimanto-dashboard',
+        label: '📊 WB+PDCAダッシュボード',
+        href: '/gyosei/dashboard',
+        status: 'active',
+        description: '住民WBスコアと施策進捗をリアルタイムで可視化',
+      },
+      {
+        id: 'shimanto-line',
+        label: '💬 LINE住民相談AI',
+        href: '/citizen/line',
+        status: 'active',
+        description: 'LINEからの相談をNotionに蓄積・AIが即時回答案を生成',
+      },
+      {
+        id: 'shimanto-migration',
+        label: '🏠 移住定着リスクAI',
+        href: '/gyosei/migration',
+        status: 'active',
+        description: '移住者の定着リスクをスコアリングし早期フォローを提案',
+      },
+      {
+        id: 'shimanto-visit',
+        label: '🏥 往診優先順位AI',
+        href: '/gyosei/visit-priority',
+        status: 'active',
+        description: '患者の要介護度・緊急フラグを基にAIが往診順序を毎日最適化',
+      },
+    ],
+  },
+
+  // ══════════════════════════════════════
   //  🏢 NEC コーポレートIT RunWith（自治体展開・準備中）
   //  NEC コーポレートIT部門向け展開ページ
   //  アクセントカラー: slate（スレート）
