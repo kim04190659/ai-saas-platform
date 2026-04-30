@@ -126,13 +126,69 @@ export type FeatureModule = {
 export const FEATURE_MODULES: FeatureModule[] = [
 
   // ══════════════════════════════════════
-  //  🏘️ ① 住民接点
+  //  🎯 必須機能（essentials）Sprint #74 新設
+  //  全自治体ページに必ず入れる4機能のみ。
+  //  ここだけ見れば自治体DXの最低限が動く。
+  //  アクセントカラー: blue（誠実さ・行政の信頼をイメージ）
+  // ══════════════════════════════════════
+  {
+    id: 'essentials',
+    group: 'core',
+    icon: Users,
+    emoji: '🎯',
+    label: '必須機能',
+    badge: '全自治体共通',
+    description: 'ダッシュボード・LINE業務対応・AI窓口提案・職員コンディション。どの自治体にも必ず導入する4機能。',
+    accent: {
+      bg: 'bg-blue-50',
+      border: 'border-blue-200',
+      icon: 'bg-blue-100 text-blue-600',
+      text: 'text-blue-700',
+      badge: 'bg-blue-100 text-blue-700',
+      button: 'bg-blue-600 hover:bg-blue-700 text-white',
+      sidebarActive: 'bg-blue-600 text-white',
+      sidebarDot: 'bg-blue-400',
+    },
+    pages: [
+      {
+        id: 'essential-dashboard',
+        label: '📊 Well-Beingダッシュボード',
+        href: '/gyosei/dashboard',
+        status: 'active',
+        description: '住民・職員のWell-Beingスコアを総合可視化。選択中の自治体データを自動切り替え',
+      },
+      {
+        id: 'essential-line',
+        label: '💬 LINE業務対応',
+        href: '/staff/line',
+        status: 'active',
+        description: '住民からのLINE相談にAIが返答案を即時生成。職員が確認・編集してNotionに保存',
+      },
+      {
+        id: 'essential-ai-suggest',
+        label: '🤖 AI窓口即時提案',
+        href: '/staff/ai-suggest',
+        status: 'active',
+        description: '窓口で住民が相談する内容を入力すると、AIが担当課・必要書類・手続き手順を即時提案',
+      },
+      {
+        id: 'essential-staff',
+        label: '💚 職員コンディション管理',
+        href: '/gyosei/staff',
+        status: 'active',
+        description: '体調・業務負荷・チームWell-Beingを日次記録。離職リスクの早期検知に活用',
+      },
+    ],
+  },
+
+  // ══════════════════════════════════════
+  //  🏘️ ① 住民接点（Sprint #74: basic-ai へ移動・非表示）
   //  住民がLINEで相談し、タッチポイント活動をNotionに蓄積する層
   //  アクセントカラー: sky（水色）
   // ══════════════════════════════════════
   {
     id: 'citizen',
-    group: 'core',   // 行政コア
+    group: 'core',   // Sprint #74: ページは全てbasic-aiへ移動・hidden化
     icon: Users,
     emoji: '🏘️',
     label: '住民接点',
@@ -150,32 +206,33 @@ export const FEATURE_MODULES: FeatureModule[] = [
     },
     pages: [
       {
+        // Sprint #74: basic-aiモジュールへ移動のためhidden
         id: 'citizen-services',
         label: '🏘️ 住民サービス状況',
         href: '/gyosei/services',
-        status: 'active',
-        description: '行政サービスの稼働状況・窓口待ち時間・満足度スコアを記録。日次入力はNotionフォームでも可',
+        status: 'hidden',
+        description: 'basic-aiモジュールへ移動済み',
       },
       {
         id: 'citizen-line',
         label: '💬 LINE相談管理',
         href: '/gyosei/line-consultation',
-        status: 'active',
-        description: '住民からのLINE相談を一覧確認し、対応状況・回答内容をNotionに記録',
+        status: 'hidden',
+        description: 'basic-aiモジュールへ移動済み',
       },
       {
         id: 'citizen-touchpoint',
         label: '📍 タッチポイント記録',
         href: '/gyosei/touchpoints',
-        status: 'active',
-        description: '窓口・電話・訪問の接点をSDL価値共創スコアで可視化。AI顧問のRAGデータに活用',
+        status: 'hidden',
+        description: 'basic-aiモジュールへ移動済み',
       },
       {
         id: 'citizen-push-notifications',
         label: '🔔 住民プッシュ通知',
         href: '/gyosei/push-notifications',
-        status: 'active',
-        description: '緊急アラート・手続き期限リマインド・行事案内をLINEで住民に先回り配信。職員が対応する前に問題を解決',
+        status: 'hidden',
+        description: 'basic-aiモジュールへ移動済み',
       },
     ],
   },
@@ -206,79 +263,76 @@ export const FEATURE_MODULES: FeatureModule[] = [
     },
     pages: [
       {
+        // Sprint #74: essentials モジュールへ統合のためhidden
         id: 'staff-condition',
         label: '💚 職員コンディション',
         href: '/gyosei/staff',
-        status: 'active',
-        description: '体調・業務負荷・チームWell-Beingを日次記録。入力はNotionフォームでも可・AI顧問の推論データに活用',
+        status: 'hidden',
+        description: '必須機能モジュールへ移動済み',
       },
       {
         id: 'staff-line',
         label: '💬 LINE業務対応',
         href: '/staff/line',
-        status: 'active',
-        description: '住民からのLINE相談にAIが返答案を即時生成。職員が確認・編集してNotionに保存',
+        status: 'hidden',
+        description: '必須機能モジュールへ移動済み',
       },
       {
         id: 'staff-ai-suggest',
         label: '🤖 AI窓口即時提案',
         href: '/staff/ai-suggest',
-        status: 'active',
-        description: '窓口で住民が相談する内容を入力すると、AIが担当課・必要書類・手続き手順を即時提案',
+        status: 'hidden',
+        description: '必須機能モジュールへ移動済み',
       },
       {
+        // Sprint #74: basic-aiモジュールへ移動のためhidden
         id: 'staff-document-generator',
         label: '✨ AI文書自動起案',
         href: '/gyosei/document-generator',
-        status: 'active',
-        description: '議事録・住民通知文・業務報告書・職員回覧をメモ入力だけでAIが起案。職員は確認・修正するだけ',
+        status: 'hidden',
+        description: 'basic-aiモジュールへ移動済み',
       },
       {
         id: 'staff-predictive-alerts',
         label: '🔮 予兆検知ダッシュボード',
         href: '/gyosei/predictive-alerts',
-        status: 'active',
-        description: 'インフラ老朽化・離職リスク1on1・住民満足度低下をAIが先回り検知。週次自動実行＋LINE通知でゼロ見逃しを実現',
+        status: 'hidden',
+        description: 'basic-aiモジュールへ移動済み',
       },
       {
-        // Sprint #43 追加: 住民困り事レーダー
         id: 'staff-citizen-radar',
         label: '🎯 住民困り事レーダー',
         href: '/gyosei/citizen-radar',
-        status: 'active',
-        description: 'Yahoo知恵袋・Google News・発言小町などから住民の困り事を自動収集。AIがカテゴリ分類・優先度付けしてNotionに蓄積する',
+        status: 'hidden',
+        description: 'basic-aiモジュールへ移動済み',
       },
       {
-        // Sprint #44 追加: 困り事→施策提案サイクル
         id: 'staff-issue-policy',
         label: '💡 困り事 → 施策提案',
         href: '/gyosei/issue-policy',
-        status: 'active',
-        description: '収集した困り事をカテゴリ別に集計・トレンド分析。前週比で増加・改善・解決を追跡し、AIが優先施策を提案するWell-Being向上サイクル',
+        status: 'hidden',
+        description: 'basic-aiモジュールへ移動済み',
       },
       {
-        // Sprint #74 移動: executive → staff
         id: 'staff-weekly-summary',
         label: '📋 週次WBサマリー生成',
         href: '/gyosei/weekly-summary',
-        status: 'active',
-        description: '全5部門のコンディションを集計しAIサマリーをNotionに保存。毎週月曜9時に自動実行、手動実行も可',
+        status: 'hidden',
+        description: 'basic-aiモジュールへ移動済み',
       },
       {
-        // Sprint #74 移動: executive → staff
         id: 'staff-emergency-support',
         label: '🚨 緊急時住民支援',
         href: '/gyosei/emergency-support',
-        status: 'active',
-        description: '台風・地震などの緊急時に「誰を優先して助けるか」をAIが計算。要支援スコアを算出し地区別対応計画を生成',
+        status: 'hidden',
+        description: 'basic-aiモジュールへ移動済み',
       },
       {
-        // Sprint #74 移動: executive → staff
         id: 'staff-risk-scoring',
         label: '🔴 離職リスクスコアリング',
         href: '/gyosei/risk-scoring',
-        status: 'active',
-        description: '過去4週間のWBスコア推移を職員ごとに分析。低下傾向・危険水準を自動検知しNotionにリスクレポートを保存',
+        status: 'hidden',
+        description: 'basic-aiモジュールへ移動済み',
       },
     ],
   },
@@ -308,53 +362,55 @@ export const FEATURE_MODULES: FeatureModule[] = [
     },
     pages: [
       {
+        // Sprint #74: essentials モジュールへ統合のためhidden
         id: 'executive-dashboard',
         label: '📊 Well-Beingダッシュボード',
         href: '/gyosei/dashboard',
-        status: 'active',
-        description: '住民・職員のWell-Beingスコアを総合可視化。人口・財政データと連動',
+        status: 'hidden',
+        description: '必須機能モジュールへ移動済み',
       },
       {
+        // Sprint #74: basic-aiモジュールへ移動のためhidden
         id: 'executive-ai-advisor',
         label: '🤖 AI Well-Being顧問',
         href: '/ai-advisor',
-        status: 'active',
-        description: '4DBのデータをAIが横断分析し、SDL五軸の視点で施策提言を行うチャット',
+        status: 'hidden',
+        description: 'basic-aiモジュールへ移動済み',
       },
       {
         id: 'executive-population',
         label: '📥 人口・地域データ',
         href: '/gyosei/population',
-        status: 'active',
-        description: '自治体CSVをNotionに蓄積。人口・世帯・高齢化率の時系列管理（Notion標準インポートでも可）',
+        status: 'hidden',
+        description: 'basic-aiモジュールへ移動済み',
       },
       {
         id: 'executive-revenue',
         label: '💰 収益・財政データ',
         href: '/gyosei/revenue',
-        status: 'active',
-        description: '観光・産品・宿泊など地域収益データを可視化。AI提言示唆を記録しAI顧問に供給',
+        status: 'hidden',
+        description: 'basic-aiモジュールへ移動済み',
       },
       {
         id: 'executive-compare',
         label: '🔍 類似自治体比較分析',
         href: '/gyosei/compare',
-        status: 'active',
-        description: '類似自治体のWell-Being・DX成熟度・財政力を比較。RunWith導入効果を可視化',
+        status: 'hidden',
+        description: 'basic-aiモジュールへ移動済み',
       },
       {
         id: 'executive-document',
         label: '📋 AI政策文書生成',
         href: '/gyosei/document-gen',
-        status: 'active',
-        description: '蓄積データをAIが横断分析し、議会向けレポート・政策提言書を自動ドラフト',
+        status: 'hidden',
+        description: 'basic-aiモジュールへ移動済み',
       },
       {
         id: 'executive-shrink-scenario',
         label: '🗺️ 縮小シナリオ×地区WellBeing',
         href: '/gyosei/shrink-scenario',
-        status: 'active',
-        description: '20地区を拠点/移行/終息に分類。30年縮小ロードマップと総幸福量を町長・議会向けに可視化',
+        status: 'hidden',
+        description: 'basic-aiモジュールへ移動済み',
       },
       {
         // Sprint #74: 職員支援グループへ移動のためhidden
@@ -381,44 +437,40 @@ export const FEATURE_MODULES: FeatureModule[] = [
         description: '職員支援グループへ移動済み',
       },
       {
-        // Sprint #56 昇格: 財政健全化管理（霧島市固有 → 共通）
+        // Sprint #74: basic-aiモジュールへ移動のためhidden
         id: 'gyosei-fiscal-health',
         label: '💴 財政健全化管理',
         href: '/gyosei/fiscal-health',
-        status: 'active',
-        description: '財政健全化法に基づく実質公債費比率・将来負担比率・経常収支比率等をAIが分析。選択中の自治体データを自動切り替え',
+        status: 'hidden',
+        description: 'basic-aiモジュールへ移動済み',
       },
       {
-        // Sprint #56 昇格: インフラ老朽化管理（霧島市固有 → 共通）
         id: 'gyosei-infra-aging',
         label: '🏗️ インフラ老朽化管理',
         href: '/gyosei/infra-aging',
-        status: 'active',
-        description: '橋梁・市道・排水路・公共施設の健全度スコアをAIが分析。緊急修繕・予算最適化・施設統廃合の3シナリオで修繕計画を提言',
+        status: 'hidden',
+        description: 'basic-aiモジュールへ移動済み',
       },
       {
-        // Sprint #56 昇格: 経営ダッシュボード（霧島市固有 → 共通）
         id: 'gyosei-management-dashboard',
         label: '🏛️ 経営ダッシュボード',
         href: '/gyosei/management-dashboard',
-        status: 'active',
-        description: '財政健全化・インフラ老朽化・PDCA進捗・住民WBスコアの4領域を1画面に集約。市長・幹部向け総合KPIビュー（全自治体共通）',
+        status: 'hidden',
+        description: 'basic-aiモジュールへ移動済み',
       },
       {
-        // Sprint #60 追加: DX効果測定ダッシュボード
         id: 'gyosei-dx-effectiveness',
         label: '🔍 DX効果測定ダッシュボード',
         href: '/gyosei/dx-effectiveness',
-        status: 'active',
-        description: '住民相談チャネル（LINE/窓口/電話）をカテゴリ別に集計。デジタル化率が低いサービスほど改善余地が大きいと判定し、AIが優先DX施策を提案する',
+        status: 'hidden',
+        description: 'basic-aiモジュールへ移動済み',
       },
       {
-        // Sprint #63 追加: 四半期AI分析レポート（ISO 23592×9要素スコアリング）
         id: 'gyosei-quarterly-report',
         label: '📊 四半期AI分析レポート',
         href: '/gyosei/quarterly-report',
-        status: 'active',
-        description: 'ISO 23592「エクセレントサービス」4側面×9要素で自治体の現在地をスコアリング。PDCA・WB・財政・インフラの蓄積データをAIが横断分析し、首長・議会への説明資料を自動生成',
+        status: 'hidden',
+        description: 'basic-aiモジュールへ移動済み',
       },
       {
         // Sprint #74: AI拡張機能グループへ移動のためhidden
@@ -480,7 +532,192 @@ export const FEATURE_MODULES: FeatureModule[] = [
   },
 
   // ══════════════════════════════════════
-  //  🤖 AI拡張機能（ai-ext グループ）Sprint #74 新設
+  //  📦 基本AIセット（basic-ai）Sprint #74 新設
+  //  旧・基本機能グループから移動した全機能。
+  //  必須4機能以外の標準的な行政DX機能群。
+  //  アクセントカラー: teal（実用・信頼・安定）
+  // ══════════════════════════════════════
+  {
+    id: 'basic-ai',
+    group: 'ai-ext',
+    icon: BarChart3,
+    emoji: '📦',
+    label: '基本AIセット',
+    badge: '標準機能・拡張',
+    description: '住民接点強化・職員AI支援・経営分析・研修など、自治体DXの標準機能セット。必須4機能に追加して段階的に導入できる。',
+    accent: {
+      bg: 'bg-teal-50',
+      border: 'border-teal-200',
+      icon: 'bg-teal-100 text-teal-600',
+      text: 'text-teal-700',
+      badge: 'bg-teal-100 text-teal-700',
+      button: 'bg-teal-600 hover:bg-teal-700 text-white',
+      sidebarActive: 'bg-teal-600 text-white',
+      sidebarDot: 'bg-teal-400',
+    },
+    pages: [
+      // ── 住民接点（旧・住民接点モジュール） ──
+      {
+        id: 'basic-citizen-services',
+        label: '🏘️ 住民サービス状況',
+        href: '/gyosei/services',
+        status: 'active',
+        description: '行政サービスの稼働状況・窓口待ち時間・満足度スコアを記録',
+      },
+      {
+        id: 'basic-citizen-line',
+        label: '💬 LINE相談管理',
+        href: '/gyosei/line-consultation',
+        status: 'active',
+        description: '住民からのLINE相談を一覧確認し、対応状況・回答内容をNotionに記録',
+      },
+      {
+        id: 'basic-citizen-touchpoint',
+        label: '📍 タッチポイント記録',
+        href: '/gyosei/touchpoints',
+        status: 'active',
+        description: '窓口・電話・訪問の接点をSDL価値共創スコアで可視化。AI顧問のRAGデータに活用',
+      },
+      {
+        id: 'basic-citizen-push',
+        label: '🔔 住民プッシュ通知',
+        href: '/gyosei/push-notifications',
+        status: 'active',
+        description: '緊急アラート・手続き期限リマインド・行事案内をLINEで住民に先回り配信',
+      },
+      // ── 職員支援（旧・職員支援モジュールの拡張部分） ──
+      {
+        id: 'basic-staff-document',
+        label: '✨ AI文書自動起案',
+        href: '/gyosei/document-generator',
+        status: 'active',
+        description: '議事録・住民通知文・業務報告書をメモ入力だけでAIが起案。職員は確認・修正するだけ',
+      },
+      {
+        id: 'basic-staff-predictive',
+        label: '🔮 予兆検知ダッシュボード',
+        href: '/gyosei/predictive-alerts',
+        status: 'active',
+        description: 'インフラ老朽化・離職リスク・住民満足度低下をAIが先回り検知。週次自動実行＋LINE通知',
+      },
+      {
+        id: 'basic-staff-radar',
+        label: '🎯 住民困り事レーダー',
+        href: '/gyosei/citizen-radar',
+        status: 'active',
+        description: 'Webから住民の困り事を自動収集。AIがカテゴリ分類・優先度付けしてNotionに蓄積',
+      },
+      {
+        id: 'basic-staff-issue-policy',
+        label: '💡 困り事 → 施策提案',
+        href: '/gyosei/issue-policy',
+        status: 'active',
+        description: '収集した困り事をカテゴリ別に集計・トレンド分析。AIが優先施策を提案するWell-Being向上サイクル',
+      },
+      {
+        id: 'basic-staff-weekly',
+        label: '📋 週次WBサマリー生成',
+        href: '/gyosei/weekly-summary',
+        status: 'active',
+        description: '全部門のコンディションを集計しAIサマリーをNotionに保存。毎週月曜9時に自動実行',
+      },
+      {
+        id: 'basic-staff-emergency',
+        label: '🚨 緊急時住民支援',
+        href: '/gyosei/emergency-support',
+        status: 'active',
+        description: '台風・地震などの緊急時に要支援スコアを算出し、地区別対応計画をAIが生成',
+      },
+      {
+        id: 'basic-staff-risk',
+        label: '🔴 離職リスクスコアリング',
+        href: '/gyosei/risk-scoring',
+        status: 'active',
+        description: '過去4週間のWBスコア推移を職員ごとに分析。危険水準を自動検知しNotionにリスクレポートを保存',
+      },
+      // ── 経営・政策（旧・経営・政策モジュールの拡張部分） ──
+      {
+        id: 'basic-ai-advisor',
+        label: '🤖 AI Well-Being顧問',
+        href: '/ai-advisor',
+        status: 'active',
+        description: '蓄積データをAIが横断分析し、SDL五軸の視点で施策提言を行うチャット型顧問',
+      },
+      {
+        id: 'basic-management-dashboard',
+        label: '🏛️ 経営ダッシュボード',
+        href: '/gyosei/management-dashboard',
+        status: 'active',
+        description: '財政健全化・インフラ老朽化・PDCA進捗・住民WBスコアの4領域を1画面に集約。市長・幹部向け',
+      },
+      {
+        id: 'basic-fiscal-health',
+        label: '💴 財政健全化管理',
+        href: '/gyosei/fiscal-health',
+        status: 'active',
+        description: '実質公債費比率・将来負担比率・経常収支比率等をAIが分析。3シナリオで改善提言を生成',
+      },
+      {
+        id: 'basic-infra-aging',
+        label: '🏗️ インフラ老朽化管理',
+        href: '/gyosei/infra-aging',
+        status: 'active',
+        description: '橋梁・市道・排水路・公共施設の健全度スコアをAIが分析。修繕計画を3シナリオで提言',
+      },
+      {
+        id: 'basic-quarterly-report',
+        label: '📊 四半期AI分析レポート',
+        href: '/gyosei/quarterly-report',
+        status: 'active',
+        description: 'ISO 23592「エクセレントサービス」9要素で自治体をスコアリング。首長・議会向け説明資料を自動生成',
+      },
+      {
+        id: 'basic-dx-effectiveness',
+        label: '🔍 DX効果測定',
+        href: '/gyosei/dx-effectiveness',
+        status: 'active',
+        description: '住民相談チャネルをカテゴリ別に集計。デジタル化率が低いサービスほど改善余地が大きいと判定',
+      },
+      {
+        id: 'basic-population',
+        label: '📥 人口・地域データ',
+        href: '/gyosei/population',
+        status: 'active',
+        description: '自治体CSVをNotionに蓄積。人口・世帯・高齢化率の時系列管理',
+      },
+      {
+        id: 'basic-revenue',
+        label: '💰 収益・財政データ',
+        href: '/gyosei/revenue',
+        status: 'active',
+        description: '観光・産品・宿泊など地域収益データを可視化。AI提言示唆を記録しAI顧問に供給',
+      },
+      {
+        id: 'basic-shrink-scenario',
+        label: '🗺️ 縮小シナリオ×地区WellBeing',
+        href: '/gyosei/shrink-scenario',
+        status: 'active',
+        description: '地区を拠点/移行/終息に分類。30年縮小ロードマップと総幸福量を町長・議会向けに可視化',
+      },
+      {
+        id: 'basic-compare',
+        label: '🔍 類似自治体比較分析',
+        href: '/gyosei/compare',
+        status: 'active',
+        description: '類似自治体のWell-Being・DX成熟度・財政力を比較。RunWith導入効果を可視化',
+      },
+      {
+        id: 'basic-document-gen',
+        label: '📋 AI政策文書生成',
+        href: '/gyosei/document-gen',
+        status: 'active',
+        description: '蓄積データをAIが横断分析し、議会向けレポート・政策提言書を自動ドラフト',
+      },
+    ],
+  },
+
+  // ══════════════════════════════════════
+  //  🤖 課題特化型AI（ai-ext グループ）Sprint #74 新設
   //  課題特化型AIエンジン群（選択導入型）
   //  全自治体に常時表示。データが入っている自治体で機能する。
   //  ウィザードで選択した機能が各自治体ページにも表示される。
@@ -870,6 +1107,14 @@ export const FEATURE_MODULES: FeatureModule[] = [
     },
     pages: [
       {
+        // Sprint #74: 必須ダッシュボード追加（共通WBダッシュボード）
+        id: 'kirishima-dashboard',
+        label: '📊 Well-Beingダッシュボード',
+        href: '/gyosei/dashboard',
+        status: 'active',
+        description: '霧島市の住民・職員Well-Beingスコアをリアルタイム可視化（ヘッダーで霧島市を選択）',
+      },
+      {
         id: 'kirishima-kpi',
         label: '📊 KPI総合ダッシュボード',
         href: '/kirishima/kpi',
@@ -961,7 +1206,7 @@ export const FEATURE_MODULES: FeatureModule[] = [
   // ══════════════════════════════════════
   {
     id: 'training',
-    group: 'core',   // Sprint #74: cross → core へ移動（研修は全自治体共通の基本機能）
+    group: 'ai-ext',   // Sprint #74: basic-aiグループの一部として ai-ext へ
     icon: BookOpen,
     emoji: '🎮',
     label: '研修・学習',
@@ -1083,6 +1328,14 @@ export const FEATURE_MODULES: FeatureModule[] = [
     },
     pages: [
       {
+        // Sprint #74: 必須ダッシュボード追加
+        id: 'yakushima-dashboard',
+        label: '📊 Well-Beingダッシュボード',
+        href: '/gyosei/dashboard',
+        status: 'active',
+        description: '屋久島町の住民・職員Well-Beingスコアをリアルタイム可視化（ヘッダーで屋久島町を選択）',
+      },
+      {
         id: 'yakushima-tourism',
         label: '🌿 観光・エコツーリズム管理',
         href: '/yakushima/tourism',
@@ -1172,6 +1425,14 @@ export const FEATURE_MODULES: FeatureModule[] = [
     },
     pages: [
       {
+        // Sprint #74: 必須ダッシュボード追加
+        id: 'amacho-dashboard',
+        label: '📊 Well-Beingダッシュボード',
+        href: '/gyosei/dashboard',
+        status: 'active',
+        description: '海士町の住民・職員Well-Beingスコアをリアルタイム可視化（ヘッダーで海士町を選択）',
+      },
+      {
         // Sprint #64: 移住定着リスクAI（海士町事例）
         id: 'amacho-migration-risk',
         label: '🏡 移住定着リスクAI',
@@ -1207,6 +1468,14 @@ export const FEATURE_MODULES: FeatureModule[] = [
       sidebarDot: 'bg-rose-400',
     },
     pages: [
+      {
+        // Sprint #74: 必須ダッシュボード追加
+        id: 'goto-dashboard',
+        label: '📊 Well-Beingダッシュボード',
+        href: '/gyosei/dashboard',
+        status: 'active',
+        description: '五島市の住民・職員Well-Beingスコアをリアルタイム可視化（ヘッダーで五島市を選択）',
+      },
       {
         // Sprint #65: 往診優先順位AI（五島市事例）
         id: 'goto-visit-priority',
@@ -1245,6 +1514,14 @@ export const FEATURE_MODULES: FeatureModule[] = [
     },
     pages: [
       {
+        // Sprint #74: 必須ダッシュボード追加
+        id: 'wajima-dashboard',
+        label: '📊 Well-Beingダッシュボード',
+        href: '/gyosei/dashboard',
+        status: 'active',
+        description: '輪島市の住民・職員Well-Beingスコアをリアルタイム可視化（ヘッダーで輪島市を選択）',
+      },
+      {
         // Sprint #67: 復興進捗ダッシュボード（輪島市事例）
         id: 'wajima-recovery-dashboard',
         label: '🏗️ 復興進捗ダッシュボード',
@@ -1281,6 +1558,14 @@ export const FEATURE_MODULES: FeatureModule[] = [
       sidebarDot: 'bg-amber-400',
     },
     pages: [
+      {
+        // Sprint #74: 必須ダッシュボード追加
+        id: 'nishiawakura-dashboard',
+        label: '📊 Well-Beingダッシュボード',
+        href: '/gyosei/dashboard',
+        status: 'active',
+        description: '西粟倉村の住民・職員Well-Beingスコアをリアルタイム可視化（ヘッダーで西粟倉村を選択）',
+      },
       {
         // Sprint #66: 農業担い手マッチングAI（西粟倉村事例）
         id: 'nishiawakura-farm-matching',
@@ -1319,6 +1604,14 @@ export const FEATURE_MODULES: FeatureModule[] = [
     },
     pages: [
       {
+        // Sprint #74: 必須ダッシュボード追加
+        id: 'kamikatsu-dashboard',
+        label: '📊 Well-Beingダッシュボード',
+        href: '/gyosei/dashboard',
+        status: 'active',
+        description: '上勝町の住民・職員Well-Beingスコアをリアルタイム可視化（ヘッダーで上勝町を選択）',
+      },
+      {
         // Sprint #68: CO2削減進捗トラッカー（上勝町事例）
         id: 'kamikatsu-carbon-tracker',
         label: '🌱 CO2削減進捗トラッカー',
@@ -1356,6 +1649,14 @@ export const FEATURE_MODULES: FeatureModule[] = [
     },
     pages: [
       {
+        // Sprint #74: 必須ダッシュボード追加
+        id: 'kanzaki-dashboard',
+        label: '📊 Well-Beingダッシュボード',
+        href: '/gyosei/dashboard',
+        status: 'active',
+        description: '神埼市の住民・職員Well-Beingスコアをリアルタイム可視化（ヘッダーで神埼市を選択）',
+      },
+      {
         // Sprint #69: 子育て流出リスクAI（神埼市事例）
         id: 'kanzaki-childcare-risk',
         label: '👶 子育て流出リスクAI',
@@ -1392,6 +1693,14 @@ export const FEATURE_MODULES: FeatureModule[] = [
       sidebarDot: 'bg-red-400',
     },
     pages: [
+      {
+        // Sprint #74: 必須ダッシュボード追加
+        id: 'kesennuma-dashboard',
+        label: '📊 Well-Beingダッシュボード',
+        href: '/gyosei/dashboard',
+        status: 'active',
+        description: '気仙沼市の住民・職員Well-Beingスコアをリアルタイム可視化（ヘッダーで気仙沼市を選択）',
+      },
       {
         // Sprint #70: 地場産業6次産業化支援AI（気仙沼市事例）
         id: 'kesennuma-local-industry',
