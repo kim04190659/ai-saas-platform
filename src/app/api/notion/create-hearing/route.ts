@@ -419,8 +419,9 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({
-      success:         true,
+      success:          true,
       municipalityUrl,
+      municipalityPageId,  // Sprint #73: provision API が DB を作成するために使用
       roadmapUrl,
       hearingUrl,
       // フロント側での後方互換のため pageUrl も返す

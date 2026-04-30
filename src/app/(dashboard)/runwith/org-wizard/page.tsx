@@ -248,9 +248,10 @@ type WizardStep = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11;
 
 /** ロードマップ保存後のNotionリンクセット */
 type NotionLinks = {
-  municipalityUrl: string;
-  roadmapUrl:      string;
-  hearingUrl:      string;
+  municipalityUrl:    string;
+  municipalityPageId: string;  // Sprint #73: provision API に渡すNotionページID
+  roadmapUrl:         string;
+  hearingUrl:         string;
 };
 
 // ─── メインコンポーネント ──────────────────────────────
@@ -385,7 +386,8 @@ export default function OrgWizardPage() {
 
       const json = await res.json() as {
         success?: boolean;
-        municipalityUrl?: string;
+        municipalityUrl?:    string;
+        municipalityPageId?: string;  // Sprint #73: provision API が使用
         roadmapUrl?: string;
         hearingUrl?: string;
         error?: string;
@@ -396,9 +398,10 @@ export default function OrgWizardPage() {
       }
 
       setNotionLinks({
-        municipalityUrl: json.municipalityUrl ?? '',
-        roadmapUrl:      json.roadmapUrl      ?? '',
-        hearingUrl:      json.hearingUrl      ?? '',
+        municipalityUrl:    json.municipalityUrl    ?? '',
+        municipalityPageId: json.municipalityPageId ?? '',
+        roadmapUrl:         json.roadmapUrl         ?? '',
+        hearingUrl:         json.hearingUrl         ?? '',
       });
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -1835,10 +1838,9 @@ export default function OrgWizardPage() {
               {/* 自動構築ボタン */}
               <button
                 onClick={async () => {
-                  if (!notionLinks?.municipalityUrl) return;
-                  // NotionページIDをURLから抽出
-                  const match = notionLinks.municipalityUrl.match(/\/p\/([a-f0-9]{32})/);
-                  const municipalityPageId = match ? match[1] : '';
+                  // Sprint #73: create-hearing API から直接受け取ったページIDを使用
+                  // （URLパースは不要。Notionが返すURL形式に依存しない）
+                  const municipalityPageId = notionLinks?.municipalityPageId ?? '';
                   if (!municipalityPageId) {
                     setProvisionError('自治体ページIDを取得できませんでした。Notionページが作成済みか確認してください。');
                     return;
