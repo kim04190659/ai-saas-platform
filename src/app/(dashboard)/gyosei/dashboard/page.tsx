@@ -14,6 +14,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';  // Sprint #74: URLパラメータ監視
 import { useScenario } from '@/contexts/ScenarioContext';
 import { useMunicipality } from '@/contexts/MunicipalityContext';
 import Link from 'next/link';
@@ -598,22 +599,25 @@ export default function GyoseiDashboard() {
   const d = getDataForMunicipality(municipalityId);
   const metrics = buildMetrics(d);
 
+  // Sprint #74: useSearchParams でURLパラメータをリアクティブに監視
+  // （window.location.search と異なり、Next.js のクライアントサイドナビゲーションでも再発火する）
+  const searchParams = useSearchParams();
+
   const [aiDiagnosis, setAiDiagnosis] = useState<string | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [notionSaveStatus, setNotionSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [notionPageUrl, setNotionPageUrl] = useState<string | null>(null);
 
-  // Sprint #74: URLパラメータ ?municipalityId=xxx があれば自治体コンテキストを自動切り替え
-  // 各自治体のサイドバーリンクに ?municipalityId=xxx を付けることで
-  // その自治体のページを開くだけで自動的に自治体が切り替わる
+  // Sprint #74: URLパラメータ ?municipalityId=xxx が変わるたびに自治体コンテキストを自動切り替え
+  // searchParams を依存配列に含めることでサイドバーリンクのクリックでも反応する
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const urlId = params.get('municipalityId');
+    const urlId = searchParams.get('municipalityId');
     if (urlId && urlId !== municipalityId) {
       setMunicipalityId(urlId);
     }
+  // municipalityId を依存配列に含めると無限ループになるため除外
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [searchParams]);
 
   // ScenarioContext に自治体データを登録（ChatPanel の行政OSモード用）
   const { setModule, setGyoseiData } = useScenario();
