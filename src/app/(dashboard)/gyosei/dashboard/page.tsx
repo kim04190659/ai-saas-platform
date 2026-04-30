@@ -128,6 +128,41 @@ const MUNICIPALITY_DATA: Record<string, MunicipalityDiagnosisData> = {
 弱み: 高齢化進行、IT人材確保、中山間地域の過疎化`,
   },
 
+  // ── 四万十市（高知県）── Sprint #73 追加 ───────────────
+  shimanto: {
+    name: '四万十市',
+    prefecture: '高知県',
+    energySelfSufficiency: 38,
+    fiscalStrength: 22,
+    fiscalIndex: 0.22,
+    populationViability: 48,
+    wellBeingScore: 65,
+    currentPopulation: 31000,
+    agingRate: 40.2,
+    populationForecast: [
+      { year: 2024, population: 31000 },
+      { year: 2034, population: 26000 },
+      { year: 2044, population: 21000 },
+      { year: 2054, population: 15000 },
+    ],
+    survivalRank: 'B',
+    comments: {
+      energy:     '四万十川の水力・太陽光で約38%自給。清流を活かした小水力発電の拡充が脱炭素の鍵',
+      fiscal:     '財政力指数0.22は全国平均の半分以下。地方交付税への依存が高く、産業振興が急務',
+      population: '2054年に約15,000人（現在の48%）と推計。高齢化率40%超で医療・介護の負荷増大が懸念',
+      wellbeing:  '四万十川・豊かな自然・食文化が生活満足度を支える。移住促進と若者定着が課題',
+    },
+    aiPromptContext: `
+【四万十市データ】
+- 現在人口: 31,000人（高齢化率 40.2%）
+- 財政力指数: 0.22（全国平均0.51の約半分以下。交付税依存度が非常に高い）
+- エネルギー自給率: 38%（水力・太陽光）
+- 2054年推計人口: 15,000人（現在の48%）
+- 生存可能性ランク: B（要注意）
+強み: 四万十川・豊かな自然・農林水産業・移住人気エリア
+弱み: 財政力低下、人口減少加速、医療介護資源不足、IT人材不足`,
+  },
+
   // ── NEC コーポレートIT部門（準備中） ─────────────────
   nec: {
     name: 'NEC コーポレートIT部門',
