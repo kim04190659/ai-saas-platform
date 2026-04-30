@@ -9,25 +9,26 @@
  *   住民 → LINE → 職員 → エクセレントサービス → Well-Being向上
  *   という価値共創フロー（SDL）を5グループのメニューで体現する。
  *
- * ■ 5グループ構成（2026年4月 再編）
- *   ── 行政コア（標準機能・全自治体共通）──────────────
+ * ■ 4グループ構成（2026年4月 Sprint #74 再編）
+ *   ── 基本機能（全自治体共通）────────────────────────
  *   ① 住民接点    : 住民とのLINEタッチポイント（sky）
  *   ② 職員支援    : エクセレントサービス提供支援（emerald）
  *   ③ 経営・政策  : 町長・議会向け見える化・AI提言（violet）
- *   ── 部門別（標準機能・全自治体共通）──────────────
- *   ④ 教育        : 学校・教職員支援（blue）
- *   ⑤ 警察・消防  : 地域安全・防災支援（amber）
- *   ⑥ 医療・介護  : 高齢化社会を支える医療・福祉（rose）
- *   ⑦ 公共設備    : ライフライン設備管理（cyan）
- *   ── 横断・研修（標準機能・全自治体共通）────────────
- *   ⑧ 公務員連携  : 全部門横断ビュー・AI横断提言（indigo）
- *   ⑨ 研修・学習  : SDL体験型カードゲーム研修（purple）
+ *   ④ 研修・学習  : SDL体験型カードゲーム研修（purple）
+ *   ── AI拡張機能（選択導入型）────────────────────────
+ *   🏡 移住定着リスクAI / 🏥 往診優先順位AI / 🌱 CO2トラッカー
+ *   🌾 農業マッチング / 👶 子育て流出リスク / 🏗️ 復興進捗
+ *   🏭 地場産業6次産業化
  *   ── 自治体展開（自治体固有ページ）──────────────────
- *   🏙️ 霧島市      : 霧島市向け実証ダッシュボード（teal）
- *   🏝️ 屋久島町    : 屋久島町向け展開（準備中）
- *   🏢 NEC         : NECコーポレートIT（準備中）
- *   ── 基盤 ────────────────────────────────────────
- *   ⑩ 基盤・設定  : データ蓄積・IT管理・プラットフォーム設定（orange）
+ *   🏙️ 霧島市 / 🏝️ 屋久島町 / 四万十市 ほか
+ *   ── 運用管理 ─────────────────────────────────────
+ *   ⑩ 基盤・設定  : ウィザード・IT管理・プラットフォーム設定（orange）
+ *
+ * ■ hidden 対応（Sprint #74）
+ *   - department グループ（教育・警察消防・医療介護・公共設備）: hidden
+ *   - koumuin（公務員連携）: hidden（将来の部門横断ビューで復活予定）
+ *   - personal-coarc: hidden（別製品として分離検討）
+ *   - NEC コーポレートIT: hidden（法人向け設計を固めてから再開）
  *
  * ■ 新機能を追加するとき
  *   1. 該当モジュールの pages[] に1エントリ追加
@@ -62,25 +63,29 @@ import {
 
 /**
  * モジュールのグループ分類
- *   core        : 行政コア（住民接点・職員支援・経営政策）
- *   department  : 部門別（教育・警察消防・医療介護・公共設備）
- *   cross       : 横断・研修（公務員連携・研修学習）
- *   municipality: 自治体展開（霧島市・屋久島町・NEC など）
- *   platform    : 基盤・設定
+ *   core        : 基本機能（住民接点・職員支援・経営政策・研修）
+ *   ai-ext      : AI拡張機能（課題特化型AIエンジン群・全自治体常時表示）
+ *   department  : 部門別（教育・警察消防・医療介護・公共設備）← Sprint #75以降で順次実装
+ *   cross       : 横断・研修（公務員連携）← 現在 hidden
+ *   municipality: 自治体展開（霧島市・屋久島町・四万十市 など）
+ *   platform    : 運用管理（ウィザード・IT管理・設定）
  */
-export type ModuleGroup = 'core' | 'department' | 'cross' | 'municipality' | 'platform';
+export type ModuleGroup = 'core' | 'ai-ext' | 'department' | 'cross' | 'municipality' | 'platform';
 
 /** サイドバーのセクションヘッダーラベル */
 export const GROUP_LABELS: Record<ModuleGroup, string> = {
-  core:         '🏛️ 行政コア',
-  department:   '🏢 部門別',
-  cross:        '🌐 横断・研修',
-  municipality: '🏙️ 自治体展開',
-  platform:     '⚙️ 基盤',
+  core:         '🏛️ 基本機能',
+  'ai-ext':     '🤖 AI拡張機能',
+  department:   '🏢 部門別',        // hidden 中（実装まで非表示）
+  cross:        '🌐 横断・研修',    // hidden 中
+  municipality: '🏙️ 自治体ページ',
+  platform:     '⚙️ 運用管理',
 };
 
-/** セクションの表示順（この順番でサイドバーに並ぶ） */
-export const GROUP_ORDER: ModuleGroup[] = ['core', 'department', 'cross', 'municipality', 'platform'];
+/** セクションの表示順（この順番でサイドバーに並ぶ）
+ *  ※ department・cross はここに含めないことで非表示にしている
+ */
+export const GROUP_ORDER: ModuleGroup[] = ['core', 'ai-ext', 'municipality', 'platform'];
 
 /** ページ1件の定義 */
 export type FeaturePage = {
@@ -251,6 +256,30 @@ export const FEATURE_MODULES: FeatureModule[] = [
         status: 'active',
         description: '収集した困り事をカテゴリ別に集計・トレンド分析。前週比で増加・改善・解決を追跡し、AIが優先施策を提案するWell-Being向上サイクル',
       },
+      {
+        // Sprint #74 移動: executive → staff
+        id: 'staff-weekly-summary',
+        label: '📋 週次WBサマリー生成',
+        href: '/gyosei/weekly-summary',
+        status: 'active',
+        description: '全5部門のコンディションを集計しAIサマリーをNotionに保存。毎週月曜9時に自動実行、手動実行も可',
+      },
+      {
+        // Sprint #74 移動: executive → staff
+        id: 'staff-emergency-support',
+        label: '🚨 緊急時住民支援',
+        href: '/gyosei/emergency-support',
+        status: 'active',
+        description: '台風・地震などの緊急時に「誰を優先して助けるか」をAIが計算。要支援スコアを算出し地区別対応計画を生成',
+      },
+      {
+        // Sprint #74 移動: executive → staff
+        id: 'staff-risk-scoring',
+        label: '🔴 離職リスクスコアリング',
+        href: '/gyosei/risk-scoring',
+        status: 'active',
+        description: '過去4週間のWBスコア推移を職員ごとに分析。低下傾向・危険水準を自動検知しNotionにリスクレポートを保存',
+      },
     ],
   },
 
@@ -328,26 +357,28 @@ export const FEATURE_MODULES: FeatureModule[] = [
         description: '20地区を拠点/移行/終息に分類。30年縮小ロードマップと総幸福量を町長・議会向けに可視化',
       },
       {
+        // Sprint #74: 職員支援グループへ移動のためhidden
         id: 'executive-weekly-summary',
         label: '📋 週次WBサマリー生成',
         href: '/gyosei/weekly-summary',
-        status: 'active',
-        description: '全5部門のコンディションを集計しAIサマリーをNotionに保存。毎週月曜9時に自動実行、手動実行も可',
+        status: 'hidden',
+        description: '職員支援グループへ移動済み',
       },
       {
-        // Sprint #55 追加: 緊急時住民支援 優先順位システム
+        // Sprint #74: 職員支援グループへ移動のためhidden
         id: 'gyosei-emergency-support',
         label: '🚨 緊急時住民支援',
         href: '/gyosei/emergency-support',
-        status: 'active',
-        description: '台風・地震などの緊急時に「誰を優先して助けるか」「誰が助けに行けるか」をAIが計算。年齢層・世帯状況・移動手段・WBスコアから要支援スコアを算出し、地区別対応計画を生成',
+        status: 'hidden',
+        description: '職員支援グループへ移動済み',
       },
       {
+        // Sprint #74: 職員支援グループへ移動のためhidden
         id: 'executive-risk-scoring',
         label: '🔴 離職リスクスコアリング',
         href: '/gyosei/risk-scoring',
-        status: 'active',
-        description: '過去4週間のWBスコア推移を職員ごとに分析。低下傾向・危険水準を自動検知しNotionにリスクレポートを保存',
+        status: 'hidden',
+        description: '職員支援グループへ移動済み',
       },
       {
         // Sprint #56 昇格: 財政健全化管理（霧島市固有 → 共通）
@@ -390,72 +421,157 @@ export const FEATURE_MODULES: FeatureModule[] = [
         description: 'ISO 23592「エクセレントサービス」4側面×9要素で自治体の現在地をスコアリング。PDCA・WB・財政・インフラの蓄積データをAIが横断分析し、首長・議会への説明資料を自動生成',
       },
       {
-        // Sprint #64 追加: 移住定着リスクAI（農山村・限界集落型自治体向け）
+        // Sprint #74: AI拡張機能グループへ移動のためhidden
         id: 'gyosei-migration-risk',
+        label: '🏡 移住定着リスクAI',
+        href: '/gyosei/migration-risk',
+        status: 'hidden',
+        description: 'AI拡張機能グループへ移動済み',
+      },
+      {
+        // Sprint #74: AI拡張機能グループへ移動のためhidden
+        id: 'gyosei-visit-priority',
+        label: '🏥 往診優先順位AI',
+        href: '/gyosei/visit-priority',
+        status: 'hidden',
+        description: 'AI拡張機能グループへ移動済み',
+      },
+      {
+        // Sprint #74: AI拡張機能グループへ移動のためhidden
+        id: 'gyosei-carbon-tracker',
+        label: '🌱 CO2削減進捗トラッカー',
+        href: '/gyosei/carbon-tracker',
+        status: 'hidden',
+        description: 'AI拡張機能グループへ移動済み',
+      },
+      {
+        // Sprint #74: AI拡張機能グループへ移動のためhidden
+        id: 'gyosei-recovery-dashboard',
+        label: '🏗️ 復興進捗ダッシュボード',
+        href: '/gyosei/recovery-dashboard',
+        status: 'hidden',
+        description: 'AI拡張機能グループへ移動済み',
+      },
+      {
+        // Sprint #74: AI拡張機能グループへ移動のためhidden
+        id: 'gyosei-farm-matching',
+        label: '🌾 農業担い手マッチングAI',
+        href: '/gyosei/farm-matching',
+        status: 'hidden',
+        description: 'AI拡張機能グループへ移動済み',
+      },
+      {
+        // Sprint #74: AI拡張機能グループへ移動のためhidden
+        id: 'gyosei-local-industry',
+        label: '🏭 地場産業6次産業化支援AI',
+        href: '/gyosei/local-industry',
+        status: 'hidden',
+        description: 'AI拡張機能グループへ移動済み',
+      },
+      {
+        // Sprint #74: AI拡張機能グループへ移動のためhidden
+        id: 'gyosei-childcare-risk',
+        label: '👶 子育て流出リスクAI',
+        href: '/gyosei/childcare-risk',
+        status: 'hidden',
+        description: 'AI拡張機能グループへ移動済み',
+      },
+    ],
+  },
+
+  // ══════════════════════════════════════
+  //  🤖 AI拡張機能（ai-ext グループ）Sprint #74 新設
+  //  課題特化型AIエンジン群（選択導入型）
+  //  全自治体に常時表示。データが入っている自治体で機能する。
+  //  ウィザードで選択した機能が各自治体ページにも表示される。
+  //  アクセントカラー: violet（紫）
+  // ══════════════════════════════════════
+  {
+    id: 'ai-engines',
+    group: 'ai-ext',
+    icon: BarChart3,
+    emoji: '🤖',
+    label: '課題特化型AI',
+    badge: '拡張AI・選択導入',
+    description: '農山村・離島・被災地・少子化など、自治体が抱える個別課題に特化したAIエンジン群。ウィザードで選択した機能が各自治体ページに自動追加される。',
+    accent: {
+      bg: 'bg-violet-50',
+      border: 'border-violet-200',
+      icon: 'bg-violet-100 text-violet-600',
+      text: 'text-violet-700',
+      badge: 'bg-violet-100 text-violet-700',
+      button: 'bg-violet-600 hover:bg-violet-700 text-white',
+      sidebarActive: 'bg-violet-600 text-white',
+      sidebarDot: 'bg-violet-400',
+    },
+    pages: [
+      {
+        // Sprint #64: 移住定着リスクAI（農山村・限界集落型自治体向け）
+        id: 'ai-ext-migration-risk',
         label: '🏡 移住定着リスクAI',
         href: '/gyosei/migration-risk',
         status: 'active',
         description: '移住相談DBの各レコードに「定着リスクスコア」を算出。就業・世帯・補助金・動機の5要素で0〜100点スコアリングし、担当職員が早期フォローすべき移住者を特定する',
       },
       {
-        // Sprint #65 追加: 往診優先順位AI（離島・高齢化型自治体向け）
-        id: 'gyosei-visit-priority',
+        // Sprint #65: 往診優先順位AI（離島・高齢化型自治体向け）
+        id: 'ai-ext-visit-priority',
         label: '🏥 往診優先順位AI',
         href: '/gyosei/visit-priority',
         status: 'active',
-        description: '往診管理DBの各患者に「優先度スコア」を算出。年齢・基礎疾患・世帯状況・要介護度・緊急フラグ・前回往診日の6要素で0〜100点スコアリングし、限られた医師が今週訪問すべき患者を一目で把握できるようにする',
+        description: '往診管理DBの各患者に「優先度スコア」を算出。年齢・要介護度・緊急フラグ・前回往診日の6要素で0〜100点スコアリングし、限られた医師が今週訪問すべき患者を一目で把握できるようにする',
       },
       {
-        // Sprint #68 追加: CO2削減進捗トラッカー（ゼロカーボン推進型自治体向け）
-        id: 'gyosei-carbon-tracker',
+        // Sprint #68: CO2削減進捗トラッカー（ゼロカーボン推進型自治体向け）
+        id: 'ai-ext-carbon-tracker',
         label: '🌱 CO2削減進捗トラッカー',
         href: '/gyosei/carbon-tracker',
         status: 'active',
-        description: 'ゼロカーボン宣言自治体の削減活動（再エネ・EV・廃棄物・森林吸収・省エネ）をカテゴリ別に可視化。達成スコアをゲージで表示し、Claude HaikuがAI四半期総括を自動生成。上勝町のゼロカーボン推進をモデルに設計。',
+        description: 'ゼロカーボン宣言自治体の削減活動（再エネ・EV・廃棄物・森林吸収・省エネ）をカテゴリ別に可視化。達成スコアをゲージで表示し、Claude HaikuがAI四半期総括を自動生成',
       },
       {
-        // Sprint #67 追加: 復興進捗ダッシュボード（被災自治体向け）
-        id: 'gyosei-recovery-dashboard',
-        label: '🏗️ 復興進捗ダッシュボード',
-        href: '/gyosei/recovery-dashboard',
-        status: 'active',
-        description: '復興事業進捗DBの全案件を可視化。住宅再建・インフラ・産業・医療・教育・コミュニティの6カテゴリ別に進捗率・予算執行率・遅延リスクをスコアリングし、首長・復興推進課が今週対応すべき案件を一目で把握できるようにする',
-      },
-      {
-        // Sprint #66 追加: 農業担い手マッチングAI（農山村・農業後継者不足型自治体向け）
-        id: 'gyosei-farm-matching',
+        // Sprint #66: 農業担い手マッチングAI（農業後継者不足型自治体向け）
+        id: 'ai-ext-farm-matching',
         label: '🌾 農業担い手マッチングAI',
         href: '/gyosei/farm-matching',
         status: 'active',
-        description: '農地情報DBと移住就農希望者DBをAIがクロス分析。作物経験・家族構成・規模・補助金・移住時期の6要素でマッチングスコアを算出し、「どの農地とどの担い手が最も相性が良いか」を一目で把握できるようにする',
+        description: '農地情報DBと移住就農希望者DBをAIがクロス分析。6要素でマッチングスコアを算出し「どの農地とどの担い手が最も相性が良いか」を一目で把握できるようにする',
       },
       {
-        // Sprint #70 追加: 地場産業6次産業化支援AI（地場産業衰退・後継者断絶型自治体向け）
-        id: 'gyosei-local-industry',
-        label: '🏭 地場産業6次産業化支援AI',
-        href: '/gyosei/local-industry',
-        status: 'active',
-        description: '地場産業台帳DBの各産業に「後継者空白リスクスコア」を算出。水産・農業・林業・食品加工・工芸の産業種別に後継者有無・事業者平均年齢・年商・6次産業化状況を可視化し、Claude Haikuが「5年後に消えるリスクがある産業×支援施策」を産業ごとに提言する。気仙沼市の水産業衰退問題をモデルに設計。',
-      },
-      {
-        // Sprint #69 追加: 子育て世帯流出リスク検知AI（少子化・子育て世帯流出型自治体向け）
-        id: 'gyosei-childcare-risk',
+        // Sprint #69: 子育て流出リスクAI（少子化・子育て世帯流出型自治体向け）
+        id: 'ai-ext-childcare-risk',
         label: '👶 子育て流出リスクAI',
         href: '/gyosei/childcare-risk',
         status: 'active',
-        description: '子育て相談DBの各世帯に「転出懸念スコア」を算出。保育所待機・医療・経済支援・発達支援など6カテゴリの相談傾向をAIが分析し、転出しそうな世帯を早期検知。Claude HaikuがカテゴリBESTフォロー施策を3件提言する。神埼市の少子化対策をモデルに設計。',
+        description: '子育て相談DBの各世帯に「転出懸念スコア」を算出。保育所待機・医療・経済支援など6カテゴリの相談傾向をAIが分析し、転出しそうな世帯を早期検知する',
+      },
+      {
+        // Sprint #67: 復興進捗ダッシュボード（被災自治体向け）
+        id: 'ai-ext-recovery-dashboard',
+        label: '🏗️ 復興進捗ダッシュボード',
+        href: '/gyosei/recovery-dashboard',
+        status: 'active',
+        description: '復興事業進捗DBの全案件を可視化。住宅再建・インフラ・産業・医療の6カテゴリ別に進捗率・予算執行率・遅延リスクをスコアリングし、首長が今週対応すべき案件を一目で把握できるようにする',
+      },
+      {
+        // Sprint #70: 地場産業6次産業化支援AI（地場産業衰退型自治体向け）
+        id: 'ai-ext-local-industry',
+        label: '🏭 地場産業6次産業化支援AI',
+        href: '/gyosei/local-industry',
+        status: 'active',
+        description: '地場産業台帳DBの各産業に「後継者空白リスクスコア」を算出。5年後に消えるリスクがある産業×支援施策をClaude Haikuが産業ごとに提言する',
       },
     ],
   },
 
   // ══════════════════════════════════════
-  //  🏫 ④ 教育
+  //  🏫 ④ 教育（Sprint #74: hidden中 → Sprint #75以降で順次実装）
   //  学校・教職員支援層
   //  アクセントカラー: blue（青）
   // ══════════════════════════════════════
   {
     id: 'education',
-    group: 'department',   // 部門別
+    group: 'department',   // 部門別（GROUP_ORDERに含まれないため非表示）
     icon: GraduationCap,
     emoji: '🏫',
     label: '教育',
@@ -473,44 +589,45 @@ export const FEATURE_MODULES: FeatureModule[] = [
     },
     pages: [
       {
+        // Sprint #74: 未実装のためhidden（Sprint #75以降で正式実装）
         id: 'education-staff',
         label: '👩‍🏫 教職員コンディション',
         href: '/education/staff',
-        status: 'active',
-        description: '教職員の体調・業務負荷・バーンアウトリスクを日次記録。早期サポートに活用',
+        status: 'hidden',
+        description: '未実装。Sprint #75以降で正式実装予定',
       },
       {
         id: 'education-student-wellbeing',
         label: '👦 児童・生徒WellBeing',
         href: '/education/student-wellbeing',
-        status: 'active',
-        description: '学校生活満足度・不登校リスク・いじめ兆候をAIが早期検知',
+        status: 'hidden',
+        description: '未実装。Sprint #75以降で正式実装予定',
       },
       {
         id: 'education-service',
         label: '🏫 学校サービス状況',
         href: '/education/service',
-        status: 'active',
-        description: '各校の行事・給食・授業進捗・施設状況を一元把握',
+        status: 'hidden',
+        description: '未実装。Sprint #75以降で正式実装予定',
       },
       {
         id: 'education-policy',
         label: '📋 AI教育政策提言',
         href: '/education/policy',
-        status: 'active',
-        description: '学力・出席・WellBeingデータをAIが分析し、教育委員会向け政策案を自動ドラフト',
+        status: 'hidden',
+        description: '未実装。Sprint #75以降で正式実装予定',
       },
     ],
   },
 
   // ══════════════════════════════════════
-  //  👮 ⑤ 警察・消防
+  //  👮 ⑤ 警察・消防（Sprint #74: hidden中 → Sprint #75以降で順次実装）
   //  地域安全・防災支援層
   //  アクセントカラー: amber（琥珀）
   // ══════════════════════════════════════
   {
     id: 'safety',
-    group: 'department',   // 部門別
+    group: 'department',   // 部門別（GROUP_ORDERに含まれないため非表示）
     icon: Shield,
     emoji: '👮',
     label: '警察・消防',
@@ -528,44 +645,45 @@ export const FEATURE_MODULES: FeatureModule[] = [
     },
     pages: [
       {
+        // Sprint #74: 未実装のためhidden
         id: 'safety-staff',
         label: '💪 隊員コンディション',
         href: '/safety/staff',
-        status: 'active',
-        description: '警察官・消防隊員の体調・勤務状況・ストレスレベルを管理。過重労働を早期検知',
+        status: 'hidden',
+        description: '未実装。Sprint #75以降で正式実装予定',
       },
       {
         id: 'safety-incident',
         label: '🚨 インシデント・出動記録',
         href: '/safety/incident',
-        status: 'active',
-        description: '事件・事故・火災・救急出動を記録。AIがパターン分析し予防策を提言',
+        status: 'hidden',
+        description: '未実装。Sprint #75以降で正式実装予定',
       },
       {
         id: 'safety-dashboard',
         label: '🛡️ 地域安全ダッシュボード',
         href: '/safety/dashboard',
-        status: 'active',
-        description: '犯罪・火災・救急出動件数の時系列推移と地域マップを可視化',
+        status: 'hidden',
+        description: '未実装。Sprint #75以降で正式実装予定',
       },
       {
         id: 'safety-disaster',
         label: '🌊 防災・避難情報管理',
         href: '/safety/disaster',
-        status: 'active',
-        description: '災害発生時の避難所開設状況・要支援者リスト・物資管理を一元管理',
+        status: 'hidden',
+        description: '未実装。Sprint #75以降で正式実装予定',
       },
     ],
   },
 
   // ══════════════════════════════════════
-  //  🏥 ⑥ 医療・介護
+  //  🏥 ⑥ 医療・介護（Sprint #74: hidden中 → Sprint #75以降で順次実装）
   //  高齢化社会を支える医療・福祉層
   //  アクセントカラー: rose（薔薇）
   // ══════════════════════════════════════
   {
     id: 'healthcare',
-    group: 'department',   // 部門別
+    group: 'department',   // 部門別（GROUP_ORDERに含まれないため非表示）
     icon: Heart,
     emoji: '🏥',
     label: '医療・介護',
@@ -583,44 +701,45 @@ export const FEATURE_MODULES: FeatureModule[] = [
     },
     pages: [
       {
+        // Sprint #74: 未実装のためhidden
         id: 'healthcare-staff',
         label: '👩‍⚕️ 医療従事者コンディション',
         href: '/healthcare/staff',
-        status: 'active',
-        description: '医師・看護師・介護士の疲労度・充足率をモニタリング。離職リスクを早期検知',
+        status: 'hidden',
+        description: '未実装。Sprint #75以降で正式実装予定',
       },
       {
         id: 'healthcare-service',
         label: '🏥 医療サービス状況',
         href: '/healthcare/service',
-        status: 'active',
-        description: '診療科別の稼働状況・待ち時間・在宅医療カバー率を可視化',
+        status: 'hidden',
+        description: '未実装。Sprint #75以降で正式実装予定',
       },
       {
         id: 'healthcare-elderly',
         label: '👴 高齢者WellBeingモニタリング',
         href: '/healthcare/elderly',
-        status: 'active',
-        description: '要介護認定者の生活状況・訪問頻度・孤独死リスクをAIが継続追跡',
+        status: 'hidden',
+        description: '未実装。Sprint #75以降で正式実装予定',
       },
       {
         id: 'healthcare-care',
         label: '🤝 介護サービス連携',
         href: '/healthcare/care',
-        status: 'active',
-        description: '居宅介護・施設介護・地域包括支援センターの連携状況を一元管理',
+        status: 'hidden',
+        description: '未実装。Sprint #75以降で正式実装予定',
       },
     ],
   },
 
   // ══════════════════════════════════════
-  //  🏗️ ⑦ 公共設備
+  //  🏗️ ⑦ 公共設備（Sprint #74: hidden中 → Sprint #75以降で順次実装）
   //  電気・水道・ガス・道路管理層
   //  アクセントカラー: cyan（シアン）
   // ══════════════════════════════════════
   {
     id: 'infrastructure',
-    group: 'department',   // 部門別
+    group: 'department',   // 部門別（GROUP_ORDERに含まれないため非表示）
     icon: Settings,
     emoji: '🏗️',
     label: '公共設備',
@@ -638,52 +757,52 @@ export const FEATURE_MODULES: FeatureModule[] = [
     },
     pages: [
       {
+        // Sprint #74: 未実装のためhidden
         id: 'infrastructure-staff',
         label: '👷 設備員コンディション',
         href: '/infrastructure/staff',
-        status: 'active',
-        description: '電気・水道・道路担当員の体調・業務負荷を日次記録。現場安全管理に活用',
+        status: 'hidden',
+        description: '未実装。Sprint #75以降で正式実装予定',
       },
       {
         id: 'infrastructure-service',
         label: '🔧 設備稼働・点検状況',
         href: '/infrastructure/service',
-        status: 'active',
-        description: '電気・水道・ガス・道路の定期点検結果・稼働状況・老朽化度を一元把握',
+        status: 'hidden',
+        description: '未実装。Sprint #75以降で正式実装予定',
       },
       {
         id: 'infrastructure-incident',
         label: '🚨 障害・緊急修繕記録',
         href: '/infrastructure/incident',
-        status: 'active',
-        description: '停電・断水・ガス漏れ・道路陥没などの障害発生〜復旧完了を記録。影響世帯数を追跡',
+        status: 'hidden',
+        description: '未実装。Sprint #75以降で正式実装予定',
       },
       {
         id: 'infrastructure-policy',
         label: '📋 AI設備維持管理提言',
         href: '/infrastructure/policy',
-        status: 'active',
-        description: '点検・障害データをAIが分析し、修繕優先順位・老朽化対策・予算計画を自動ドラフト',
+        status: 'hidden',
+        description: '未実装。Sprint #75以降で正式実装予定',
       },
       {
         id: 'infrastructure-fault-reports',
         label: '🚨 障害通報LINE受付',
         href: '/infrastructure/fault-reports',
-        status: 'active',
-        description: '住民LINEからの断水・停電・ガス漏れ等の通報をAIが自動分類。担当課へ転送・Notionに記録',
+        status: 'hidden',
+        description: '未実装。Sprint #75以降で正式実装予定',
       },
     ],
   },
 
   // ══════════════════════════════════════
-  //  🌐 ⑧ 公務員連携（統合ビュー）
-  //  自治体職員・教育・警察消防・医療介護を横断し
-  //  「縮んでいく街を公務員全体で支える」モデルを可視化
+  //  🌐 ⑧ 公務員連携（統合ビュー）Sprint #74: hidden中
+  //  部門別グループが揃ったら復活予定
   //  アクセントカラー: indigo（藍）
   // ══════════════════════════════════════
   {
     id: 'koumuin',
-    group: 'cross',   // 横断・研修
+    group: 'cross',   // 横断（GROUP_ORDERに含まれないため非表示）
     icon: Globe,
     emoji: '🌐',
     label: '公務員連携',
@@ -701,25 +820,26 @@ export const FEATURE_MODULES: FeatureModule[] = [
     },
     pages: [
       {
+        // Sprint #74: 部門別グループ実装まで hidden
         id: 'koumuin-dashboard',
         label: '🌐 全部門 統合ダッシュボード',
         href: '/koumuin/dashboard',
-        status: 'active',
-        description: '行政・教育・警察消防・医療介護の全公務員WellBeingを一画面で俯瞰。街全体の支援力を可視化',
+        status: 'hidden',
+        description: '部門別グループが揃った後に実装予定',
       },
       {
         id: 'koumuin-ai-advisor',
         label: '🤖 AI 全体最適化提言',
         href: '/koumuin/ai-advisor',
-        status: 'active',
-        description: '全部門データをAIが横断分析し、人員配置・連携強化ポイントを提言',
+        status: 'hidden',
+        description: '部門別グループが揃った後に実装予定',
       },
       {
         id: 'koumuin-cross-issue',
         label: '🔄 部門横断 課題連携',
         href: '/koumuin/cross-issue',
-        status: 'active',
-        description: '部門をまたぐ課題（高齢者・子育て・障害者等）を一元管理し、担当部門が連携して解決',
+        status: 'hidden',
+        description: '部門別グループが揃った後に実装予定',
       },
     ],
   },
@@ -808,28 +928,28 @@ export const FEATURE_MODULES: FeatureModule[] = [
         description: '住民のLINE相談履歴をAIが分析し、WBスコアと個別コーチングメッセージを生成。職員が住民に寄り添う次のアクションを提示（霧島市版）',
       },
       {
-        // Sprint #51 追加: インフラ老朽化管理（霧島市）
+        // Sprint #74: /gyosei/infra-aging（共通）と重複のためhidden
         id: 'kirishima-infra-aging',
         label: '🛣️ インフラ老朽化管理',
         href: '/kirishima/infra-aging',
-        status: 'active',
-        description: '橋梁・市道・排水路・公共施設・上下水道の健全度スコアをAIが分析。緊急修繕・予算最適化・施設統廃合の3シナリオで修繕計画を提言',
+        status: 'hidden',
+        description: '共通ページ /gyosei/infra-aging に統合済み',
       },
       {
-        // Sprint #52 追加: 財政健全化管理（霧島市）
+        // Sprint #74: /gyosei/fiscal-health（共通）と重複のためhidden
         id: 'kirishima-fiscal-health',
         label: '💴 財政健全化管理',
         href: '/kirishima/fiscal-health',
-        status: 'active',
-        description: '財政健全化法に基づく実質公債費比率・将来負担比率・経常収支比率等をAIが分析。歳出最適化・中長期財政計画の3シナリオで改善提言を生成',
+        status: 'hidden',
+        description: '共通ページ /gyosei/fiscal-health に統合済み',
       },
       {
-        // Sprint #53 追加: 経営ダッシュボード（霧島市）
+        // Sprint #74: /gyosei/management-dashboard（共通）と重複のためhidden
         id: 'kirishima-management-dashboard',
         label: '🏛️ 経営ダッシュボード',
         href: '/kirishima/management-dashboard',
-        status: 'active',
-        description: '財政健全化・インフラ老朽化・PDCA進捗・住民WBスコアの4領域を1画面に集約。市長・幹部向け総合KPIビュー',
+        status: 'hidden',
+        description: '共通ページ /gyosei/management-dashboard に統合済み',
       },
     ],
   },
@@ -841,7 +961,7 @@ export const FEATURE_MODULES: FeatureModule[] = [
   // ══════════════════════════════════════
   {
     id: 'training',
-    group: 'cross',   // 横断・研修
+    group: 'core',   // Sprint #74: cross → core へ移動（研修は全自治体共通の基本機能）
     icon: BookOpen,
     emoji: '🎮',
     label: '研修・学習',
@@ -891,13 +1011,12 @@ export const FEATURE_MODULES: FeatureModule[] = [
 
 
   // ══════════════════════════════════════
-  //  👨‍👩‍👧‍👦 Personal Coarc
-  //  家族向け個人AIアシスタント（BYOK方式）
+  //  👨‍👩‍👧‍👦 Personal Coarc Sprint #74: hidden中（別製品として分離検討）
   //  アクセントカラー: purple（紫）
   // ══════════════════════════════════════
   {
     id: 'personal-coarc',
-    group: 'cross',   // 横断・研修
+    group: 'cross',   // 横断（GROUP_ORDERに含まれないため非表示）
     icon: Users,
     emoji: '👨‍👩‍👧‍👦',
     label: 'Personal Coarc',
@@ -915,26 +1034,26 @@ export const FEATURE_MODULES: FeatureModule[] = [
     },
     pages: [
       {
-        // Sprint #61 追加: 生活困り解決ダッシュボード
+        // Sprint #74: 自治体DXアプリから分離検討のためhidden
         id: 'personal-coarc-worries',
         label: '📋 生活困り解決ダッシュボード',
         href: '/personal-coarc/worries',
-        status: 'active',
-        description: '共働き子育て・一人暮らし・シニア・フリーランスなど6タイプの生活困りをAI解決策付きで一覧表示。実装状況・生活領域でフィルタリング可能',
+        status: 'hidden',
+        description: '別製品として分離検討中',
       },
       {
         id: 'personal-coarc-admin',
         label: '⚙️ 管理者セットアップ',
         href: '/personal-coarc/admin',
-        status: 'active',
-        description: 'APIキー登録・QRコード招待',
+        status: 'hidden',
+        description: '別製品として分離検討中',
       },
       {
         id: 'personal-coarc-join',
         label: '👤 家族登録',
         href: '/personal-coarc/join',
-        status: 'active',
-        description: 'QRスキャン後の登録フォーム',
+        status: 'hidden',
+        description: '別製品として分離検討中',
       },
     ],
   },
@@ -1016,11 +1135,12 @@ export const FEATURE_MODULES: FeatureModule[] = [
         description: '学校・ICT・人口・移住・観光の5本のNotionDBを読み込み、実際の数値を引用した施策提案とデータ不足の指摘を生成する屋久島町専用エンジン',
       },
       {
+        // Sprint #74: 運用管理グループのウィザードと重複のためhidden
         id: 'yakushima-setup',
         label: '🧠 組織設計ウィザード',
         href: '/runwith/org-wizard',
-        status: 'coming',
-        description: '組織設計ウィザードを使って屋久島町のNotionページを自動生成',
+        status: 'hidden',
+        description: '運用管理グループのウィザードへ誘導',
       },
     ],
   },
@@ -1365,11 +1485,12 @@ export const FEATURE_MODULES: FeatureModule[] = [
     },
     pages: [
       {
+        // Sprint #74: 法人向け設計を固めてから再開のためhidden
         id: 'nec-setup',
         label: '🧠 組織設計ウィザード起動',
         href: '/runwith/org-wizard',
-        status: 'coming',
-        description: '組織設計ウィザードを使ってNECコーポレートITのNotionページを自動生成',
+        status: 'hidden',
+        description: '法人向け設計を固めてから再開予定',
       },
     ],
   },
