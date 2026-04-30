@@ -297,6 +297,7 @@ export async function GET(req: NextRequest) {
 
   try {
     // ── Notionから全往診患者レコードを取得 ─────────────
+    // ── Notionから全往診患者レコードを取得 ─────────────
     const res = await fetch(`${NOTION_API}/databases/${dbConf.visitDbId}/query`, {
       method: 'POST',
       headers: {
@@ -305,7 +306,10 @@ export async function GET(req: NextRequest) {
         'Notion-Version': NOTION_VER,
       },
       body: JSON.stringify({
-        sorts:     [{ property: '最終往診日', direction: 'ascending' }],
+        // ※ '最終往診日'（旧手動作成DB）と '前回往診日'（ウィザード自動作成DB）で
+        //   プロパティ名が異なるため、プロパティ sort は使わず created_time で代用する。
+        //   最終的な表示順序は priorityScore 降順（下記 records.sort）で決まるため問題なし。
+        sorts:     [{ timestamp: 'created_time', direction: 'descending' }],
         page_size: 50,
       }),
     })
@@ -318,7 +322,8 @@ export async function GET(req: NextRequest) {
     // ── 優先度スコア付きで変換 ──────────────────────────
     const records: VisitPriorityRecord[] = rows.map(r => {
       const p             = r.properties
-      const lastVisitDate = getDate(p,   '最終往診日')
+      // '前回往診日'（ウィザード自動作成DB）と '最終往診日'（旧手動作成DB）の両方に対応
+      const lastVisitDate = getDate(p, '前回往診日') || getDate(p, '最終往診日')
       const age           = getNumber(p, '年齢')
       const householdType = getSelect(p, '世帯状況')
       const careLevel     = getSelect(p, '要介護度')
