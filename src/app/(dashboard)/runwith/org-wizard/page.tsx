@@ -45,7 +45,8 @@ import {
   Check,
 } from 'lucide-react';
 import type { RoadmapData } from '@/app/api/runwith/roadmap-ai/route';
-import { BASIC_FEATURES, EXTENDED_FEATURES } from '@/config/feature-catalog';
+import { BASIC_FEATURES, EXTENDED_FEATURES, DB_SCHEMAS } from '@/config/feature-catalog';
+import type { FeatureDef } from '@/config/feature-catalog';
 
 // ─── 定数：課題一覧 ────────────────────────────────────
 
@@ -238,11 +239,12 @@ type HearingData = {
 };
 
 /**
- * ウィザードのステップ定義（Sprint #71 拡張）
+ * ウィザードのステップ定義（Sprint #72 拡張）
  *   0=スタート、1〜5=BlockA〜D+E、6=ロードマップ
- *   7=基本機能確認（NEW）、8=拡張AI機能選択（NEW）、9=完了
+ *   7=基本機能確認、8=拡張AI機能選択
+ *   9=テストデータ入力（NEW）、10=完了
  */
-type WizardStep = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
+type WizardStep = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
 
 /** ロードマップ保存後のNotionリンクセット */
 type NotionLinks = {
@@ -276,6 +278,12 @@ export default function OrgWizardPage() {
   const [notionLinks,  setNotionLinks]  = useState<NotionLinks | null>(null);
   const [error,        setError]        = useState<string | null>(null);
 
+  // Sprint #72: テストデータ入力状態
+  // featureId + dbKey → 入力行の配列
+  const [testDataByKey, setTestDataByKey] = useState<Record<string, Record<string, string>[]>>({});
+  const [isSeedingData, setIsSeedingData] = useState(false);
+  const [seedResults, setSeedResults]     = useState<Record<string, { success: boolean; message: string }>>({});
+
   // ── ヘルパー ───────────────────────────────────────────
   const update = (key: keyof HearingData, value: string) =>
     setData((prev) => ({ ...prev, [key]: value }));
@@ -303,6 +311,7 @@ export default function OrgWizardPage() {
     if (step === 6) return roadmap !== null; // ロードマップ生成済みなら次へ可能
     if (step === 7) return true;             // 基本機能確認（表示のみ）
     if (step === 8) return true;             // 拡張機能は0件でも可
+    if (step === 9) return true;             // テストデータは任意入力
     return true;
   };
 
@@ -351,7 +360,7 @@ export default function OrgWizardPage() {
   const handleSubmit = async () => {
     setIsSubmitting(true);
     setError(null);
-    setStep(9); // Sprint #71: 完了画面は Step 9 に移動
+    setStep(9); // Sprint #72: Notion保存後はテストデータ入力（Step 9）へ
 
     try {
       const res = await fetch('/api/notion/create-hearing', {
@@ -380,7 +389,7 @@ export default function OrgWizardPage() {
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       setError(msg);
-      setStep(8); // エラー時は拡張機能選択画面に戻す
+      setStep(8); // Notionエラー時は拡張機能選択画面に戻す
     } finally {
       setIsSubmitting(false);
     }
@@ -1441,9 +1450,276 @@ export default function OrgWizardPage() {
       )}
 
       {/* ════════════════════════════════════════════════ */}
-      {/* STEP 9: 完了画面（Sprint #71: Step 7 から移動）  */}
+      {/* STEP 9: テストデータ入力（Sprint #72 NEW）        */}
       {/* ════════════════════════════════════════════════ */}
       {step === 9 && (
+        <div className="bg-white rounded-xl shadow-sm border border-blue-200 p-6">
+
+          {/* Notion保存中はローディング表示 */}
+          {isSubmitting && (
+            <div className="text-center py-12">
+              <Loader2 size={32} className="text-orange-500 animate-spin mx-auto mb-4" />
+              <p className="text-gray-600 font-medium">Notionに保存中...</p>
+              <p className="text-xs text-gray-400 mt-1">自治体ページとロードマップを作成しています</p>
+            </div>
+          )}
+
+          {/* 保存完了後：テストデータ入力フォーム */}
+          {!isSubmitting && notionLinks && (() => {
+            // 入力対象の機能リスト（基本3件 + 選択した拡張機能）
+            const allFeatures: FeatureDef[] = [
+              ...BASIC_FEATURES,
+              ...EXTENDED_FEATURES.filter((f) => data.selectedExtensions.includes(f.id)),
+            ];
+
+            // 入力行を初期化する（初回のみ各機能に2行追加）
+            const initRows = (dbKey: string) => {
+              if (testDataByKey[dbKey]) return;
+              const schema = DB_SCHEMAS[dbKey];
+              if (!schema) return;
+              const emptyRow = Object.fromEntries(
+                schema.properties
+                  .filter((p) => p.name !== '自治体名')
+                  .map((p) => [p.name, ''])
+              );
+              setTestDataByKey((prev) => ({
+                ...prev,
+                [dbKey]: [{ ...emptyRow }, { ...emptyRow }],
+              }));
+            };
+
+            // 行の特定フィールドを更新
+            const updateCell = (dbKey: string, rowIdx: number, field: string, value: string) => {
+              setTestDataByKey((prev) => {
+                const rows = [...(prev[dbKey] ?? [])];
+                rows[rowIdx] = { ...rows[rowIdx], [field]: value };
+                return { ...prev, [dbKey]: rows };
+              });
+            };
+
+            // 行を追加
+            const addRow = (dbKey: string) => {
+              const schema = DB_SCHEMAS[dbKey];
+              if (!schema) return;
+              const emptyRow = Object.fromEntries(
+                schema.properties
+                  .filter((p) => p.name !== '自治体名')
+                  .map((p) => [p.name, ''])
+              );
+              setTestDataByKey((prev) => ({
+                ...prev,
+                [dbKey]: [...(prev[dbKey] ?? []), emptyRow],
+              }));
+            };
+
+            // seed-data API を呼んでデータを登録
+            const handleSeedData = async () => {
+              setIsSeedingData(true);
+              const newResults: Record<string, { success: boolean; message: string }> = {};
+
+              for (const feature of allFeatures) {
+                for (const dbKey of feature.dbKeys.length > 0 ? feature.dbKeys : []) {
+                  const rows = testDataByKey[dbKey] ?? [];
+                  const validRows = rows.filter((r) =>
+                    Object.values(r).some((v) => v.trim() !== '')
+                  );
+                  if (validRows.length === 0) continue;
+
+                  try {
+                    const res = await fetch('/api/runwith/seed-data', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        municipalityId:   data.a2_org_name.toLowerCase().replace(/\s/g, ''),
+                        municipalityName: data.a2_org_name,
+                        featureId:        feature.id,
+                        dbKey,
+                        rows:             validRows,
+                      }),
+                    });
+                    const json = await res.json() as {
+                      success: boolean; message: string; skipped?: boolean
+                    };
+                    newResults[dbKey] = {
+                      success: json.success,
+                      message: json.skipped
+                        ? 'DBが未作成のためスキップ（Sprint #73 で自動作成後に登録されます）'
+                        : json.message,
+                    };
+                  } catch {
+                    newResults[dbKey] = { success: false, message: '通信エラー' };
+                  }
+                }
+              }
+
+              setSeedResults(newResults);
+              setIsSeedingData(false);
+              setStep(10); // 完了画面へ
+            };
+
+            return (
+              <>
+                <div className="flex items-center gap-3 mb-6 pb-4 border-b border-blue-100">
+                  <div className="p-2 bg-blue-100 rounded-lg">
+                    <Database size={20} className="text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-blue-600 uppercase tracking-wide">STEP 9 · テストデータ入力</p>
+                    <h2 className="text-lg font-bold text-gray-900">サンプルデータを入力する</h2>
+                    <p className="text-sm text-gray-500">
+                      各機能が正しく動くか確認するためのデータを入力します（最低2件推奨）
+                    </p>
+                  </div>
+                </div>
+
+                {/* Notionリンク（保存済み） */}
+                <div className="flex gap-2 mb-6">
+                  {notionLinks.municipalityUrl && (
+                    <a href={notionLinks.municipalityUrl} target="_blank" rel="noopener noreferrer"
+                      className="flex items-center gap-1 text-xs px-3 py-1.5 bg-orange-50 border border-orange-200 text-orange-700 rounded-lg hover:bg-orange-100">
+                      <ExternalLink size={12} /> 自治体ページを確認
+                    </a>
+                  )}
+                </div>
+
+                {/* 機能ごとのデータ入力フォーム */}
+                <div className="space-y-6 mb-6">
+                  {allFeatures.map((feature) => {
+                    const dbKeys = feature.dbKeys.length > 0 ? feature.dbKeys : [];
+                    if (dbKeys.length === 0) return null; // staff_condition は既存DBのためスキップ
+
+                    return (
+                      <div key={feature.id} className="border border-gray-200 rounded-lg overflow-hidden">
+                        {/* 機能ヘッダー */}
+                        <div className="flex items-center gap-2 px-4 py-3 bg-gray-50 border-b border-gray-200">
+                          <span className="text-lg">{feature.icon}</span>
+                          <p className="text-sm font-semibold text-gray-700">{feature.name}</p>
+                          <span className="text-xs px-1.5 py-0.5 bg-gray-200 text-gray-500 rounded">
+                            Sprint #{feature.sprint}
+                          </span>
+                        </div>
+
+                        {/* DBごとのテーブル */}
+                        {dbKeys.map((dbKey) => {
+                          const schema = DB_SCHEMAS[dbKey];
+                          if (!schema) return null;
+                          // 自治体名は自動入力なので除外
+                          const fields = schema.properties.filter((p) => p.name !== '自治体名');
+                          const rows   = testDataByKey[dbKey];
+                          if (!rows) { initRows(dbKey); return null; }
+
+                          const seedResult = seedResults[dbKey];
+
+                          return (
+                            <div key={dbKey} className="p-4">
+                              {dbKeys.length > 1 && (
+                                <p className="text-xs font-medium text-gray-500 mb-2">📋 {schema.name}</p>
+                              )}
+
+                              {/* 登録結果バッジ */}
+                              {seedResult && (
+                                <div className={`flex items-center gap-1 text-xs px-2 py-1 rounded mb-2 ${
+                                  seedResult.success
+                                    ? 'bg-green-50 text-green-700'
+                                    : 'bg-amber-50 text-amber-700'
+                                }`}>
+                                  {seedResult.success ? '✅' : '⚠️'} {seedResult.message}
+                                </div>
+                              )}
+
+                              {/* 入力テーブル（横スクロール対応） */}
+                              <div className="overflow-x-auto">
+                                <table className="w-full text-xs border-collapse">
+                                  <thead>
+                                    <tr className="bg-gray-50">
+                                      <th className="w-8 px-2 py-1.5 text-gray-400 font-medium border border-gray-200">#</th>
+                                      {fields.map((f) => (
+                                        <th key={f.name}
+                                          className="px-2 py-1.5 text-left text-gray-600 font-medium border border-gray-200 whitespace-nowrap">
+                                          {f.name}
+                                          <span className="ml-1 text-gray-300">[{f.type}]</span>
+                                        </th>
+                                      ))}
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {rows.map((row, rowIdx) => (
+                                      <tr key={rowIdx} className={rowIdx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                                        <td className="px-2 py-1 text-center text-gray-400 border border-gray-200">
+                                          {rowIdx + 1}
+                                        </td>
+                                        {fields.map((f) => (
+                                          <td key={f.name} className="border border-gray-200 p-0">
+                                            <input
+                                              type="text"
+                                              value={row[f.name] ?? ''}
+                                              onChange={(e) => updateCell(dbKey, rowIdx, f.name, e.target.value)}
+                                              placeholder={
+                                                f.type === 'date' ? 'YYYY-MM-DD' :
+                                                f.type === 'number' ? '数値' :
+                                                f.type === 'checkbox' ? 'あり / なし' :
+                                                f.type === 'select' ? '選択肢' : '入力'
+                                              }
+                                              className="w-full px-2 py-1.5 text-xs focus:outline-none focus:bg-blue-50 min-w-[80px]"
+                                            />
+                                          </td>
+                                        ))}
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+
+                              {/* 行を追加ボタン */}
+                              <button
+                                onClick={() => addRow(dbKey)}
+                                className="mt-2 text-xs text-blue-600 hover:text-blue-700 flex items-center gap-1">
+                                + 行を追加
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* ナビゲーション */}
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setStep(10)}
+                    className="flex items-center gap-1 px-4 py-2.5 border border-gray-300 text-gray-600 rounded-lg text-sm hover:bg-gray-50">
+                    スキップ（後で手動入力）
+                  </button>
+                  <button
+                    onClick={handleSeedData}
+                    disabled={isSeedingData}
+                    className={`flex-1 flex items-center justify-center gap-2 py-2.5 font-semibold rounded-lg text-sm transition-colors ${
+                      !isSeedingData
+                        ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    }`}
+                  >
+                    {isSeedingData ? (
+                      <><Loader2 size={16} className="animate-spin" /> 登録中...</>
+                    ) : (
+                      <><Database size={16} /> Notionにテストデータを登録して完了</>
+                    )}
+                  </button>
+                </div>
+                <p className="text-center text-xs text-gray-400 mt-2">
+                  新規自治体のDBはSprint #73で自動作成されます。既存DBへの登録のみ即時反映されます。
+                </p>
+              </>
+            );
+          })()}
+        </div>
+      )}
+
+      {/* ════════════════════════════════════════════════ */}
+      {/* STEP 10: 完了画面（Sprint #72: Step 9 から移動） */}
+      {/* ════════════════════════════════════════════════ */}
+      {step === 10 && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center">
 
           {/* 保存中 */}
@@ -1522,6 +1798,8 @@ export default function OrgWizardPage() {
                   setRoadmap(null);
                   setNotionLinks(null);
                   setError(null);
+                  setTestDataByKey({});
+                  setSeedResults({});
                   setData({
                     a1_end_user: '', a1_count: '', a1_relation: '直接',
                     a2_org_name: '', a2_count: '', a2_services: '',
