@@ -163,6 +163,251 @@ const MUNICIPALITY_DATA: Record<string, MunicipalityDiagnosisData> = {
 弱み: 財政力低下、人口減少加速、医療介護資源不足、IT人材不足`,
   },
 
+  // ── 海士町（島根県隠岐諸島）── Sprint #64 ───────────
+  amacho: {
+    name: '海士町',
+    prefecture: '島根県',
+    energySelfSufficiency: 55,
+    fiscalStrength: 13,
+    fiscalIndex: 0.13,
+    populationViability: 42,
+    wellBeingScore: 71,
+    currentPopulation: 2300,
+    agingRate: 45.5,
+    populationForecast: [
+      { year: 2024, population: 2300 },
+      { year: 2034, population: 1900 },
+      { year: 2044, population: 1500 },
+      { year: 2054, population: 970 },
+    ],
+    survivalRank: 'C',
+    comments: {
+      energy:     '再生可能エネルギーで約55%自給。離島の地理的優位を活かした太陽光・風力の拡充が鍵',
+      fiscal:     '財政力指数0.13は全国最低水準。ふるさと納税・移住施策で自主財源確保が急務',
+      population: '2054年に約970人（現在の42%）と推計。少子高齢化が加速し行政サービスの持続が最大課題',
+      wellbeing:  '「隠岐の島」の豊かな自然・食文化・コミュニティが高スコアを支える。移住者の定着率向上が鍵',
+    },
+    aiPromptContext: `
+【海士町データ】
+- 現在人口: 2,300人（高齢化率 45.5%）
+- 財政力指数: 0.13（全国最低水準。交付税・ふるさと納税に大きく依存）
+- エネルギー自給率: 55%（太陽光・風力）
+- 2054年推計人口: 970人（現在の42%）
+- 生存可能性ランク: C（危機的）
+強み: 世界的注目の移住先、隠岐の自然・食文化、コミュニティの強さ
+弱み: 超高齢化、財政力低下、医療・介護資源不足、島内IT人材皆無`,
+  },
+
+  // ── 五島市（長崎県五島列島）── Sprint #65 ──────────
+  goto: {
+    name: '五島市',
+    prefecture: '長崎県',
+    energySelfSufficiency: 35,
+    fiscalStrength: 17,
+    fiscalIndex: 0.17,
+    populationViability: 44,
+    wellBeingScore: 63,
+    currentPopulation: 32000,
+    agingRate: 40.8,
+    populationForecast: [
+      { year: 2024, population: 32000 },
+      { year: 2034, population: 26500 },
+      { year: 2044, population: 21000 },
+      { year: 2054, population: 14000 },
+    ],
+    survivalRank: 'C',
+    comments: {
+      energy:     '風力発電で約35%自給。五島沖の浮体式洋上風力は全国先進事例。100%自給も射程内',
+      fiscal:     '財政力指数0.17は全国平均の1/3以下。島しょ部の高コスト構造が財政を圧迫している',
+      population: '2054年に約14,000人（現在の44%）と推計。医師不足・高齢化で在宅医療の限界が深刻',
+      wellbeing:  '自然・食文化・信仰（教会群）が生活満足度を支える。若者の島外流出が止まらない',
+    },
+    aiPromptContext: `
+【五島市データ】
+- 現在人口: 32,000人（高齢化率 40.8%）
+- 財政力指数: 0.17（全国平均の1/3以下。島しょ部コスト高）
+- エネルギー自給率: 35%（風力・太陽光。洋上風力で拡大中）
+- 2054年推計人口: 14,000人（現在の44%）
+- 生存可能性ランク: C（危機的）
+強み: 浮体式洋上風力の先進地、世界遺産の教会群、豊富な水産物
+弱み: 医師不足、高齢化率40%超、財政力脆弱、島外への若者流出`,
+  },
+
+  // ── 輪島市（石川県）── Sprint #67 ─────────────────
+  wajima: {
+    name: '輪島市',
+    prefecture: '石川県',
+    energySelfSufficiency: 22,
+    fiscalStrength: 19,
+    fiscalIndex: 0.19,
+    populationViability: 38,
+    wellBeingScore: 52,
+    currentPopulation: 24000,
+    agingRate: 43.0,
+    populationForecast: [
+      { year: 2024, population: 24000 },
+      { year: 2034, population: 18500 },
+      { year: 2044, population: 13500 },
+      { year: 2054, population: 9200 },
+    ],
+    survivalRank: 'D',
+    comments: {
+      energy:     '能登半島地震でインフラ損傷。復旧後は再エネ導入による強靭化を目指している段階',
+      fiscal:     '震災復興で特別交付税を受けながらも、財政力指数0.19は脆弱。産業復興が急務',
+      population: '2054年に約9,200人（現在の38%）と推計。震災後の転出加速が懸念される深刻な状況',
+      wellbeing:  '輪島塗・朝市・能登の豊かな文化が誇り。震災からの復興が住民Well-Beingの最重要テーマ',
+    },
+    aiPromptContext: `
+【輪島市データ】
+- 現在人口: 24,000人（高齢化率 43.0%）
+- 財政力指数: 0.19（震災復興特別交付税受給中。産業再建が急務）
+- エネルギー自給率: 22%（地震でインフラ損傷。復旧・再エネ化を推進中）
+- 2054年推計人口: 9,200人（現在の38%）
+- 生存可能性ランク: D（限界）
+強み: 輪島塗・朝市の伝統産業、国内外からの復興支援、能登の自然・食文化
+弱み: 2024年能登半島地震で甚大被害、震災後の転出加速、財政力脆弱、高齢化率43%`,
+  },
+
+  // ── 西粟倉村（岡山県英田郡）── Sprint #66 ─────────
+  nishiawakura: {
+    name: '西粟倉村',
+    prefecture: '岡山県',
+    energySelfSufficiency: 70,
+    fiscalStrength: 12,
+    fiscalIndex: 0.12,
+    populationViability: 53,
+    wellBeingScore: 76,
+    currentPopulation: 1400,
+    agingRate: 37.5,
+    populationForecast: [
+      { year: 2024, population: 1400 },
+      { year: 2034, population: 1200 },
+      { year: 2044, population: 1000 },
+      { year: 2054, population: 740 },
+    ],
+    survivalRank: 'B',
+    comments: {
+      energy:     '「百年の森林」バイオマス・太陽光で約70%自給。森林資源を活かした脱炭素先進村',
+      fiscal:     '財政力指数0.12は全国最低水準。ふるさと納税・森林ビジネスで自主財源を確保中',
+      population: '2054年に約740人（現在の53%）と推計。移住促進で「消滅可能性村」を回避する戦略',
+      wellbeing:  '自然との共生・コミュニティの絆・森林ビジネスの活気が高スコアを維持。移住者に人気',
+    },
+    aiPromptContext: `
+【西粟倉村データ】
+- 現在人口: 1,400人（高齢化率 37.5%）
+- 財政力指数: 0.12（全国最低水準。ふるさと納税・林業ビジネスで補完）
+- エネルギー自給率: 70%（バイオマス・太陽光。百年の森林プロジェクト）
+- 2054年推計人口: 740人（現在の53%）
+- 生存可能性ランク: B（要注意）
+強み: 森林ビジネス「百年の森林」、移住者を惹きつけるブランド力、脱炭素先進地
+弱み: 財政力極度に脆弱、農業後継者不足、医療アクセス困難`,
+  },
+
+  // ── 上勝町（徳島県勝浦郡）── Sprint #68 ───────────
+  kamikatsu: {
+    name: '上勝町',
+    prefecture: '徳島県',
+    energySelfSufficiency: 62,
+    fiscalStrength: 11,
+    fiscalIndex: 0.11,
+    populationViability: 50,
+    wellBeingScore: 79,
+    currentPopulation: 1500,
+    agingRate: 52.0,
+    populationForecast: [
+      { year: 2024, population: 1500 },
+      { year: 2034, population: 1250 },
+      { year: 2044, population: 1000 },
+      { year: 2054, population: 750 },
+    ],
+    survivalRank: 'B',
+    comments: {
+      energy:     'バイオマス・太陽光で約62%自給。2020年ゼロカーボン宣言後、脱炭素で全国トップ級の実績',
+      fiscal:     '財政力指数0.11は全国最低水準。ふるさと納税とゼロウェイスト観光で補完している状態',
+      population: '2054年に約750人（現在の50%）と推計。高齢化率52%は全国最高水準。行政継続に黄信号',
+      wellbeing:  'ゼロウェイスト・自然との共生・「いろどり」事業の高齢者活躍がWell-Beingを高水準に維持',
+    },
+    aiPromptContext: `
+【上勝町データ】
+- 現在人口: 1,500人（高齢化率 52.0%、全国最高水準）
+- 財政力指数: 0.11（全国最低水準。ゼロウェイスト観光・ふるさと納税で補完）
+- エネルギー自給率: 62%（バイオマス・太陽光。2020年ゼロカーボン宣言済み）
+- 2054年推計人口: 750人（現在の50%）
+- 生存可能性ランク: B（要注意）
+強み: ゼロウェイスト宣言で世界的認知度、高齢者活躍（いろどり）、豊かな森林資源
+弱み: 高齢化率52%で行政継続に限界、財政力極度脆弱、後継者不在の農業・林業`,
+  },
+
+  // ── 神埼市（佐賀県）── Sprint #69 ──────────────────
+  kanzaki: {
+    name: '神埼市',
+    prefecture: '佐賀県',
+    energySelfSufficiency: 26,
+    fiscalStrength: 24,
+    fiscalIndex: 0.24,
+    populationViability: 58,
+    wellBeingScore: 63,
+    currentPopulation: 29000,
+    agingRate: 35.0,
+    populationForecast: [
+      { year: 2024, population: 29000 },
+      { year: 2034, population: 25500 },
+      { year: 2044, population: 21800 },
+      { year: 2054, population: 16800 },
+    ],
+    survivalRank: 'B',
+    comments: {
+      energy:     '太陽光・農業バイオマスで約26%自給。農地を活かしたアグリ発電の拡充が脱炭素の鍵',
+      fiscal:     '財政力指数0.24は全国平均の半分以下。農業振興・物流拠点化で税基盤強化が急務',
+      population: '2054年に約16,800人（現在の58%）と推計。子育て世帯の福岡・佐賀市への流出が加速中',
+      wellbeing:  '吉野ヶ里遺跡・農業の豊かさが地域の誇り。保育所不足・共働き支援の充実が定住促進の鍵',
+    },
+    aiPromptContext: `
+【神埼市データ】
+- 現在人口: 29,000人（高齢化率 35.0%）
+- 財政力指数: 0.24（全国平均の半分以下。農業・物流基盤の強化が急務）
+- エネルギー自給率: 26%（太陽光・農業バイオマス）
+- 2054年推計人口: 16,800人（現在の58%）
+- 生存可能性ランク: B（要注意）
+強み: 吉野ヶ里遺跡・農業（麦・大豆）・九州縦貫道IC近接の物流立地
+弱み: 子育て世帯の福岡・佐賀市への流出加速、少子化深刻、医療・保育所不足`,
+  },
+
+  // ── 気仙沼市（宮城県）── Sprint #70 ──────────────────
+  kesennuma: {
+    name: '気仙沼市',
+    prefecture: '宮城県',
+    energySelfSufficiency: 28,
+    fiscalStrength: 22,
+    fiscalIndex: 0.22,
+    populationViability: 47,
+    wellBeingScore: 61,
+    currentPopulation: 61000,
+    agingRate: 38.5,
+    populationForecast: [
+      { year: 2024, population: 61000 },
+      { year: 2034, population: 51000 },
+      { year: 2044, population: 41500 },
+      { year: 2054, population: 28700 },
+    ],
+    survivalRank: 'B',
+    comments: {
+      energy:     '水産加工廃棄物・太陽光で約28%自給。港湾・水産業のグリーン化で脱炭素を加速',
+      fiscal:     '財政力指数0.22は全国平均の半分以下。水産業の6次産業化で付加価値・税収を向上',
+      population: '2054年に約28,700人（現在の47%）と推計。水産業の担い手不足と若者流出が同時進行',
+      wellbeing:  'カツオ・フカヒレ・マグロの水産業への誇りが市民Well-Beingを支える。後継者育成が急務',
+    },
+    aiPromptContext: `
+【気仙沼市データ】
+- 現在人口: 61,000人（高齢化率 38.5%）
+- 財政力指数: 0.22（全国平均の半分以下。水産業6次産業化で付加価値創出が急務）
+- エネルギー自給率: 28%（水産廃棄物・太陽光）
+- 2054年推計人口: 28,700人（現在の47%）
+- 生存可能性ランク: B（要注意）
+強み: カツオ水揚げ量・フカヒレシェア世界トップ、食文化・水産ブランド、三陸の自然
+弱み: 水産業後継者不足、若者流出、東日本大震災からの復興過渡期、財政力脆弱`,
+  },
+
   // ── NEC コーポレートIT部門（準備中） ─────────────────
   nec: {
     name: 'NEC コーポレートIT部門',
@@ -348,7 +593,8 @@ function SurvivalRankBadge({ rank }: { rank: string }) {
 
 export default function GyoseiDashboard() {
   // Sprint #32: セレクターで選択中の自治体を Context から取得
-  const { municipalityId } = useMunicipality();
+  // Sprint #74: URLパラメータ（?municipalityId=xxx）からも自動切り替え可能
+  const { municipalityId, setMunicipalityId } = useMunicipality();
   const d = getDataForMunicipality(municipalityId);
   const metrics = buildMetrics(d);
 
@@ -356,6 +602,18 @@ export default function GyoseiDashboard() {
   const [aiLoading, setAiLoading] = useState(false);
   const [notionSaveStatus, setNotionSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [notionPageUrl, setNotionPageUrl] = useState<string | null>(null);
+
+  // Sprint #74: URLパラメータ ?municipalityId=xxx があれば自治体コンテキストを自動切り替え
+  // 各自治体のサイドバーリンクに ?municipalityId=xxx を付けることで
+  // その自治体のページを開くだけで自動的に自治体が切り替わる
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const urlId = params.get('municipalityId');
+    if (urlId && urlId !== municipalityId) {
+      setMunicipalityId(urlId);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // ScenarioContext に自治体データを登録（ChatPanel の行政OSモード用）
   const { setModule, setGyoseiData } = useScenario();

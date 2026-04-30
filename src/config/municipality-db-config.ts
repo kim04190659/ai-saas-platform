@@ -64,72 +64,72 @@ export const MUNICIPALITY_DB_CONFIG: Record<string, MunicipalityDbConfig> = {
   },
 
   // ── 海士町（島根県隠岐諸島）── Sprint #64 追加 ──────
-  // 移住定着リスクAI の事例自治体。移住相談DBのみ設定。
+  // 移住定着リスクAI の事例自治体。Sprint #74 で基本3機能DB追加。
   amacho: {
-    pdcaDbId:         '',                                   // 未設定（将来追加）
-    consultationDbId: '',                                   // 未設定（将来追加）
-    coachingDbId:     '',                                   // 未設定（将来追加）
+    pdcaDbId:         '90202acaae6d42ca9e892080db618818',  // 施策実行記録DB（Sprint #74）
+    consultationDbId: 'a73c926b2420457ca1a310ff4c3e2501',  // 住民相談DB（Sprint #74）
+    coachingDbId:     '49f248b0bbb94e879df97a70b97dddc1',  // 住民WBコーチングDB（Sprint #74）
     migrationDbId:    'a0b7e20ffe2f46f890f152982a08e101',  // 移住相談DB（Sprint #64）
   },
 
   // ── 五島市（長崎県）── Sprint #65 追加 ──────────────
-  // 往診優先順位AI の事例自治体。往診管理DBのみ設定。
+  // 往診優先順位AI の事例自治体。Sprint #74 で基本3機能DB追加。
   // 離島・人口約3.2万人・高齢化率約40%・医師不足が深刻
   goto: {
-    pdcaDbId:         '',                                   // 未設定（将来追加）
-    consultationDbId: '',                                   // 未設定（将来追加）
-    coachingDbId:     '',                                   // 未設定（将来追加）
+    pdcaDbId:         'd572caa60aad4a128adb983ecebc83a1',  // 施策実行記録DB（Sprint #74）
+    consultationDbId: 'b221fa6870384846b16fde1188f40223',  // 住民相談DB（Sprint #74）
+    coachingDbId:     'c58038ed3ad44f4fba1c960ef7a89446',  // 住民WBコーチングDB（Sprint #74）
     visitDbId:        'dd61e9fcdee44c48880ab26cc1d8675d',  // 往診管理DB（Sprint #65）
   },
 
   // ── 輪島市（石川県）── Sprint #67 追加 ──────────────
-  // 復興進捗ダッシュボード の事例自治体。
-  // 2024年1月1日 能登半島地震で甚大な被害。復興事業進捗DBのみ設定。
+  // 復興進捗ダッシュボード の事例自治体。Sprint #74 で基本3機能DB追加。
+  // 2024年1月1日 能登半島地震で甚大な被害。
   wajima: {
-    pdcaDbId:         '',                                   // 未設定（将来追加）
-    consultationDbId: '',                                   // 未設定（将来追加）
-    coachingDbId:     '',                                   // 未設定（将来追加）
+    pdcaDbId:         'd8675b569cf747cbb747d01e9e60a2ef',  // 施策実行記録DB（Sprint #74）
+    consultationDbId: 'cfaeb57fa81c450ea4e7280456b27374',  // 住民相談DB（Sprint #74）
+    coachingDbId:     'b6c1a3212d2a4e4d82a2a6eaf2256618',  // 住民WBコーチングDB（Sprint #74）
     recoveryDbId:     'ff40f22ee2b749819fe2790cf071e1f8',  // 復興事業進捗DB（Sprint #67）
   },
 
   // ── 西粟倉村（岡山県英田郡）── Sprint #66 追加 ──────
-  // 農業担い手マッチングAI の事例自治体。
+  // 農業担い手マッチングAI の事例自治体。Sprint #74 で基本3機能DB追加。
   // 「百年の森林」で全国的に知られる村だが農業後継者不足も深刻。
   nishiawakura: {
-    pdcaDbId:         '',                                   // 未設定（将来追加）
-    consultationDbId: '',                                   // 未設定（将来追加）
-    coachingDbId:     '',                                   // 未設定（将来追加）
+    pdcaDbId:         '8247e3edd26147e6b196f389619ab348',  // 施策実行記録DB（Sprint #74）
+    consultationDbId: 'a1fecf8c024e4364a335b2da83a1ba8e',  // 住民相談DB（Sprint #74）
+    coachingDbId:     '822e3e5de98a406cb26acbda6d7c133a',  // 住民WBコーチングDB（Sprint #74）
     farmDbId:         '8c77f269212f4ac4a0527f99bd5f4c1d',  // 農地情報DB（Sprint #66）
     farmerDbId:       '2f633b13b9314ea48642ae33ad72ff6e',  // 移住就農希望者DB（Sprint #66）
   },
 
   // ── 神埼市（佐賀県）── Sprint #69 追加 ──────────────
-  // 子育て世帯流出リスク検知AI の事例自治体。
+  // 子育て世帯流出リスク検知AI の事例自治体。Sprint #74 で基本3機能DB追加。
   // 佐賀県中東部・人口約29,000人・少子化が深刻で年間出生数が激減中。
   kanzaki: {
-    pdcaDbId:         '',                                   // 未設定（将来追加）
-    consultationDbId: '',                                   // 未設定（将来追加）
-    coachingDbId:     '',                                   // 未設定（将来追加）
+    pdcaDbId:         'dfce9f0af7d0403e9ef397f94764f693',  // 施策実行記録DB（Sprint #74）
+    consultationDbId: '1b91cf67c9614f8199859f7ccbd00669',  // 住民相談DB（Sprint #74）
+    coachingDbId:     'a20d06caea8a43e29ab02d9d0e899250',  // 住民WBコーチングDB（Sprint #74）
     childcareDbId:    '465b6d131ed04e67a3ced4708c8f40d0',  // 子育て相談DB（Sprint #69）
   },
 
   // ── 上勝町（徳島県）── Sprint #68 追加 ──────────────
-  // CO2削減進捗トラッカー の事例自治体。
+  // CO2削減進捗トラッカー の事例自治体。Sprint #74 で基本3機能DB追加。
   // 「ゼロ・ウェイスト宣言」で全国的に知られる。2020年にゼロカーボン宣言。
   kamikatsu: {
-    pdcaDbId:         '',                                   // 未設定（将来追加）
-    consultationDbId: '',                                   // 未設定（将来追加）
-    coachingDbId:     '',                                   // 未設定（将来追加）
+    pdcaDbId:         'b5f2a6f8b837406792ab941d11627cdd',  // 施策実行記録DB（Sprint #74）
+    consultationDbId: 'd4d9304289e2464eb14a6a0d78414135',  // 住民相談DB（Sprint #74）
+    coachingDbId:     '88a31c1ebf6946f9adc78a56bd0d7f92',  // 住民WBコーチングDB（Sprint #74）
     carbonDbId:       '30179aa96448400399ccc069e0f10b29',  // CO2削減活動DB（Sprint #68）
   },
 
   // ── 気仙沼市（宮城県）── Sprint #70 追加 ──────────────
-  // 地場産業6次産業化支援AI の事例自治体。
+  // 地場産業6次産業化支援AI の事例自治体。Sprint #74 で基本3機能DB追加。
   // 水産業都市・人口約6.1万人・フカヒレ世界シェア70%を誇る三陸沿岸の中核都市。
   kesennuma: {
-    pdcaDbId:            '',                                   // 未設定（将来追加）
-    consultationDbId:    '',                                   // 未設定（将来追加）
-    coachingDbId:        '',                                   // 未設定（将来追加）
+    pdcaDbId:            '55cde6eec46447f38a4b31d24fd234c4',  // 施策実行記録DB（Sprint #74）
+    consultationDbId:    '4dc0ec0857d44f22b85351da4deb5a1d',  // 住民相談DB（Sprint #74）
+    coachingDbId:        '90d7eca0376749abb539511ce2c83304',  // 住民WBコーチングDB（Sprint #74）
     localIndustryDbId:   '8fcf8d3e7c084d34904df8b5468b8f91',  // 地場産業台帳DB（Sprint #70）
   },
 

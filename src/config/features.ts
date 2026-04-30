@@ -1110,9 +1110,9 @@ export const FEATURE_MODULES: FeatureModule[] = [
         // Sprint #74: 必須ダッシュボード追加（共通WBダッシュボード）
         id: 'kirishima-dashboard',
         label: '📊 Well-Beingダッシュボード',
-        href: '/gyosei/dashboard',
+        href: '/gyosei/dashboard?municipalityId=kirishima',
         status: 'active',
-        description: '霧島市の住民・職員Well-Beingスコアをリアルタイム可視化（ヘッダーで霧島市を選択）',
+        description: '霧島市の住民・職員Well-Beingスコアをリアルタイム可視化',
       },
       {
         id: 'kirishima-kpi',
@@ -1331,9 +1331,9 @@ export const FEATURE_MODULES: FeatureModule[] = [
         // Sprint #74: 必須ダッシュボード追加
         id: 'yakushima-dashboard',
         label: '📊 Well-Beingダッシュボード',
-        href: '/gyosei/dashboard',
+        href: '/gyosei/dashboard?municipalityId=yakushima',
         status: 'active',
-        description: '屋久島町の住民・職員Well-Beingスコアをリアルタイム可視化（ヘッダーで屋久島町を選択）',
+        description: '屋久島町の住民・職員Well-Beingスコアをリアルタイム可視化',
       },
       {
         id: 'yakushima-tourism',
@@ -1428,9 +1428,9 @@ export const FEATURE_MODULES: FeatureModule[] = [
         // Sprint #74: 必須ダッシュボード追加
         id: 'amacho-dashboard',
         label: '📊 Well-Beingダッシュボード',
-        href: '/gyosei/dashboard',
+        href: '/gyosei/dashboard?municipalityId=amacho',
         status: 'active',
-        description: '海士町の住民・職員Well-Beingスコアをリアルタイム可視化（ヘッダーで海士町を選択）',
+        description: '海士町の住民・職員Well-Beingスコアをリアルタイム可視化',
       },
       {
         // Sprint #64: 移住定着リスクAI（海士町事例）
@@ -1472,9 +1472,9 @@ export const FEATURE_MODULES: FeatureModule[] = [
         // Sprint #74: 必須ダッシュボード追加
         id: 'goto-dashboard',
         label: '📊 Well-Beingダッシュボード',
-        href: '/gyosei/dashboard',
+        href: '/gyosei/dashboard?municipalityId=goto',
         status: 'active',
-        description: '五島市の住民・職員Well-Beingスコアをリアルタイム可視化（ヘッダーで五島市を選択）',
+        description: '五島市の住民・職員Well-Beingスコアをリアルタイム可視化',
       },
       {
         // Sprint #65: 往診優先順位AI（五島市事例）
@@ -1517,9 +1517,9 @@ export const FEATURE_MODULES: FeatureModule[] = [
         // Sprint #74: 必須ダッシュボード追加
         id: 'wajima-dashboard',
         label: '📊 Well-Beingダッシュボード',
-        href: '/gyosei/dashboard',
+        href: '/gyosei/dashboard?municipalityId=wajima',
         status: 'active',
-        description: '輪島市の住民・職員Well-Beingスコアをリアルタイム可視化（ヘッダーで輪島市を選択）',
+        description: '輪島市の住民・職員Well-Beingスコアをリアルタイム可視化',
       },
       {
         // Sprint #67: 復興進捗ダッシュボード（輪島市事例）
@@ -1562,9 +1562,9 @@ export const FEATURE_MODULES: FeatureModule[] = [
         // Sprint #74: 必須ダッシュボード追加
         id: 'nishiawakura-dashboard',
         label: '📊 Well-Beingダッシュボード',
-        href: '/gyosei/dashboard',
+        href: '/gyosei/dashboard?municipalityId=nishiawakura',
         status: 'active',
-        description: '西粟倉村の住民・職員Well-Beingスコアをリアルタイム可視化（ヘッダーで西粟倉村を選択）',
+        description: '西粟倉村の住民・職員Well-Beingスコアをリアルタイム可視化',
       },
       {
         // Sprint #66: 農業担い手マッチングAI（西粟倉村事例）
@@ -1607,9 +1607,9 @@ export const FEATURE_MODULES: FeatureModule[] = [
         // Sprint #74: 必須ダッシュボード追加
         id: 'kamikatsu-dashboard',
         label: '📊 Well-Beingダッシュボード',
-        href: '/gyosei/dashboard',
+        href: '/gyosei/dashboard?municipalityId=kamikatsu',
         status: 'active',
-        description: '上勝町の住民・職員Well-Beingスコアをリアルタイム可視化（ヘッダーで上勝町を選択）',
+        description: '上勝町の住民・職員Well-Beingスコアをリアルタイム可視化',
       },
       {
         // Sprint #68: CO2削減進捗トラッカー（上勝町事例）
@@ -1652,9 +1652,9 @@ export const FEATURE_MODULES: FeatureModule[] = [
         // Sprint #74: 必須ダッシュボード追加
         id: 'kanzaki-dashboard',
         label: '📊 Well-Beingダッシュボード',
-        href: '/gyosei/dashboard',
+        href: '/gyosei/dashboard?municipalityId=kanzaki',
         status: 'active',
-        description: '神埼市の住民・職員Well-Beingスコアをリアルタイム可視化（ヘッダーで神埼市を選択）',
+        description: '神埼市の住民・職員Well-Beingスコアをリアルタイム可視化',
       },
       {
         // Sprint #69: 子育て流出リスクAI（神埼市事例）
@@ -1697,9 +1697,9 @@ export const FEATURE_MODULES: FeatureModule[] = [
         // Sprint #74: 必須ダッシュボード追加
         id: 'kesennuma-dashboard',
         label: '📊 Well-Beingダッシュボード',
-        href: '/gyosei/dashboard',
+        href: '/gyosei/dashboard?municipalityId=kesennuma',
         status: 'active',
-        description: '気仙沼市の住民・職員Well-Beingスコアをリアルタイム可視化（ヘッダーで気仙沼市を選択）',
+        description: '気仙沼市の住民・職員Well-Beingスコアをリアルタイム可視化',
       },
       {
         // Sprint #70: 地場産業6次産業化支援AI（気仙沼市事例）
@@ -1741,9 +1741,9 @@ export const FEATURE_MODULES: FeatureModule[] = [
       {
         id: 'shimanto-dashboard',
         label: '📊 WB+PDCAダッシュボード',
-        href: '/gyosei/dashboard',
+        href: '/gyosei/dashboard?municipalityId=shimanto',
         status: 'active',
-        description: '住民WBスコアと施策進捗をリアルタイムで可視化（ヘッダーで四万十市を選択）',
+        description: '住民WBスコアと施策進捗をリアルタイムで可視化',
       },
       {
         id: 'shimanto-line',
