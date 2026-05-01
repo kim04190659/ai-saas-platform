@@ -217,6 +217,109 @@ RunWith は **製品化の途中** にあるため、最初から完璧な共通
 
 ---
 
+## 左メニュー（Sidebar）設計ルール（Sprint #76〜）
+
+### 関連ファイル
+
+```
+src/components/layout/Sidebar.tsx   — Sidebar 本体（Sprint #76 全面リデザイン）
+src/config/features.ts              — メニュー項目の定義（ここだけ編集すればOK）
+```
+
+### features.ts のグループ構造
+
+```
+必須機能グループ（coreGroup）  → 常時展開・トグルなし
+ai-ext グループ               → デフォルト閉じ（AI拡張機能）
+municipality グループ         → デフォルト閉じ（自治体別リンク）
+admin グループ                → デフォルト閉じ（運用管理）
+```
+
+### 新ページをサイドバーに追加するとき
+
+`src/config/features.ts` に1件追記する。**これだけでサイドバーとホームに自動反映される。**
+
+```typescript
+{
+  id: 'my-new-feature',
+  label: '機能名',
+  href: '/gyosei/my-new-feature',
+  icon: SomeIcon,          // lucide-react のアイコン
+  group: 'core',           // 'core' | 'ai-ext' | 'municipality' | 'admin'
+  hidden: false,           // true にするとサイドバーから非表示（ページ自体は存在）
+}
+```
+
+- **municipality グループのリンク** には必ず `?municipalityId=xxx` を付与する（Sprint #75）
+  - 例: `href: '/gyosei/dashboard?municipalityId=kirishima'`
+- `hidden: true` で非表示にできる（ページは動くが左メニューに出ない）
+- `getVisiblePages()` が hidden なページを自動除外するため、削除は不要
+
+### Sidebar が使われるレイアウト
+
+| レイアウト | ファイル | Sidebar |
+|---|---|---|
+| 通常ダッシュボード | `src/app/(dashboard)/layout.tsx` | ✅ 左列に表示 |
+| 霧島市専用 | 同上（`isKirishima` 分岐） | ✅ KirishimaSidebar |
+| 屋久島専用 | 同上（`isYakushima` 分岐） | ✅ YakushimaSidebar |
+| カードゲーム | `src/app/card-game/layout.tsx` | ❌ フルスクリーン（Sidebar なし） |
+| Well-Being QUEST | `src/app/well-being-quest/layout.tsx` | ❌ フルスクリーン（Sidebar なし） |
+
+---
+
+## 右メニュー（ChatPanel）設計ルール（Sprint #77〜）
+
+### 関連ファイル
+
+```
+src/components/layout/ChatPanel.tsx  — ChatPanel 本体（Sprint #77 全面書き換え）
+```
+
+### 基本動作
+
+- `usePathname()` で現在のURLを自動検出
+- `PAGE_CONTEXTS` マップ（ファイル内に定義）から該当ページのコンテキストを取得
+- ヘッダーは常に **「RunWithアシスタント」** で固定
+- サブヘッダーに `ctx.pageTitle`（現在ページ名）を表示
+- 入力欄のプレースホルダー：「このページの使い方を質問する...」
+
+### 新ページを追加したら必ず PAGE_CONTEXTS にも追記する
+
+`ChatPanel.tsx` 内の `PAGE_CONTEXTS` オブジェクトに1件追加する。
+
+```typescript
+'/gyosei/my-new-feature': {
+  pageTitle: '機能名（日本語）',
+  description: 'このページで何ができるかの説明（1〜2文）',
+  systemPrompt: `あなたはRunWith Platformの操作サポートAIです。現在のページは「機能名」です。
+このページでは〇〇ができます。
+- 操作手順や注意点をここに書く
+回答は400字以内。`,
+  suggestions: ['よくある質問1', 'よくある質問2', 'よくある質問3'],
+},
+```
+
+**⚠️ systemPrompt の冒頭は必ず `あなたはRunWith Platformの操作サポートAIです。現在のページは「...」です。` で始めること**
+
+### ChatPanel が使われるレイアウト別の表示方式
+
+| レイアウト | 表示方式 | ボタン色 | ファイル |
+|---|---|---|---|
+| 通常ダッシュボード | ヘッダーボタン → 右列パネル（flex内） | 青 `bg-blue-600` | `(dashboard)/layout.tsx` |
+| 霧島市専用 | 同上 | ティール `bg-teal-600` | 同上（isKirishima分岐） |
+| 屋久島専用 | 同上 | エメラルド `bg-emerald-600` | 同上（isYakushima分岐） |
+| カードゲーム | 右下フローティングボタン → **固定オーバーレイ** | 青 `bg-blue-600` | `card-game/layout.tsx` |
+| Well-Being QUEST | 右下フローティングボタン → **固定オーバーレイ** | エメラルド `bg-emerald-600` | `well-being-quest/layout.tsx` |
+
+### ❌ やってはいけないこと
+
+- `KirishimaChatPanel` は **廃止済み**（Sprint #77）。使わないこと
+- 個別ページ（page.tsx）に ChatPanel を直接 import・配置しないこと  
+  → **必ずレイアウト（layout.tsx）が提供する**
+- ページ追加時に PAGE_CONTEXTS の追記を忘れると、そのページで「汎用の説明」しか出ない
+
+---
+
 ## 開発スタイル
 
 - コードには必ず日本語コメントを入れる

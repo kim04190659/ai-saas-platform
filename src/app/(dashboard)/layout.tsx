@@ -19,6 +19,7 @@ import YakushimaSidebar from '@/components/layout/YakushimaSidebar';
 // Sprint #77: KirishimaChatPanel を廃止し、ChatPanel に統合
 // → ChatPanel が usePathname() でページを検出して自動でコンテキストを切り替える
 import ChatPanel from '@/components/layout/ChatPanel';
+import NotionStatusBanner from '@/components/layout/NotionStatusBanner';
 import LanguageSwitcher from '@/components/common/LanguageSwitcher';
 import MunicipalitySelector from '@/components/layout/MunicipalitySelector';
 import { MunicipalitySearchParamsSync } from '@/components/layout/MunicipalitySearchParamsSync';
@@ -76,6 +77,8 @@ function DashboardLayoutInner({
             </div>
           </header>
 
+          {/* Sprint #81: Notion 障害時バナー */}
+          <NotionStatusBanner />
           <main className="flex-1 overflow-auto bg-gray-50">
             {children}
           </main>
@@ -119,6 +122,8 @@ function DashboardLayoutInner({
             </div>
           </header>
 
+          {/* Sprint #81: Notion 障害時バナー */}
+          <NotionStatusBanner />
           <main className="flex-1 overflow-auto bg-gray-50">
             {children}
           </main>
@@ -156,6 +161,8 @@ function DashboardLayoutInner({
           </div>
         </header>
 
+        {/* Sprint #81: Notion 障害時バナー */}
+        <NotionStatusBanner />
         <main className="flex-1 overflow-auto bg-gray-50 p-6">
           {children}
         </main>

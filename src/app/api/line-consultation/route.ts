@@ -17,6 +17,8 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { getMunicipalityById } from '@/config/municipalities'
+// Sprint #81-C: Notion 障害時に Supabase バックアップへ自動フォールバック
+import { getWithFallback } from '@/lib/notion-fallback'
 
 // ─── 定数 ─────────────────────────────────────────────
 const NOTION_API_BASE   = 'https://api.notion.com/v1'
@@ -118,48 +120,61 @@ export async function GET(req: NextRequest) {
   const municipality   = getMunicipalityById(municipalityId)
 
   try {
-    // ── Notion DB クエリ ──
-    // 受信日時の新しい順で最大 100 件取得
-    const queryBody: Record<string, unknown> = {
-      page_size: 100,
-      sorts: [{ property: '受信日時', direction: 'descending' }],
-    }
+    // ── Sprint #81-C: getWithFallback でラップ ─────────────────────
+    // Notion が応答しない場合は Supabase バックアップを自動で使用する。
+    // dbType 'resident_consult' はバックアップエンジンの保存キーと一致させること。
+    const { data: notionResults, fromBackup, backedUpAt } =
+      await getWithFallback<object[]>(
+        municipalityId,
+        'resident_consult',
+        async () => {
+          // ── Notion DB クエリ ──
+          // 受信日時の新しい順で最大 100 件取得
+          const queryBody: Record<string, unknown> = {
+            page_size: 100,
+            sorts: [{ property: '受信日時', direction: 'descending' }],
+          }
 
-    // ── フィルター構築（自治体名 + ステータスの組み合わせ対応）──
-    // 自治体名フィルター（必須：マルチテナント対応）
-    const municipalityFilter = {
-      property: '自治体名',
-      rich_text: { contains: municipality.shortName },
-    }
+          // ── フィルター構築（自治体名 + ステータスの組み合わせ対応）──
+          // 自治体名フィルター（必須：マルチテナント対応）
+          const municipalityFilter = {
+            property: '自治体名',
+            rich_text: { contains: municipality.shortName },
+          }
 
-    if (statusFilter) {
-      // ステータス指定あり → 自治体名 AND ステータスの複合フィルター
-      queryBody.filter = {
-        and: [
-          municipalityFilter,
-          { property: '対応状況', select: { equals: statusFilter } },
-        ],
-      }
-    } else {
-      // ステータス指定なし → 自治体名のみでフィルタリング
-      queryBody.filter = municipalityFilter
-    }
+          if (statusFilter) {
+            // ステータス指定あり → 自治体名 AND ステータスの複合フィルター
+            queryBody.filter = {
+              and: [
+                municipalityFilter,
+                { property: '対応状況', select: { equals: statusFilter } },
+              ],
+            }
+          } else {
+            // ステータス指定なし → 自治体名のみでフィルタリング
+            queryBody.filter = municipalityFilter
+          }
 
-    const res = await fetch(`${NOTION_API_BASE}/databases/${LINE_LOG_DB_ID}/query`, {
-      method:  'POST',
-      headers: notionHeaders(notionApiKey),
-      body:    JSON.stringify(queryBody),
-    })
+          const res = await fetch(`${NOTION_API_BASE}/databases/${LINE_LOG_DB_ID}/query`, {
+            method:  'POST',
+            headers: notionHeaders(notionApiKey),
+            body:    JSON.stringify(queryBody),
+          })
 
-    if (!res.ok) {
-      const errText = await res.text()
-      return NextResponse.json({ error: `Notion取得エラー: ${errText}` }, { status: 500 })
-    }
+          if (!res.ok) {
+            // Notion 応答エラー → getWithFallback がキャッチして Supabase へ
+            const errText = await res.text()
+            throw new Error(`Notion取得エラー: ${errText}`)
+          }
 
-    const data = await res.json()
+          const data = await res.json()
+          // 結果が空の場合は空配列を返す（フォールバックには進まない）
+          return (data.results ?? []) as object[]
+        },
+      )
 
-    // Sprint #37: Notion が空の場合は自治体別サンプルデータにフォールバック
-    if (!data.results || data.results.length === 0) {
+    // Notion が空 かつ バックアップもない場合 → サンプルデータにフォールバック
+    if (!notionResults || notionResults.length === 0) {
       // ステータスフィルターが指定されている場合はサンプルも絞り込む
       const allSamples = getSampleConsultations(municipalityId)
       const filtered   = statusFilter
@@ -181,9 +196,9 @@ export async function GET(req: NextRequest) {
       })
     }
 
-    // Notion レコードを扱いやすい形に変換
+    // Notion（またはバックアップ）レコードを扱いやすい形に変換
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const records: ConsultationRecord[] = data.results?.map((r: any) => {
+    const records: ConsultationRecord[] = notionResults.map((r: any) => {
       const p = r.properties
       return {
         id:           r.id,
@@ -224,6 +239,10 @@ export async function GET(req: NextRequest) {
         escalatedCount,
         completionRate,
       },
+      // Sprint #81-C: バックアップからの取得かどうかをフロントに伝える
+      // fromBackup=true のとき NotionStatusBanner が自動表示される
+      fromBackup,
+      backedUpAt,
     })
   } catch (err) {
     console.error('LineConsultation GET エラー:', err)
