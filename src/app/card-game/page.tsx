@@ -2,26 +2,22 @@
  * /card-game - カードゲーム選択ハブ
  *
  * Sprint #3 修正: Sidebar と ChatPanel を直接組み込み。
- * これにより、カードゲームのトップページでもナビゲーションが常に表示される。
- * （app/page.tsx と同じ構造を採用）
- *
- * 実際のゲーム（select → plan → result）はフルスクリーン体験のため
- * Sidebar なしのページが別途存在する。
+ * Sprint #78 修正: ChatPanel を card-game/layout.tsx に移管。
+ *   - layout.tsx が全カードゲームページに統一のフローティングパネルを提供
+ *   - このページから ChatPanel の import・state・JSX を削除
  */
 
 'use client';
 
-import { useState } from 'react';
 import Link from 'next/link';
 import Sidebar from '@/components/layout/Sidebar';
-import ChatPanel from '@/components/layout/ChatPanel';
+// Sprint #78: ChatPanel は card-game/layout.tsx に移管
 import {
   Gamepad2,
   TrendingUp,
   Truck,
   Heart,
   ChevronRight,
-  MessageSquare,
 } from 'lucide-react';
 
 // ─── ゲーム定義リスト ────────────────────────────────────
@@ -97,12 +93,12 @@ const games = [
 // ─── メインコンポーネント ─────────────────────────────────
 
 export default function CardGamePage() {
-  // AI Chat パネルの開閉状態
-  const [chatOpen, setChatOpen] = useState(false);
+  // Sprint #78: chatOpen・ChatPanel は card-game/layout.tsx に移管
+  // このページは Sidebar + コンテンツのみ担当
 
   return (
-    // home page (app/page.tsx) と同じ3ペイン構造:
-    // Sidebar（左） | メインコンテンツ（中央） | ChatPanel（右・開閉式）
+    // Sidebar（左） | メインコンテンツ（中央）
+    // ChatPanel は layout.tsx のフローティングボタンで提供
     <div className="flex h-screen">
       <Sidebar />
 
@@ -115,14 +111,6 @@ export default function CardGamePage() {
               35年のIT運用・ITIL/SIAMの知見を体験学習に変換
             </p>
           </div>
-          {/* AI Chat ボタン */}
-          <button
-            onClick={() => setChatOpen(!chatOpen)}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
-          >
-            <MessageSquare size={16} />
-            AIチャット
-          </button>
         </header>
 
         {/* ── メインコンテンツ ── */}
@@ -214,8 +202,6 @@ export default function CardGamePage() {
         </main>
       </div>
 
-      {/* AI Chat パネル（右側・スライドイン） */}
-      <ChatPanel isOpen={chatOpen} onClose={() => setChatOpen(false)} />
     </div>
   );
 }
