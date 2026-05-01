@@ -1,5 +1,11 @@
 {
   "functions": {
+    "src/app/api/admin/notion-health/route.ts": {
+      "maxDuration": 15
+    },
+    "src/app/api/cron/notion-health-check/route.ts": {
+      "maxDuration": 20
+    },
     "src/app/api/well-being-quest/evaluate/route.ts": {
       "maxDuration": 60
     },
@@ -26,6 +32,10 @@
     }
   },
   "crons": [
+    {
+      "path":     "/api/cron/notion-health-check",
+      "schedule": "*/5 * * * *"
+    },
     {
       "path":     "/api/cron/weekly-wb-summary",
       "schedule": "0 0 * * 1"

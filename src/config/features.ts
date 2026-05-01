@@ -1891,6 +1891,14 @@ export const FEATURE_MODULES: FeatureModule[] = [
         status: 'active',
         description: 'e-Stat API（人口動態）＋Notion蓄積データ＋Claude AIで自治体向け導入提案書を自動生成してNotionに保存',
       },
+      {
+        // Sprint #79: Notion 障害監視ダッシュボード
+        id: 'admin-system-health',
+        label: '🩺 システムヘルス監視',
+        href: '/admin/system-health',
+        status: 'active',
+        description: 'Notion・Vercel・LINE の死活状態をリアルタイムで確認。障害時は管理者に LINE 通知を自動送信（Cron 5分ごと）',
+      },
     ],
   },
 ];
