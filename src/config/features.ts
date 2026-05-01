@@ -1352,14 +1352,14 @@ export const FEATURE_MODULES: FeatureModule[] = [
       {
         id: 'yakushima-revenue',
         label: '💰 収益・財政データ',
-        href: '/gyosei/revenue',
+        href: '/gyosei/revenue?municipalityId=yakushima',  // Sprint #75: 自動切り替え
         status: 'active',
         description: '観光入込・ふるさと納税・特産品EC（ヤクスギ・タンカン・サバ節）の収益データ分析',
       },
       {
         id: 'yakushima-line',
         label: '💬 LINE住民相談管理',
-        href: '/gyosei/line-consultation',
+        href: '/gyosei/line-consultation?municipalityId=yakushima',  // Sprint #75: 自動切り替え
         status: 'active',
         description: '移住・子育て・観光に関する住民・移住検討者からのLINE相談を一元管理',
       },
@@ -1436,7 +1436,7 @@ export const FEATURE_MODULES: FeatureModule[] = [
         // Sprint #64: 移住定着リスクAI（海士町事例）
         id: 'amacho-migration-risk',
         label: '🏡 移住定着リスクAI',
-        href: '/gyosei/migration-risk',
+        href: '/gyosei/migration-risk?municipalityId=amacho',  // Sprint #75: 自動切り替え
         status: 'active',
         description: '移住相談DB（12件・岩牡蠣漁業・隠岐牛農業・テレワーク等）のリスクスコアをAIが分析。要フォロー移住者を担当職員が一目で把握できる',
       },
@@ -1480,7 +1480,7 @@ export const FEATURE_MODULES: FeatureModule[] = [
         // Sprint #65: 往診優先順位AI（五島市事例）
         id: 'goto-visit-priority',
         label: '🏥 往診優先順位AI',
-        href: '/gyosei/visit-priority',
+        href: '/gyosei/visit-priority?municipalityId=goto',  // Sprint #75: 自動切り替え
         status: 'active',
         description: '往診管理DB（12件・福江・玉之浦・富江地区等）の優先度スコアをAIが分析。今週訪問すべき患者を担当医が一目で把握できる',
       },
@@ -1525,7 +1525,7 @@ export const FEATURE_MODULES: FeatureModule[] = [
         // Sprint #67: 復興進捗ダッシュボード（輪島市事例）
         id: 'wajima-recovery-dashboard',
         label: '🏗️ 復興進捗ダッシュボード',
-        href: '/gyosei/recovery-dashboard',
+        href: '/gyosei/recovery-dashboard?municipalityId=wajima',  // Sprint #75: 自動切り替え
         status: 'active',
         description: '復興事業進捗DB（12件・住宅再建・インフラ・漆器産業等）の進捗をAIが分析。遅延中案件を担当課が一目で把握できる',
       },
@@ -1570,7 +1570,7 @@ export const FEATURE_MODULES: FeatureModule[] = [
         // Sprint #66: 農業担い手マッチングAI（西粟倉村事例）
         id: 'nishiawakura-farm-matching',
         label: '🌾 農業担い手マッチングAI',
-        href: '/gyosei/farm-matching',
+        href: '/gyosei/farm-matching?municipalityId=nishiawakura',  // Sprint #75: 自動切り替え
         status: 'active',
         description: '農地情報DB（10件・棚田・黒大豆・しいたけ等）と移住就農希望者DB（10件）をAIがクロス分析。最もマッチする農地×担い手ペアをスコア順で表示',
       },
@@ -1615,7 +1615,7 @@ export const FEATURE_MODULES: FeatureModule[] = [
         // Sprint #68: CO2削減進捗トラッカー（上勝町事例）
         id: 'kamikatsu-carbon-tracker',
         label: '🌱 CO2削減進捗トラッカー',
-        href: '/gyosei/carbon-tracker',
+        href: '/gyosei/carbon-tracker?municipalityId=kamikatsu',  // Sprint #75: 自動切り替え
         status: 'active',
         description: 'CO2削減活動DB（再エネ・EV・廃棄物・森林吸収・省エネ）をカテゴリ別に集計。ゼロカーボン達成スコアをゲージで表示し、Claude HaikuがAI四半期総括を生成',
       },
@@ -1660,7 +1660,7 @@ export const FEATURE_MODULES: FeatureModule[] = [
         // Sprint #69: 子育て流出リスクAI（神埼市事例）
         id: 'kanzaki-childcare-risk',
         label: '👶 子育て流出リスクAI',
-        href: '/gyosei/childcare-risk',
+        href: '/gyosei/childcare-risk?municipalityId=kanzaki',  // Sprint #75: 自動切り替え
         status: 'active',
         description: '子育て相談DB（10件・保育所待機・医療・転出相談等）の転出懸念スコアをAIが分析。転出リスクが高い世帯と担当職員が今すぐ動くべき施策を一目で把握できる',
       },
@@ -1705,7 +1705,7 @@ export const FEATURE_MODULES: FeatureModule[] = [
         // Sprint #70: 地場産業6次産業化支援AI（気仙沼市事例）
         id: 'kesennuma-local-industry',
         label: '🏭 地場産業6次産業化支援AI',
-        href: '/gyosei/local-industry',
+        href: '/gyosei/local-industry?municipalityId=kesennuma',  // Sprint #75: 自動切り替え
         status: 'active',
         description: '地場産業台帳DB（12産業・水産・食品加工・観光等）の後継者リスクをAIが分析。5年以内に消えるリスクがある産業を担当職員が一目で把握できる',
       },
@@ -1748,21 +1748,21 @@ export const FEATURE_MODULES: FeatureModule[] = [
       {
         id: 'shimanto-line',
         label: '💬 LINE住民相談AI',
-        href: '/gyosei/line-consultation',
+        href: '/gyosei/line-consultation?municipalityId=shimanto',  // Sprint #75: 自動切り替え
         status: 'active',
         description: 'LINEからの相談をNotionに蓄積・AIが即時回答案を生成',
       },
       {
         id: 'shimanto-migration',
         label: '🏠 移住定着リスクAI',
-        href: '/gyosei/migration-risk',
+        href: '/gyosei/migration-risk?municipalityId=shimanto',  // Sprint #75: 自動切り替え
         status: 'active',
         description: '移住者の定着リスクをスコアリングし早期フォローを提案',
       },
       {
         id: 'shimanto-visit',
         label: '🏥 往診優先順位AI',
-        href: '/gyosei/visit-priority',
+        href: '/gyosei/visit-priority?municipalityId=shimanto',  // Sprint #75: 自動切り替え
         status: 'active',
         description: '患者の要介護度・緊急フラグを基にAIが往診順序を毎日最適化',
       },

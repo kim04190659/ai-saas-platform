@@ -11,7 +11,7 @@
  * それ以外のページは通常の RunWith Platform レイアウトを使用。
  */
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { usePathname } from 'next/navigation';
 import Sidebar from '@/components/layout/Sidebar';
 import KirishimaSidebar from '@/components/layout/KirishimaSidebar';
@@ -20,6 +20,7 @@ import ChatPanel from '@/components/layout/ChatPanel';
 import KirishimaChatPanel from '@/components/layout/KirishimaChatPanel';
 import LanguageSwitcher from '@/components/common/LanguageSwitcher';
 import MunicipalitySelector from '@/components/layout/MunicipalitySelector';
+import { MunicipalitySearchParamsSync } from '@/components/layout/MunicipalitySearchParamsSync';
 import { MunicipalityProvider } from '@/contexts/MunicipalityContext';
 import { MessageSquare, MapPin } from 'lucide-react';
 
@@ -46,6 +47,10 @@ function DashboardLayoutInner({
   if (isYakushima) {
     return (
       <div className="flex h-screen">
+        {/* Sprint #75: URLパラメータ→Context同期（Suspenseが必須） */}
+        <Suspense fallback={null}>
+          <MunicipalitySearchParamsSync />
+        </Suspense>
         <YakushimaSidebar />
 
         <div className="flex-1 flex flex-col">
@@ -85,6 +90,10 @@ function DashboardLayoutInner({
   if (isKirishima) {
     return (
       <div className="flex h-screen">
+        {/* Sprint #75: URLパラメータ→Context同期（Suspenseが必須） */}
+        <Suspense fallback={null}>
+          <MunicipalitySearchParamsSync />
+        </Suspense>
         <KirishimaSidebar />
 
         <div className="flex-1 flex flex-col">
@@ -123,6 +132,10 @@ function DashboardLayoutInner({
   // ─── 通常の RunWith Platform レイアウト ───────────────
   return (
     <div className="flex h-screen">
+      {/* Sprint #75: URLパラメータ→Context同期（Suspenseが必須） */}
+      <Suspense fallback={null}>
+        <MunicipalitySearchParamsSync />
+      </Suspense>
       <Sidebar />
 
       <div className="flex-1 flex flex-col">
