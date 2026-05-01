@@ -16,8 +16,9 @@ import { usePathname } from 'next/navigation';
 import Sidebar from '@/components/layout/Sidebar';
 import KirishimaSidebar from '@/components/layout/KirishimaSidebar';
 import YakushimaSidebar from '@/components/layout/YakushimaSidebar';
+// Sprint #77: KirishimaChatPanel を廃止し、ChatPanel に統合
+// → ChatPanel が usePathname() でページを検出して自動でコンテキストを切り替える
 import ChatPanel from '@/components/layout/ChatPanel';
-import KirishimaChatPanel from '@/components/layout/KirishimaChatPanel';
 import LanguageSwitcher from '@/components/common/LanguageSwitcher';
 import MunicipalitySelector from '@/components/layout/MunicipalitySelector';
 import { MunicipalitySearchParamsSync } from '@/components/layout/MunicipalitySearchParamsSync';
@@ -70,7 +71,7 @@ function DashboardLayoutInner({
                 className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
               >
                 <MessageSquare size={20} />
-                屋久島AIアドバイザー
+                RunWithアシスタント
               </button>
             </div>
           </header>
@@ -113,7 +114,7 @@ function DashboardLayoutInner({
                 className="flex items-center gap-2 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors"
               >
                 <MessageSquare size={20} />
-                霧島市AIアドバイザー
+                RunWithアシスタント
               </button>
             </div>
           </header>
@@ -123,8 +124,8 @@ function DashboardLayoutInner({
           </main>
         </div>
 
-        {/* 霧島市専用チャットパネル */}
-        <KirishimaChatPanel isOpen={chatOpen} onClose={() => setChatOpen(false)} />
+        {/* Sprint #77: ChatPanel に統合（霧島市ページも自動対応） */}
+        <ChatPanel isOpen={chatOpen} onClose={() => setChatOpen(false)} />
       </div>
     );
   }
