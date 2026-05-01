@@ -40,6 +40,23 @@ interface ConsultationStatusResponse {
   department?: string   // 担当部署（どこが対応しているか）
 }
 
+// ─── デモ用サンプルデータ ─────────────────────────────
+// Notion DB にデータがない場合のデモ・開発用フォールバック。
+// 本番運用では Notion 側に実レコードを登録することで自動的に使われなくなる。
+
+const SAMPLE_DATA: Record<string, ConsultationStatusResponse> = {
+  'anon-yk-001': { found: true, status: '完了',   category: '生活・環境',   receivedAt: '2026-04-12T09:30:00', answeredAt: '2026-04-12T14:00:00', department: '住民課',        answer: 'ゴミ分別マニュアルをお送りします。水道の開栓手続きは役場住民課（0997-46-2111）にお電話ください。' },
+  'anon-yk-002': { found: true, status: '完了',   category: '観光・体験',   receivedAt: '2026-04-10T14:15:00', answeredAt: '2026-04-10T17:00:00', department: '観光課',        answer: '平日早朝（5〜7時スタート）が比較的空いています。許可証は事前予約制をご利用ください。' },
+  'anon-yk-003': { found: true, status: '対応中', category: '子育て・教育', receivedAt: '2026-04-11T10:00:00', answeredAt: '',                    department: '福祉課',        answer: '現在空き状況を確認中です。確認でき次第ご連絡いたします。' },
+  'anon-yk-004': { found: true, status: '完了',   category: '防災・安全',   receivedAt: '2026-04-09T16:45:00', answeredAt: '2026-04-09T17:30:00', department: '総務課',        answer: '宮之浦地区の避難所は「屋久島環境文化村センター」です。防災マップをお送りします。' },
+  'anon-yk-005': { found: true, status: '未対応', category: '税・手続き',   receivedAt: '2026-04-13T09:00:00', answeredAt: '',                    department: '',              answer: '' },
+  'anon-kr-001': { found: true, status: '完了',   category: '観光・体験',   receivedAt: '2026-04-11T10:30:00', answeredAt: '2026-04-11T15:00:00', department: '観光課',        answer: '元旦は大変混雑します。臨時駐車場（霧島高校グラウンド）をご利用ください。シャトルバスも運行します。' },
+  'anon-kr-002': { found: true, status: '対応中', category: '税・手続き',   receivedAt: '2026-04-10T13:00:00', answeredAt: '',                    department: '収納課',        answer: '分割納付のご相談は収納課（0995-45-5111）にてお受けしています。' },
+  'anon-kr-003': { found: true, status: '完了',   category: 'インフラ・環境', receivedAt: '2026-04-09T08:15:00', answeredAt: '2026-04-09T12:00:00', department: '建設課',       answer: '現地を確認しました。本日中に補修工事を行います。ご連絡いただきありがとうございます。' },
+  'anon-kr-004': { found: true, status: '完了',   category: '子育て・教育', receivedAt: '2026-04-12T09:45:00', answeredAt: '2026-04-12T11:00:00', department: '子育て支援課',  answer: '隼人児童センターで本日14時以降お受けできます。事前にお電話での予約をお願いします。' },
+  'anon-kr-005': { found: true, status: '未対応', category: '生活・環境',   receivedAt: '2026-04-13T07:30:00', answeredAt: '',                    department: '',              answer: '' },
+}
+
 // ─── GET ハンドラ ─────────────────────────────────────
 // 匿名IDに一致する相談レコードを検索して状況を返す
 
@@ -86,8 +103,12 @@ export async function GET(req: NextRequest) {
 
     const data = await res.json()
 
-    // ── レコードが見つからない場合 ───────────────────
+    // ── レコードが見つからない場合 → サンプルデータを参照 ──
+    // Notion に実レコードがない場合はデモ用サンプルにフォールバック。
+    // 本番運用では Notion にデータが入るため自動的にサンプルは使われなくなる。
     if (!data.results || data.results.length === 0) {
+      const sample = SAMPLE_DATA[anonymousId]
+      if (sample) return NextResponse.json(sample)
       return NextResponse.json({ found: false })
     }
 
