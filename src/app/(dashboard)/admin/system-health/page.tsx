@@ -2,20 +2,22 @@
 
 // =====================================================
 //  src/app/(dashboard)/admin/system-health/page.tsx
-//  システムヘルス管理画面 — Sprint #79
+//  システムヘルス管理画面 — Sprint #79/#80
 //
 //  ■ 役割
 //    Notion・Vercel・LINE 各サービスの死活状態を確認する管理者向けページ。
 //    手動でヘルスチェックを実行し、結果をリアルタイムで表示する。
+//    Sprint #80 追加: Supabase バックアップの状態確認と手動実行。
 //
 //  ■ 表示内容
 //    - 各サービスのステータス（正常 / 遅延 / 障害）
 //    - Notion の応答時間
 //    - 最終確認時刻
 //    - 過去の確認履歴（セッション内）
+//    - バックアップ最終実行時刻・件数（Sprint #80）
 // =====================================================
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import {
   Activity,
   RefreshCw,
@@ -27,6 +29,7 @@ import {
   MessageSquare,
   Globe,
   Bell,
+  HardDrive,
 } from 'lucide-react';
 
 // ─── 型定義 ─────────────────────────────────────────
@@ -64,6 +67,15 @@ function StatusBadge({ status }: { status: ServiceStatus['status'] }) {
   );
 }
 
+// ─── バックアップ状態の型 ────────────────────────────
+
+interface BackupInfo {
+  lastBackedUpAt: string | null
+  totalEntries:   number
+  loading:        boolean
+  error:          string | null
+}
+
 // ─── メインコンポーネント ────────────────────────────
 
 export default function SystemHealthPage() {
@@ -82,6 +94,15 @@ export default function SystemHealthPage() {
 
   // ローディング状態
   const [loading, setLoading] = useState(false);
+
+  // ── バックアップ状態 ─────────────────────────────────
+  const [backup, setBackup] = useState<BackupInfo>({
+    lastBackedUpAt: null,
+    totalEntries:   0,
+    loading:        false,
+    error:          null,
+  });
+  const [backupRunning, setBackupRunning] = useState(false);
 
   // ── Notion ヘルスチェックを手動実行 ──────────────────
   const checkNotionHealth = useCallback(async () => {
@@ -124,6 +145,39 @@ export default function SystemHealthPage() {
       setLoading(false);
     }
   }, []);
+
+  // ── バックアップ状態をページロード時に取得 ────────────
+  const fetchBackupStatus = useCallback(async () => {
+    setBackup((prev) => ({ ...prev, loading: true, error: null }));
+    try {
+      const res  = await fetch('/api/admin/notion-backup');
+      const data = await res.json();
+      setBackup({
+        lastBackedUpAt: data.lastBackedUpAt ?? null,
+        totalEntries:   data.totalEntries   ?? 0,
+        loading:        false,
+        error:          null,
+      });
+    } catch {
+      setBackup((prev) => ({ ...prev, loading: false, error: 'バックアップ状態の取得に失敗しました' }));
+    }
+  }, []);
+
+  useEffect(() => { fetchBackupStatus(); }, [fetchBackupStatus]);
+
+  // ── 手動バックアップ実行 ──────────────────────────────
+  const runBackup = useCallback(async () => {
+    setBackupRunning(true);
+    try {
+      await fetch('/api/admin/notion-backup', { method: 'POST' });
+      // 完了後にステータスを再取得
+      await fetchBackupStatus();
+    } catch {
+      setBackup((prev) => ({ ...prev, error: 'バックアップ実行に失敗しました' }));
+    } finally {
+      setBackupRunning(false);
+    }
+  }, [fetchBackupStatus]);
 
   // ── 他サービスは静的表示（将来拡張予定）─────────────
 
@@ -293,6 +347,55 @@ export default function SystemHealthPage() {
           </div>
         </section>
       )}
+
+      {/* ── バックアップ状態 ── */}
+      <section>
+        <h2 className="text-sm font-semibold text-gray-600 mb-3 flex items-center gap-2">
+          <HardDrive size={14} />
+          Supabase バックアップ（毎日 1:00 AM 自動実行）
+        </h2>
+        <div className="rounded-xl border border-gray-200 bg-white p-5">
+          <div className="flex items-start justify-between">
+            <div className="flex items-center gap-3">
+              <span className="text-gray-500"><HardDrive size={20} /></span>
+              <div>
+                <p className="font-semibold text-gray-800 text-sm">Notion → Supabase バックアップ</p>
+                {backup.loading ? (
+                  <p className="text-xs text-gray-400 mt-0.5">読み込み中...</p>
+                ) : backup.error ? (
+                  <p className="text-xs text-red-500 mt-0.5">{backup.error}</p>
+                ) : backup.lastBackedUpAt ? (
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    最終バックアップ：
+                    {new Date(backup.lastBackedUpAt).toLocaleString('ja-JP', {
+                      timeZone: 'Asia/Tokyo',
+                      month: 'numeric', day: 'numeric',
+                      hour: '2-digit', minute: '2-digit',
+                    })}
+                    　({backup.totalEntries} エントリ保存済み)
+                  </p>
+                ) : (
+                  <p className="text-xs text-gray-400 mt-0.5">まだバックアップが実行されていません</p>
+                )}
+              </div>
+            </div>
+            <button
+              onClick={runBackup}
+              disabled={backupRunning}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-700 text-white rounded-lg
+                         hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed
+                         transition-colors text-xs font-medium whitespace-nowrap"
+            >
+              <RefreshCw size={12} className={backupRunning ? 'animate-spin' : ''} />
+              {backupRunning ? '実行中...' : '今すぐバックアップ'}
+            </button>
+          </div>
+          <p className="mt-3 text-xs text-gray-400 leading-relaxed">
+            全自治体の住民相談・WBコーチング・施策実行記録の3DBを Supabase に保存します。
+            自治体×DB種別ごとに最新3世代を保持します。
+          </p>
+        </div>
+      </section>
 
       {/* ── 設定確認 ── */}
       <section className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
