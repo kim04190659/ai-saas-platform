@@ -122,7 +122,7 @@ const MENU_GROUPS: MenuGroup[] = [
       {
         id:    'weekly-summary',
         label: '週次WBサマリー',
-        href:  '/gyosei/weekly-summary?municipalityId=kirishima',
+        href:  '/kirishima/weekly-summary',
         icon:  CalendarDays,
       },
     ],
@@ -182,13 +182,13 @@ const MENU_GROUPS: MenuGroup[] = [
       {
         id:    'wb-quest',
         label: 'Well-Being QUEST',
-        href:  '/well-being-quest',
+        href:  '/kirishima/well-being-quest',
         icon:  Zap,
       },
       {
         id:    'card-game',
         label: 'カードゲーム',
-        href:  '/card-game',
+        href:  '/kirishima/card-game',
         icon:  Gamepad2,
       },
     ],

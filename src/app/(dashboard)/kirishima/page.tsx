@@ -54,7 +54,7 @@ const GROUPS = [
       { href: '/kirishima/wellbeing',                              icon: Heart,      label: 'チームWellBeing', desc: '職員のWBスコア・体調・業務負荷を個人別表示' },
       { href: '/kirishima/management-dashboard',                   icon: Briefcase,  label: '経営ダッシュボード', desc: '財政・住民・職員データを経営視点で統合' },
       { href: '/kirishima/pdca-tracking',                          icon: RefreshCw,  label: '施策PDCA',        desc: '実施中施策のPDCA進捗をAIが分析・提案' },
-      { href: '/gyosei/weekly-summary?municipalityId=kirishima',   icon: CalendarDays, label: '週次WBサマリー', desc: 'AI生成の週次レポートをNotionに自動保存' },
+      { href: '/kirishima/weekly-summary',   icon: CalendarDays, label: '週次WBサマリー', desc: 'AI生成の週次レポートをNotionに自動保存' },
     ],
   },
   {
@@ -79,8 +79,8 @@ const GROUPS = [
     headColor: 'bg-violet-600',
     items: [
       { href: '/kirishima/knowledge', icon: BookOpen,  label: 'ナレッジ活用',     desc: 'ナレッジ記事の活用状況・有効性スコアを可視化' },
-      { href: '/well-being-quest',    icon: Zap,       label: 'Well-Being QUEST', desc: '限界自治体の持続可能な街づくりを体験するゲーム' },
-      { href: '/card-game',           icon: Gamepad2,  label: 'カードゲーム',     desc: 'DX・アジャイル・行政改革を体験型で学ぶ研修ゲーム' },
+      { href: '/kirishima/well-being-quest',    icon: Zap,       label: 'Well-Being QUEST', desc: '限界自治体の持続可能な街づくりを体験するゲーム' },
+      { href: '/kirishima/card-game',           icon: Gamepad2,  label: 'カードゲーム',     desc: 'DX・アジャイル・行政改革を体験型で学ぶ研修ゲーム' },
     ],
   },
 ];
