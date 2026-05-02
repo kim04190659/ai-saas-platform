@@ -37,6 +37,7 @@ const mcpServer = new McpServer({
 })
 
 // ── ツール①: データソース一覧 ──
+// @ts-ignore MCP SDK の型推論が深すぎるため抑制（動作には影響なし）
 mcpServer.tool(
   'list_datasources',
   'RunWithゲートウェイで利用可能なデータソースの一覧を返す。まずこのツールを呼んで利用可能なデータを確認すること。',
@@ -66,6 +67,7 @@ mcpServer.tool(
 )
 
 // ── ツール②: CSVクエリ ──
+// @ts-ignore MCP SDK の型推論が深すぎるため抑制（動作には影響なし）
 mcpServer.tool(
   'query_csv',
   'CSVファイルを読み込んで匿名化済みデータを返す。個人情報フィールドは自動的にマスクされる。',
@@ -128,6 +130,7 @@ mcpServer.tool(
 )
 
 // ── ツール③: Excelクエリ ──
+// @ts-ignore MCP SDK の型推論が深すぎるため抑制（動作には影響なし）
 mcpServer.tool(
   'query_excel',
   'Excelファイルを読み込んで匿名化済みデータを返す。シートを指定できる。',
@@ -277,19 +280,28 @@ app.post('/api/query/excel', requireApiKey, async (req, res) => {
 // ════════════════════════════════════════════════
 
 async function main() {
-  // REST APIサーバを起動
-  app.listen(PORT, () => {
-    console.log(`[MCPゲートウェイ] REST API起動: http://localhost:${PORT}`)
-    console.log(`[MCPゲートウェイ] データフォルダ: ${process.env.DATA_ROOT ?? 'mcp-gateway/data'}`)
-    console.log(`[MCPゲートウェイ] 登録データソース数: ${listDataSources().length}`)
-  })
+  // ── 起動モードの判定 ──
+  // Claude Desktopから起動された場合（stdin が TTY でない）→ MCPモード
+  // ターミナルから手動起動された場合（stdin が TTY）→ REST APIモード
+  const isMcpMode = !process.stdin.isTTY
 
-  // MCPサーバを stdio で起動（Claude Desktopからの接続用）
-  // ※ REST APIと共存するため、stdinが TTY でない場合のみ起動
-  if (!process.stdin.isTTY) {
+  if (isMcpMode) {
+    // MCPモード：stdout はJSON-RPCのみ。console.log 禁止。
+    // ログは全て stderr に書く（Claude Desktopはstderrを無視する）
+    console.error('[MCPゲートウェイ] MCPモードで起動')
+    console.error(`[MCPゲートウェイ] データフォルダ: ${process.env.DATA_ROOT ?? 'mcp-gateway/data'}`)
+    console.error(`[MCPゲートウェイ] 登録データソース数: ${listDataSources().length}`)
+
     const transport = new StdioServerTransport()
     await mcpServer.connect(transport)
-    console.error('[MCPゲートウェイ] MCPサーバ起動（stdio）')
+
+  } else {
+    // REST APIモード：ターミナルから `npm start` で起動したとき
+    app.listen(PORT, () => {
+      console.error(`[MCPゲートウェイ] REST API起動: http://localhost:${PORT}`)
+      console.error(`[MCPゲートウェイ] データフォルダ: ${process.env.DATA_ROOT ?? 'mcp-gateway/data'}`)
+      console.error(`[MCPゲートウェイ] 登録データソース数: ${listDataSources().length}`)
+    })
   }
 }
 

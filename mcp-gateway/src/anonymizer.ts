@@ -8,14 +8,17 @@
  */
 
 // 匿名化対象フィールド名のキーワード（部分一致）
+// ※ 「名」単体は「地区名」「施設名」など業務用語にも含まれるため除外
+// ※ 個人を特定できる複合語のみ対象にする
 const SENSITIVE_FIELD_KEYWORDS = [
-  '氏名', '名前', '姓', '名', 'name',
+  '氏名', '名前', '姓名', 'fullname', 'full_name',
   '住所', '番地', 'address',
-  'マイナンバー', '個人番号', 'my_number',
-  '電話', 'tel', 'phone',
-  'メール', 'email', 'mail',
+  'マイナンバー', '個人番号', 'my_number', 'mynumber',
+  '電話番号', 'tel', 'phone',
+  'メールアドレス', 'email', 'mail',
   '生年月日', '誕生日', 'birthday', 'birth_date',
   'パスワード', 'password',
+  '口座番号', '銀行口座',
 ]
 
 /**
