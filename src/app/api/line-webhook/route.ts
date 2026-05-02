@@ -218,7 +218,7 @@ async function classifyWithAI(
   messageText: string,
   channel:     '住民LINE' | '職員LINE',
   anthropicKey: string,
-): Promise<{ category: string; aiResult: string }> {
+): Promise<{ category: string; aiResult: string; needsFollowup: boolean }> {
 
   try {
     const anthropic = new Anthropic({ apiKey: anthropicKey })
@@ -239,28 +239,38 @@ ${messageText}
 
 タスク2: このメッセージの要点と推奨担当部署を1文で示してください。
 
-回答フォーマット（必ずこの形式で）:
+タスク3: この相談は住民個人の状況に依存し、職員による個別対応が必要ですか？
+- 職員対応必要（はい）: 個人の申請審査・個別訪問・他機関への引き継ぎ・
+  不服申し立て・生活保護・税務個別調査など、一般情報では解決できないケース
+- AI対応可能（いいえ）: 一般的な手続き案内・情報提供・施設案内で完結できるケース
+
+回答フォーマット（必ずこの形式で3行）:
 種別: [種別名]
-振り分け: [要点と推奨担当部署]`
+振り分け: [要点と推奨担当部署]
+職員対応: [はい/いいえ]`
 
     const res = await anthropic.messages.create({
       model:      'claude-haiku-4-5-20251001',
-      max_tokens: 200,
+      max_tokens: 250,
       messages:   [{ role: 'user', content: prompt }],
     })
 
-    const text     = res.content[0].type === 'text' ? res.content[0].text : ''
-    const kindLine = text.match(/種別:\s*(.+)/)?.[1]?.trim()  ?? 'その他'
-    const aiLine   = text.match(/振り分け:\s*(.+)/)?.[1]?.trim() ?? ''
+    const text            = res.content[0].type === 'text' ? res.content[0].text : ''
+    const kindLine        = text.match(/種別:\s*(.+)/)?.[1]?.trim()    ?? 'その他'
+    const aiLine          = text.match(/振り分け:\s*(.+)/)?.[1]?.trim() ?? ''
+    const followupLine    = text.match(/職員対応:\s*(.+)/)?.[1]?.trim() ?? 'いいえ'
 
     // 有効な種別かチェック
     const validCategories = ['住民サービス', '手続き・申請', 'インフラ・施設', '観光・移住', 'その他']
-    const category = validCategories.includes(kindLine) ? kindLine : 'その他'
+    const category        = validCategories.includes(kindLine) ? kindLine : 'その他'
 
-    return { category, aiResult: aiLine }
+    // Sprint #89: 「はい」を含む場合は職員対応必要フラグを立てる
+    const needsFollowup   = followupLine.includes('はい')
+
+    return { category, aiResult: aiLine, needsFollowup }
   } catch (e) {
     console.error('[line-webhook] AI分類エラー:', e)
-    return { category: 'その他', aiResult: '（AI分類エラー）' }
+    return { category: 'その他', aiResult: '（AI分類エラー）', needsFollowup: false }
   }
 }
 
@@ -284,6 +294,7 @@ async function saveToNotion(params: {
   receivedAt:  string   // ISO 8601形式
   aiResult:    string
   aiAnswer?:   string   // Sprint #28追加: AI実回答内容（住民LINEのみ）
+  status?:     string   // Sprint #89追加: 明示的なステータス指定（省略時は自動判定）
 }): Promise<{ id: string; url: string } | null> {
   try {
     const res = await fetch(`${NOTION_API_BASE}/pages`, {
@@ -330,9 +341,14 @@ async function saveToNotion(params: {
               rich_text: [{ text: { content: params.aiAnswer.slice(0, 2000) } }],
             },
           } : {}),
-          // 対応状況: AI回答を送信済みの場合は「AI回答済み」、それ以外は「未対応」
+          // Sprint #89: 対応状況の決定ロジック
+          // 1. status が明示指定されている場合はそれを優先
+          // 2. aiAnswer がない場合は「未対応」
+          // 3. aiAnswer がある場合は「AI回答済み」
+          // （障害通報は呼び出し元で「エスカレーション」を明示指定）
+          // （要職員対応は呼び出し元で「未対応」を明示指定）
           '対応状況': {
-            select: { name: params.aiAnswer ? 'AI回答済み' : '未対応' },
+            select: { name: params.status ?? (params.aiAnswer ? 'AI回答済み' : '未対応') },
           },
         },
       }),
@@ -483,6 +499,7 @@ export async function POST(req: NextRequest) {
       }
 
       // 4. LINE相談ログDBにも記録（全相談の一元管理）
+      // Sprint #89: 障害通報は即「エスカレーション」で職員が対応要
       await saveToNotion({
         notionKey,
         title,
@@ -494,6 +511,7 @@ export async function POST(req: NextRequest) {
         receivedAt: timestamp,
         aiResult,
         aiAnswer:   fault.replyMessage,
+        status:     'エスカレーション',
       })
 
       console.log(`[line-webhook] 🚨 障害通報: ${fault.faultType.label} / 緊急度: ${fault.urgency} / 場所: ${fault.location} | 返信: ${aiAnswerSent ? '✅' : '❌'}`)
@@ -531,6 +549,7 @@ export async function POST(req: NextRequest) {
       }
 
       // Notionに保存
+      // Sprint #89: needsFollowup=true（個人案件）は未対応、false（一般情報）はAI回答済み
       await saveToNotion({
         notionKey,
         title,
@@ -542,6 +561,7 @@ export async function POST(req: NextRequest) {
         receivedAt: timestamp,
         aiResult,
         aiAnswer:   aiAnswerRaw,
+        status:     classifyResult.needsFollowup ? '未対応' : 'AI回答済み',
       })
 
       console.log(`[line-webhook] 住民LINE AI回答: ${aiAnswerRaw.length}字 | 送信: ${aiAnswerSent ? '✅' : '❌'} | 参照: ${aiResult2.contextUsed}`)
