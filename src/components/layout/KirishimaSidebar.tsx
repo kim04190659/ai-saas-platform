@@ -36,7 +36,9 @@ import {
   BookOpen,
   Zap,
   Gamepad2,
+  Megaphone,
 } from 'lucide-react';
+
 
 // ─── 型定義 ────────────────────────────────────────────────
 
@@ -85,6 +87,12 @@ const MENU_GROUPS: MenuGroup[] = [
         label: '住民タッチポイント',
         href:  '/kirishima/touchpoints',
         icon:  Users,
+      },
+      {
+        id:    'line-push',
+        label: 'LINE通知送信',
+        href:  '/kirishima/line-push',
+        icon:  Megaphone,
       },
     ],
   },
