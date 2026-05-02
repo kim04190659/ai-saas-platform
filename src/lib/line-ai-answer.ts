@@ -1,6 +1,6 @@
 // =====================================================
 //  src/lib/line-ai-answer.ts
-//  LINE AI自動回答エンジン — Sprint #28
+//  LINE AI自動回答エンジン — Sprint #28 / Sprint #88-B（自治体名動的化）
 //
 //  ■ 役割
 //    住民のLINE相談に対して、Notionナレッジベースを参照しながら
@@ -30,9 +30,13 @@ const NOTION_VERSION  = '2022-06-28'
 const LINE_API_REPLY  = 'https://api.line.me/v2/bot/message/reply'
 const LINE_API_PUSH   = 'https://api.line.me/v2/bot/message/push'
 
-// 回答の末尾に付ける署名（自治体名はここで変更可能）
-const MUNICIPALITY_NAME = '屋久島町'
-const AI_ANSWER_FOOTER  = `\n\n---\n※ このメッセージはAIが自動生成しました。\n詳細・手続きについては担当窓口へお問い合わせください。（${MUNICIPALITY_NAME}）`
+// Sprint #88-B: 自治体名はハードコードせず、呼び出し元から受け取る
+// （旧: const MUNICIPALITY_NAME = '屋久島町' → 廃止）
+
+/** 回答末尾のフッターを自治体名つきで生成する */
+function makeFooter(municipalityName: string): string {
+  return `\n\n---\n※ このメッセージはAIが自動生成しました。\n詳細・手続きについては担当窓口へお問い合わせください。（${municipalityName}）`
+}
 
 // ─── 型定義 ──────────────────────────────────────────
 
@@ -145,9 +149,10 @@ export async function searchNotionKnowledge(
  * @returns AI回答の生成結果
  */
 export async function generateAIAnswer(
-  question:     string,
-  context:      string,
-  anthropicKey: string,
+  question:         string,
+  context:          string,
+  anthropicKey:     string,
+  municipalityName: string = '自治体',  // Sprint #88-B: 自治体名を引数で受け取る
 ): Promise<AIAnswerResult> {
 
   const modelUsed = 'claude-haiku-4-5-20251001'
@@ -156,7 +161,7 @@ export async function generateAIAnswer(
     const anthropic = new Anthropic({ apiKey: anthropicKey })
 
     // システムプロンプト: 自治体AIアシスタントとして回答するよう指示
-    const systemPrompt = `あなたは${MUNICIPALITY_NAME}の行政AIアシスタントです。
+    const systemPrompt = `あなたは${municipalityName}の行政AIアシスタントです。
 住民からのLINE相談に対して、分かりやすく丁寧に回答します。
 
 【回答ルール】
@@ -186,7 +191,7 @@ ${context ? `【参考情報】\n${context}\n` : ''}
       ? answerRaw.slice(0, 197) + '…'
       : answerRaw
 
-    const answer = truncated + AI_ANSWER_FOOTER
+    const answer = truncated + makeFooter(municipalityName)
 
     console.log(`[line-ai] 回答生成完了: ${truncated.length}字`)
     return {
@@ -198,9 +203,9 @@ ${context ? `【参考情報】\n${context}\n` : ''}
 
   } catch (e) {
     console.error('[line-ai] AI回答生成エラー:', e)
-    const fallback = `ご相談ありがとうございます。ただいまシステムに一時的な問題が発生しております。誠に恐れ入りますが、${MUNICIPALITY_NAME}の担当窓口に直接お問い合わせください。`
+    const fallback = `ご相談ありがとうございます。ただいまシステムに一時的な問題が発生しております。誠に恐れ入りますが、${municipalityName}の担当窓口に直接お問い合わせください。`
     return {
-      answer:      fallback + AI_ANSWER_FOOTER,
+      answer:      fallback + makeFooter(municipalityName),
       answerRaw:   fallback,
       contextUsed: '（エラーフォールバック）',
       modelUsed,
