@@ -4,136 +4,143 @@
  * 霧島市 RunWith トップページ
  * /kirishima
  *
- * 霧島市展開の4ダッシュボードへのハブページ
+ * Sprint #87 更新：4グループ構成のハブページ
+ * サイドバーと同じメニュー構成をカード形式で表示する。
  */
 
 import Link from 'next/link';
+import {
+  Home,
+  MessageSquare,
+  Users,
+  BarChart2,
+  Heart,
+  Briefcase,
+  RefreshCw,
+  CalendarDays,
+  Truck,
+  Trash2,
+  PiggyBank,
+  Building2,
+  UserCheck,
+  BookOpen,
+  Zap,
+  Gamepad2,
+} from 'lucide-react';
 
-const DASHBOARDS = [
+// ─── グループ・リンク定義（サイドバーと同じ構成） ─────────
+
+const GROUPS = [
   {
-    href: '/kirishima/kpi',
-    icon: '📊',
-    title: 'KPI総合ダッシュボード',
-    desc: 'E軸（市民）・T軸（提供者）・L軸（責任者）の9KPIをリアルタイム可視化。目標値との差異をゲージで表示。',
-    color: 'border-teal-300 bg-teal-50 hover:bg-teal-100',
-    badgeColor: 'bg-teal-100 text-teal-700',
-    badge: 'DB06 KPISnapshot',
+    id:    'essentials',
+    label: '必須機能',
+    emoji: '⚡',
+    color: 'border-teal-400',
+    headColor: 'bg-teal-600',
+    items: [
+      { href: '/gyosei/dashboard?municipalityId=kirishima', icon: Home,            label: 'WBダッシュボード',   desc: '市民・職員のWell-Beingを一元把握' },
+      { href: '/kirishima/line-consultation',               icon: MessageSquare,   label: '住民LINE相談',       desc: 'LINEで届いた相談を職員が対応管理' },
+      { href: '/kirishima/touchpoints',                     icon: Users,           label: '住民タッチポイント', desc: 'チャネル別接触・SDL五軸満足度分析' },
+    ],
   },
   {
-    href: '/kirishima/touchpoints',
-    icon: '🎯',
-    title: '市民接触・満足度分析',
-    desc: 'チャネル別（窓口・LINE・Web・電話・市民センター）のタッチポイント状況とSDL軸分布を分析。',
-    color: 'border-sky-300 bg-sky-50 hover:bg-sky-100',
-    badgeColor: 'bg-sky-100 text-sky-700',
-    badge: 'DB02 TouchPoint',
+    id:    'basic-ai',
+    label: '基本AI',
+    emoji: '🤖',
+    color: 'border-sky-400',
+    headColor: 'bg-sky-600',
+    items: [
+      { href: '/kirishima/kpi',                                    icon: BarChart2,  label: 'KPI総合',         desc: 'E軸・T軸・L軸の9KPIをリアルタイム可視化' },
+      { href: '/kirishima/wellbeing',                              icon: Heart,      label: 'チームWellBeing', desc: '職員のWBスコア・体調・業務負荷を個人別表示' },
+      { href: '/kirishima/management-dashboard',                   icon: Briefcase,  label: '経営ダッシュボード', desc: '財政・住民・職員データを経営視点で統合' },
+      { href: '/kirishima/pdca-tracking',                          icon: RefreshCw,  label: '施策PDCA',        desc: '実施中施策のPDCA進捗をAIが分析・提案' },
+      { href: '/gyosei/weekly-summary?municipalityId=kirishima',   icon: CalendarDays, label: '週次WBサマリー', desc: 'AI生成の週次レポートをNotionに自動保存' },
+    ],
   },
   {
-    href: '/kirishima/wellbeing',
-    icon: '💚',
-    title: 'チームWellBeing',
-    desc: '職員のWBスコア・体調・仕事の手応え・業務負荷を個人別ラジアルゲージで可視化。要サポート者を自動検出。',
-    color: 'border-emerald-300 bg-emerald-50 hover:bg-emerald-100',
-    badgeColor: 'bg-emerald-100 text-emerald-700',
-    badge: 'DB05 WellBeing',
+    id:    'specialized-ai',
+    label: '課題特化型AI',
+    emoji: '🎯',
+    color: 'border-amber-400',
+    headColor: 'bg-amber-600',
+    items: [
+      { href: '/kirishima/roads',          icon: Truck,     label: '道路修復AI',      desc: '老朽化・損傷をAIが分析し修繕優先度を算出' },
+      { href: '/kirishima/waste',          icon: Trash2,    label: 'ごみ管理最適化',  desc: '収集ルート・排出量データから効率改善案を提案' },
+      { href: '/kirishima/fiscal-health',  icon: PiggyBank, label: '財政健全化',      desc: '財政指標をAIが分析しコスト削減案を提言' },
+      { href: '/kirishima/infra-aging',    icon: Building2, label: 'インフラ老朽化',  desc: '施設の老朽化リスクを評価し更新計画を提案' },
+      { href: '/kirishima/resident-coach', icon: UserCheck, label: '住民個人AIコーチ', desc: '相談履歴・WBスコアからパーソナルアドバイス生成' },
+    ],
   },
   {
-    href: '/kirishima/knowledge',
-    icon: '📚',
-    title: 'ナレッジ活用状況',
-    desc: 'ナレッジベース・VoEインサイト（SDL五軸レーダー）・インシデントのナレッジ化率を統合表示。',
-    color: 'border-violet-300 bg-violet-50 hover:bg-violet-100',
-    badgeColor: 'bg-violet-100 text-violet-700',
-    badge: 'DB07 + DB08 + DB03',
+    id:    'learning',
+    label: '研修・学習',
+    emoji: '📚',
+    color: 'border-violet-400',
+    headColor: 'bg-violet-600',
+    items: [
+      { href: '/kirishima/knowledge', icon: BookOpen,  label: 'ナレッジ活用',     desc: 'ナレッジ記事の活用状況・有効性スコアを可視化' },
+      { href: '/well-being-quest',    icon: Zap,       label: 'Well-Being QUEST', desc: '限界自治体の持続可能な街づくりを体験するゲーム' },
+      { href: '/card-game',           icon: Gamepad2,  label: 'カードゲーム',     desc: 'DX・アジャイル・行政改革を体験型で学ぶ研修ゲーム' },
+    ],
   },
 ];
 
+// ─── コンポーネント ─────────────────────────────────────────
+
 export default function KirishimaTopPage() {
   return (
-    <div className="p-6 max-w-4xl mx-auto space-y-8">
+    <div className="p-6 max-w-5xl mx-auto space-y-6">
 
-      {/* ヘッダー */}
-      <div className="text-center py-6">
-        <div className="inline-flex items-center justify-center w-16 h-16 bg-teal-600 rounded-2xl mb-4 shadow-lg">
-          <span className="text-3xl">🏙️</span>
+      {/* ── ヘッダー ── */}
+      <div className="flex items-center gap-4 pb-2 border-b border-slate-200">
+        <div className="w-12 h-12 bg-teal-600 rounded-xl flex items-center justify-center flex-shrink-0">
+          <span className="text-2xl">🏙️</span>
         </div>
-        <h1 className="text-3xl font-bold text-gray-800">霧島市 RunWith</h1>
-        <p className="text-teal-600 font-medium mt-1">市民Well-Being向上プラットフォーム</p>
-        <p className="text-gray-500 text-sm mt-2">
-          鹿児島県霧島市役所 × RunWith Platform 実証
-        </p>
+        <div>
+          <h1 className="text-xl font-bold text-slate-800">霧島市 RunWith</h1>
+          <p className="text-sm text-teal-600">市民Well-Being向上プラットフォーム — 鹿児島県霧島市役所</p>
+        </div>
       </div>
 
-      {/* 概要バッジ */}
-      <div className="flex flex-wrap justify-center gap-3">
-        {[
-          { label: '市民数', value: '約12万人' },
-          { label: '職員数', value: '約1,200名' },
-          { label: '管理DB', value: '8DB' },
-          { label: 'KPI数', value: '9指標' },
-          { label: 'SDL軸', value: '5軸' },
-        ].map((item) => (
-          <div key={item.label} className="bg-white border border-gray-200 rounded-xl px-4 py-2 text-center shadow-sm">
-            <div className="text-lg font-bold text-teal-700">{item.value}</div>
-            <div className="text-xs text-gray-500">{item.label}</div>
+      {/* ── グループ別リンク一覧 ── */}
+      {GROUPS.map((group) => (
+        <div key={group.id}>
+
+          {/* グループヘッダー */}
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-base font-bold text-slate-700">
+              {group.emoji} {group.label}
+            </span>
+            <div className="flex-1 border-t border-slate-200" />
           </div>
-        ))}
-      </div>
 
-      {/* ダッシュボード一覧 */}
-      <div>
-        <h2 className="text-sm font-semibold text-gray-500 mb-3 uppercase tracking-wide">
-          ダッシュボード一覧
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {DASHBOARDS.map((dash) => (
-            <Link
-              key={dash.href}
-              href={dash.href}
-              className={`block border-2 rounded-xl p-5 transition-colors cursor-pointer ${dash.color}`}
-            >
-              <div className="flex items-start gap-3">
-                <span className="text-3xl">{dash.icon}</span>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <h3 className="font-bold text-gray-800">{dash.title}</h3>
+          {/* リンクカード */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {group.items.map((item) => {
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`flex items-start gap-3 p-4 bg-white rounded-xl border-l-4 border border-slate-200 hover:shadow-md transition-all hover:-translate-y-0.5 ${group.color}`}
+                >
+                  <div className={`w-8 h-8 rounded-lg ${group.headColor} flex items-center justify-center flex-shrink-0 mt-0.5`}>
+                    <Icon size={15} className="text-white" />
                   </div>
-                  <p className="text-xs text-gray-600 leading-relaxed mb-2">{dash.desc}</p>
-                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${dash.badgeColor}`}>
-                    {dash.badge}
-                  </span>
-                </div>
-                <span className="text-gray-400 text-lg">→</span>
-              </div>
-            </Link>
-          ))}
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-slate-800 leading-tight">{item.label}</p>
+                    <p className="text-xs text-slate-500 mt-0.5 leading-snug">{item.desc}</p>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
         </div>
-      </div>
+      ))}
 
-      {/* SDL五軸の説明 */}
-      <div className="bg-gradient-to-r from-teal-50 to-emerald-50 border border-teal-100 rounded-xl p-5">
-        <h2 className="text-sm font-semibold text-teal-800 mb-3">🔵 SDL五軸（価値共創フレームワーク）</h2>
-        <div className="grid grid-cols-5 gap-2 text-center">
-          {[
-            { label: '共創', color: '#0ea5e9', desc: '市民と共に' },
-            { label: '文脈', color: '#8b5cf6', desc: '個別状況把握' },
-            { label: '資源', color: '#22c55e', desc: '組織の知識' },
-            { label: '統合', color: '#f59e0b', desc: 'サービス連携' },
-            { label: '価値', color: '#14b8a6', desc: '市民幸福度' },
-          ].map((axis) => (
-            <div key={axis.label} className="bg-white rounded-lg p-2 shadow-sm">
-              <div className="text-sm font-bold" style={{ color: axis.color }}>{axis.label}</div>
-              <div className="text-xs text-gray-500 mt-0.5">{axis.desc}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* フッター */}
-      <div className="text-center text-xs text-gray-400 pb-4">
-        データソース：Notion 8DB（DB01〜DB08）リアルタイム連携
-        <br />
-        Powered by RunWith Platform × Claude AI
+      {/* ── フッター ── */}
+      <div className="text-center text-xs text-slate-400 pt-2 pb-4">
+        Powered by RunWith Platform × Claude AI ／ データソース: Notion DB・LINE Webhook
       </div>
     </div>
   );
