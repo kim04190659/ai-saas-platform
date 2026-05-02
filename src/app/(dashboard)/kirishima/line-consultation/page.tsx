@@ -2,7 +2,7 @@
 
 // =====================================================
 //  src/app/(dashboard)/kirishima/line-consultation/page.tsx
-//  霧島市 住民LINE相談管理 — Sprint #87
+//  霧島市 住民LINE相談管理 — Sprint #89
 //
 //  ■ このページの役割
 //    霧島市の住民からLINEで届いた相談を職員が一覧確認し、
@@ -35,11 +35,12 @@ interface ConsultationRecord {
   category:     string
   channel:      string
   status:       string
-  answer:       string
+  answer:       string   // AI送信済み回答 or 職員記録回答
   staffName:    string
   department:   string
   aiResult:     string
   anonymousId:  string
+  lineUserId:   string   // Sprint #89: 実際のLINEユーザーID（職員返信用）
   receivedAt:   string
   satisfaction: number
 }
@@ -97,6 +98,7 @@ function categoryStyle(category: string) {
     case '手続き・申請':  return 'bg-purple-50 text-purple-600'
     case 'インフラ・施設': return 'bg-orange-50 text-orange-600'
     case '観光・移住':    return 'bg-green-50 text-green-600'
+    case '障害通報':      return 'bg-red-100 text-red-700 font-bold'  // Sprint #89: 障害は目立つ赤
     default:              return 'bg-slate-50 text-slate-500'
   }
 }
@@ -127,6 +129,7 @@ function SummaryCard({
 /**
  * 相談1件を表示するカード。
  * 対応状況・回答内容・担当職員名を直接変更できる。
+ * Sprint #89: AI送信済み回答の表示 + 職員からのLINE返信機能を追加
  */
 function ConsultationCard({
   record,
@@ -143,13 +146,19 @@ function ConsultationCard({
   const [saved,          setSaved]          = useState(false)
   const [expanded,       setExpanded]       = useState(false)
 
-  // 変更があるか判定
+  // Sprint #89: 職員からのLINE返信用State
+  const [staffReply,     setStaffReply]     = useState('')        // 職員が新たに送るメッセージ
+  const [replySending,   setReplySending]   = useState(false)     // 送信中フラグ
+  const [replyResult,    setReplyResult]    = useState<{ ok: boolean; text: string } | null>(null) // 送信結果
+
+  // 変更があるか判定（Notion保存ボタンの活性判定用）
   const hasChanges =
     editStatus     !== record.status     ||
     editAnswer     !== record.answer     ||
     editStaffName  !== record.staffName  ||
     editDepartment !== record.department
 
+  // Notion への保存処理
   const handleSave = async () => {
     setSaving(true)
     await onUpdate(record.id, {
@@ -164,12 +173,55 @@ function ConsultationCard({
     setTimeout(() => setSaved(false), 2000)
   }
 
+  // Sprint #89: LINEで職員から住民へ直接返信する処理
+  const handleLineReply = async () => {
+    if (!staffReply.trim()) return
+    setReplySending(true)
+    setReplyResult(null)
+    try {
+      const res = await fetch('/api/line/push-notify', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mode:    'push',                          // 1対1送信
+          to:      record.lineUserId,               // Notionに保存されている実際のLINE UserID
+          message: staffReply,
+          sender:  editStaffName || '霧島市職員',   // 担当職員名をメッセージヘッダーに付ける
+        }),
+      })
+      const data = await res.json()
+      if (data.ok) {
+        setReplyResult({ ok: true, text: `✅ LINEで返信しました（${data.charCount}文字）` })
+        setStaffReply('')  // 送信成功後に入力欄をクリア
+      } else {
+        setReplyResult({ ok: false, text: `❌ 送信失敗: ${data.error ?? '不明なエラー'}` })
+      }
+    } catch {
+      setReplyResult({ ok: false, text: '❌ ネットワークエラーが発生しました' })
+    } finally {
+      setReplySending(false)
+      // 5秒後に結果表示を消す
+      setTimeout(() => setReplyResult(null), 5000)
+    }
+  }
+
+  // Sprint #89: 障害通報は枠線を赤くして目立たせる
+  const isKaishaTsuho = record.category === '障害通報'
+
   return (
     <div className={`bg-white rounded-xl border shadow-sm overflow-hidden transition-all ${
+      isKaishaTsuho ? 'border-red-400 ring-1 ring-red-300' :
       editStatus === '未対応' ? 'border-red-200' :
       editStatus === 'エスカレーション' ? 'border-orange-300' :
       'border-slate-200'
     }`}>
+      {/* Sprint #89: 障害通報の警告バナー */}
+      {isKaishaTsuho && (
+        <div className="bg-red-50 border-b border-red-200 px-4 py-1.5 flex items-center gap-2">
+          <span className="text-xs font-bold text-red-700">🚨 障害通報 — 優先対応が必要です</span>
+        </div>
+      )}
+
       {/* カードヘッダー */}
       <div className="px-4 py-3 flex items-start gap-3">
         {/* 対応状況バッジ */}
@@ -199,6 +251,11 @@ function ConsultationCard({
                 🏢 {record.department}
               </span>
             )}
+            {/* Sprint #89: LINE UserID の有無をアイコンで表示 */}
+            {record.lineUserId
+              ? <span className="text-xs text-green-600" title={`LINE UserID: ${record.lineUserId}`}>📲 LINE返信可</span>
+              : <span className="text-xs text-slate-400">📵 LINE返信不可</span>
+            }
           </div>
         </div>
 
@@ -229,6 +286,17 @@ function ConsultationCard({
             <div className="bg-teal-50 rounded-lg p-3">
               <p className="text-xs font-medium text-teal-600 mb-1">🤖 AI振り分け結果</p>
               <p className="text-sm text-teal-700">{record.aiResult}</p>
+            </div>
+          )}
+
+          {/* Sprint #89: AI送信済み回答（読み取り専用で表示） */}
+          {record.answer && (
+            <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
+              <p className="text-xs font-medium text-blue-600 mb-1">
+                🤖 AI送信済み回答
+                <span className="ml-1 font-normal text-blue-400">（Webhookが住民へ自動送信した内容）</span>
+              </p>
+              <p className="text-sm text-blue-800 whitespace-pre-wrap leading-relaxed">{record.answer}</p>
             </div>
           )}
 
@@ -282,21 +350,21 @@ function ConsultationCard({
             </div>
           </div>
 
-          {/* 回答内容 */}
+          {/* 対応メモ（Notion記録用） */}
           <div>
             <label className="block text-xs font-medium text-slate-600 mb-1">
-              回答内容（住民への回答を記録）
+              対応メモ（Notionに記録）
             </label>
             <textarea
               value={editAnswer}
               onChange={e => setEditAnswer(e.target.value)}
-              placeholder="住民への回答・対応内容をメモしてください"
-              rows={3}
+              placeholder="対応内容・経緯・確認事項などをメモしてください（住民には送信されません）"
+              rows={2}
               className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-teal-300 resize-none"
             />
           </div>
 
-          {/* 保存ボタン */}
+          {/* Notion保存ボタン */}
           <div className="flex items-center gap-3">
             <button
               type="button"
@@ -313,6 +381,57 @@ function ConsultationCard({
               <span className="text-xs text-slate-400">変更なし</span>
             )}
           </div>
+
+          {/* ─────────────────────────────────────────────────
+              Sprint #89: 職員からLINEで直接返信するセクション
+              ─────────────────────────────────────────────────*/}
+          <div className="border-t border-slate-100 pt-3">
+            <p className="text-xs font-semibold text-slate-600 mb-2">
+              📲 職員からLINEで返信する
+            </p>
+
+            {record.lineUserId ? (
+              // LINE UserIDがある場合 → 返信フォームを表示
+              <div className="space-y-2">
+                <textarea
+                  value={staffReply}
+                  onChange={e => setStaffReply(e.target.value)}
+                  placeholder="住民へ送るメッセージを入力してください（担当職員名が自動的に先頭に追加されます）"
+                  rows={3}
+                  className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-green-300 resize-none"
+                />
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={handleLineReply}
+                    disabled={replySending || !staffReply.trim()}
+                    className="px-4 py-2 rounded-lg bg-green-600 text-white text-sm font-medium hover:bg-green-700 transition-colors disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed flex items-center gap-1.5"
+                  >
+                    {replySending ? '送信中…' : '📨 LINEで返信する'}
+                  </button>
+                  <span className="text-xs text-slate-400">
+                    送信先: {record.anonymousId}（LINE UserID確認済み）
+                  </span>
+                </div>
+                {/* 送信結果メッセージ */}
+                {replyResult && (
+                  <p className={`text-sm font-medium ${replyResult.ok ? 'text-green-700' : 'text-red-700'}`}>
+                    {replyResult.text}
+                  </p>
+                )}
+              </div>
+            ) : (
+              // LINE UserIDがない場合 → 返信不可を表示
+              <div className="bg-slate-50 rounded-lg px-3 py-2 flex items-center gap-2">
+                <span className="text-slate-400 text-sm">📵</span>
+                <p className="text-xs text-slate-500">
+                  この相談はLINE UserIDが未登録のため直接返信できません。
+                  電話やNotionフォームで対応してください。
+                </p>
+              </div>
+            )}
+          </div>
+
         </div>
       )}
     </div>
@@ -405,7 +524,7 @@ export default function KirishimaLineConsultationPage() {
           </p>
           <div className="mt-3 flex gap-2 flex-wrap">
             <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-teal-50 text-teal-700 border border-teal-200">
-              🏙️ 霧島市 RunWith — Sprint #87
+              🏙️ 霧島市 RunWith — Sprint #89
             </span>
             <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200">
               📊 Notion LINE相談ログ DB に蓄積
