@@ -408,6 +408,9 @@ export async function POST(req: NextRequest) {
     // Sprint #88-B: グループIDから自治体名を動的に取得
     const municipalityName = detectMunicipalityName(groupId)
 
+    // ★ デバッグ用ログ: Vercel Logs でユーザーIDとグループIDを確認できる
+    console.log(`[line-webhook] 受信 userId=${userId} groupId=${groupId ?? '（1対1）'} channel=${channel} municipality=${municipalityName}`)
+
     // ユーザーIDを匿名IDに変換（表示用）
     const anonymousId = toAnonymousId(userId)
 
