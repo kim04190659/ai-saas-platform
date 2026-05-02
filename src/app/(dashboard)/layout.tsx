@@ -72,7 +72,7 @@ function DashboardLayoutInner({
                 className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
               >
                 <MessageSquare size={20} />
-                RunWithアシスタント
+                AIアシスタント
               </button>
             </div>
           </header>
@@ -117,7 +117,7 @@ function DashboardLayoutInner({
                 className="flex items-center gap-2 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors"
               >
                 <MessageSquare size={20} />
-                RunWithアシスタント
+                AIアシスタント
               </button>
             </div>
           </header>
@@ -156,7 +156,7 @@ function DashboardLayoutInner({
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
             >
               <MessageSquare size={20} />
-              RunWithアシスタント
+              AIアシスタント
             </button>
           </div>
         </header>
