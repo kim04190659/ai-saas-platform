@@ -135,25 +135,18 @@ export async function GET(req: NextRequest) {
             sorts: [{ property: '受信日時', direction: 'descending' }],
           }
 
-          // ── フィルター構築（自治体名 + ステータスの組み合わせ対応）──
-          // 自治体名フィルター（必須：マルチテナント対応）
-          const municipalityFilter = {
-            property: '自治体名',
-            rich_text: { contains: municipality.shortName },
-          }
-
+          // ── フィルター構築（ステータスのみ）──
+          // 注意: LINE相談ログDBには現時点で「自治体名」プロパティがないため
+          // ステータスフィルターのみを適用する。
+          // 将来的にDBへ「自治体名」プロパティを追加した際に再度マルチテナント対応を行う。
+          // （参照: municipality.shortName = ${municipality.shortName}）
           if (statusFilter) {
-            // ステータス指定あり → 自治体名 AND ステータスの複合フィルター
             queryBody.filter = {
-              and: [
-                municipalityFilter,
-                { property: '対応状況', select: { equals: statusFilter } },
-              ],
+              property: '対応状況',
+              select: { equals: statusFilter },
             }
-          } else {
-            // ステータス指定なし → 自治体名のみでフィルタリング
-            queryBody.filter = municipalityFilter
           }
+          // ステータス指定なし → フィルターなし（全件取得）
 
           const res = await fetch(`${NOTION_API_BASE}/databases/${LINE_LOG_DB_ID}/query`, {
             method:  'POST',
