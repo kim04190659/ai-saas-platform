@@ -330,6 +330,50 @@ src/components/layout/ChatPanel.tsx  — ChatPanel 本体（Sprint #77 全面書
 
 ---
 
+## BCP確認ルール（Sprint #83〜 適用）
+
+### 大きな開発の区切りごとに必ず実施すること
+
+「大きな開発の区切り」とは以下のタイミングを指す：
+- 複数Sprintにまたがる機能追加が完了したとき
+- 新しい自治体を追加したとき
+- APIルートやDBスキーマに大きな変更を加えたとき
+- git push して Vercel へのデプロイが完了したとき
+
+### チェックリスト
+
+**① Notionバックアップ確認**
+```bash
+curl -X POST https://ai-saas-platform-gules.vercel.app/api/admin/notion-backup \
+  -H "Authorization: Bearer $CRON_SECRET"
+```
+- 全タスク（自治体数 × 3DB）が success: true であることを確認
+- または管理画面 `/admin/system-health` のバックアップ状態を目視確認
+
+**② Coolify（Mac mini）での動作確認**
+- Mac miniのターミナルで最新コードをCoolifyに再デプロイ（Coolify管理画面 → Deploy）
+- `curl -I http://coolify-host.orb.local` で HTTP/1.1 200 OK を確認
+- または `https://tubeless-premium-legal.ngrok-free.dev` でブラウザ確認（ngrok起動時のみ）
+
+**③ LINE Webhook BCP確認（Webhook関連変更時のみ）**
+```bash
+curl -X POST https://tubeless-premium-legal.ngrok-free.dev/api/line-webhook \
+  -H "Content-Type: application/json" \
+  -d '{"destination":"test","events":[]}'
+# → {"status":"ok","message":"LINE verify OK"} または {"error":"署名検証失敗"} が返れば疎通OK
+```
+
+### BCP環境の接続情報
+| 項目 | 値 |
+|------|-----|
+| Coolify管理画面 | `http://coolify-host.orb.local:8000` |
+| BCP URL（社内） | `http://coolify-host.orb.local` |
+| BCP URL（外部公開） | `https://tubeless-premium-legal.ngrok-free.dev` |
+| ngrok起動コマンド | `ngrok http --domain=tubeless-premium-legal.ngrok-free.dev http://coolify-host.orb.local` |
+| LINE Webhook BCP URL | `https://tubeless-premium-legal.ngrok-free.dev/api/line-webhook` |
+
+---
+
 ## Claude API（Haiku）利用ルール（最重要）
 
 ### モデル固定
