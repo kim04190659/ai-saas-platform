@@ -71,7 +71,7 @@ const MENU_GROUPS: MenuGroup[] = [
       {
         id:    'dashboard',
         label: 'WBダッシュボード',
-        href:  '/gyosei/dashboard?municipalityId=kirishima',
+        href:  '/kirishima/dashboard?municipalityId=kirishima',
         icon:  Home,
       },
       {

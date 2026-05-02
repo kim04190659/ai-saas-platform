@@ -38,7 +38,7 @@ const GROUPS = [
     color: 'border-teal-400',
     headColor: 'bg-teal-600',
     items: [
-      { href: '/gyosei/dashboard?municipalityId=kirishima', icon: Home,            label: 'WBダッシュボード',   desc: '市民・職員のWell-Beingを一元把握' },
+      { href: '/kirishima/dashboard?municipalityId=kirishima', icon: Home,            label: 'WBダッシュボード',   desc: '市民・職員のWell-Beingを一元把握' },
       { href: '/kirishima/line-consultation',               icon: MessageSquare,   label: '住民LINE相談',       desc: 'LINEで届いた相談を職員が対応管理' },
       { href: '/kirishima/touchpoints',                     icon: Users,           label: '住民タッチポイント', desc: 'チャネル別接触・SDL五軸満足度分析' },
     ],
