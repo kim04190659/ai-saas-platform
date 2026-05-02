@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.env
+# 実運用データは git に含めない（サンプルデータのみ含める）
+data/*/
+!data/kirishima/residents-stats.csv
+!data/kirishima/welfare-summary.csv
+!data/kirishima/fire-dispatch-stats.csv
