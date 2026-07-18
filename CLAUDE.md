@@ -416,6 +416,7 @@ src/components/layout/ChatPanel.tsx  — ChatPanel 本体(Sprint #77 全面書�
 - コードには必ず日本語コメントを入れる
 - 型チェックは `npx tsc --noEmit` で確認してから push
 - git push は Cowork sandbox からも実行可能(GitHub Device Flow認証を設定済み)。ただし本番相当のpush・force pushは、実行前に必ずYoshitakaに一言確認してから行う
+- `gh` コマンドはCowork sandboxにはインストールできない(配布元・`api.github.com`とも許可リストでブロックされているため)。リポジトリ作成・PR作成・Issue管理など`gh`が必要な操作は、YoshitakaのMacのターミナルから実行してもらう。Cowork側はコマンドを提示するところまでを担当する
 - Notionページ削除は必ず確認を取ること
 - 新自治体追加は必ず上記「マルチテナント設計方針」に従うこと
 
