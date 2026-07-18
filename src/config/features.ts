@@ -713,6 +713,14 @@ export const FEATURE_MODULES: FeatureModule[] = [
         status: 'active',
         description: '蓄積データをAIが横断分析し、議会向けレポート・政策提言書を自動ドラフト',
       },
+      // ── 結(YUI) 基盤連携：てつだって(personal-coarc)からのSignal ──
+      {
+        id: 'basic-signal-board',
+        label: '🔔 Signalボード',
+        href: '/gyosei/signal-board',
+        status: 'active',
+        description: '「てつだって」の会話から検知された生活状況の変化サインを、匿名化・集計した状態で表示（母数未達のカテゴリは件数非公開）',
+      },
     ],
   },
 

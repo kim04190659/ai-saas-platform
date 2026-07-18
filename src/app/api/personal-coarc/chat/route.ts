@@ -2,6 +2,8 @@
 // Notionの個人プロフィールを参照しながらClaudeがパーソナライズ回答を生成する
 
 import { NextRequest, NextResponse } from 'next/server'
+import { detectSignal } from '@/lib/signal-detector'
+import { saveSignal, hashInternalRef } from '@/lib/signal-store'
 
 const NOTION_API_BASE = 'https://api.notion.com/v1'
 const NOTION_VERSION  = '2022-06-28'
@@ -165,6 +167,20 @@ ${profile}
     appendChatToNotion(notionPageId, message, reply).catch(e =>
       console.error('[personal-coarc/chat] Notion追記失敗:', e)
     )
+
+    // Signal検知（結(YUI) 基盤 第一歩）
+    // 会話から生活状況の変化を検知し、検知できたら匿名化した上でSignalログDBに保存する。
+    // 検知・保存は非同期で行い、失敗してもチャット応答自体は止めない。
+    const notionApiKey = process.env.NOTION_API_KEY
+    if (notionApiKey) {
+      detectSignal(apiKey, message, reply)
+        .then(signal => {
+          if (!signal.detected) return
+          const internalRef = hashInternalRef(notionPageId)
+          return saveSignal(notionApiKey, signal, internalRef)
+        })
+        .catch(e => console.error('[personal-coarc/chat] Signal検知/保存失敗:', e))
+    }
 
     return NextResponse.json({ reply })
   } catch (err: unknown) {
