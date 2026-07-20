@@ -92,7 +92,7 @@ const getRich   = (p: NotionProps, k: string) =>
 
 // ─── リスクスコア算出 ─────────────────────────────────
 
-function calcRiskScore(record: {
+export function calcRiskScore(record: {
   status:        string
   occupation:    string
   householdType: string
@@ -143,7 +143,7 @@ function calcRiskScore(record: {
   return { score: clamped, factors }
 }
 
-function toRiskRank(score: number): 'HIGH' | 'MID' | 'LOW' {
+export function toRiskRank(score: number): 'HIGH' | 'MID' | 'LOW' {
   if (score >= 60) return 'HIGH'
   if (score >= 30) return 'MID'
   return 'LOW'
@@ -196,6 +196,61 @@ async function generateRecommendations(
 }
 
 // ─── メインハンドラ ─────────────────────────────────
+
+// ─── Pulse-native連携用: サマリーだけを返す軽量版 ──────
+//   【結(YUI)】Signal/Pulse基盤(⑤文化多様性と回復力)向け。
+//   AI提言は生成せず、リスク件数の集計だけを返す(コスト・速度優先)。
+//   既存のGETハンドラのロジックは変更せず、そのまま呼び出せる形で追加した。
+export async function fetchMigrationRiskSummary(
+  notionKey:      string,
+  municipalityId: string,
+): Promise<{ municipal: string; summary: MigrationRiskResponse['summary'] } | null> {
+  const municipality  = getMunicipalityById(municipalityId)
+  const municipalName = municipality?.shortName ?? municipalityId
+  const dbConf         = getMunicipalityDbConfig(municipalityId)
+
+  if (!dbConf?.migrationDbId) return null
+
+  const res = await fetch(`${NOTION_API}/databases/${dbConf.migrationDbId}/query`, {
+    method: 'POST',
+    headers: {
+      'Authorization':  `Bearer ${notionKey}`,
+      'Content-Type':   'application/json',
+      'Notion-Version': NOTION_VER,
+    },
+    body: JSON.stringify({
+      sorts:     [{ timestamp: 'created_time', direction: 'descending' }],
+      page_size: 50,
+    }),
+  })
+  if (!res.ok) return null
+
+  const data = await res.json()
+  const rows = (data.results ?? []) as Array<{ id: string; properties: NotionProps }>
+
+  const ranks = rows.map(r => {
+    const p          = r.properties
+    const status     = getSelect(p, '進捗ステータス') || getSelect(p, '定住状況')
+    const occupation = getSelect(p, '就農・就業状況')
+    const household  = getSelect(p, '世帯構成')
+    const subsidy    = getSelect(p, '定住補助金申請')
+    const motivation = getSelect(p, '移住動機')
+    const { score }  = calcRiskScore({ status, occupation, householdType: household, subsidyStatus: subsidy, motivation })
+    return { status, riskRank: toRiskRank(score) }
+  })
+
+  return {
+    municipal: municipalName,
+    summary: {
+      total:    ranks.length,
+      highRisk: ranks.filter(r => r.riskRank === 'HIGH').length,
+      midRisk:  ranks.filter(r => r.riskRank === 'MID').length,
+      lowRisk:  ranks.filter(r => r.riskRank === 'LOW').length,
+      settled:  ranks.filter(r => r.status === '定住確定').length,
+      dropped:  ranks.filter(r => r.status === '断念').length,
+    },
+  }
+}
 
 export async function GET(req: NextRequest) {
   const notionKey      = process.env.NOTION_API_KEY ?? ''

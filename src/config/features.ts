@@ -721,6 +721,13 @@ export const FEATURE_MODULES: FeatureModule[] = [
         status: 'active',
         description: '「てつだって」の会話から検知された生活状況の変化サインを、匿名化・集計した状態で表示（母数未達のカテゴリは件数非公開）',
       },
+      {
+        id: 'basic-wellbeing-board',
+        label: '🌱 地域Well-Beingダッシュボード',
+        href: '/gyosei/wellbeing-board',
+        status: 'active',
+        description: '財政健全化・移住定着リスクなど自治体の既存データと、てつだってのSignalをまとめて表示（結(YUI) GNH8領域基盤 第二歩）',
+      },
     ],
   },
 
