@@ -23,6 +23,7 @@ interface AggregatedCategory {
   category: SignalCategory
   dominantSeverity: 'info' | '注意' | '要対応'
   count: number | null
+  threshold: number
 }
 
 interface SignalBoardResponse {
@@ -69,9 +70,9 @@ export default function SignalBoardPage() {
         </h1>
         <p className="text-sm text-gray-500 mt-1">
           「てつだって」の会話から検知された、地域の小さな変化のサインです。
-          個人が特定できる情報は含まれておらず、一定数（母数
-          {data?.threshold ? `${data.threshold}件` : '規定数'}
-          ）以上集まったカテゴリのみ件数を表示します。
+          個人が特定できる情報は含まれておらず、カテゴリごとに定めた一定数
+          （母数5〜20件、機微度が高い内容ほど基準を高くしています）
+          以上集まったカテゴリのみ件数を表示します。
         </p>
       </div>
 
@@ -114,7 +115,7 @@ export default function SignalBoardPage() {
                   <span className="text-sm font-normal text-gray-400 ml-1">件</span>
                 </p>
               ) : (
-                <p className="text-sm text-gray-400">検知中（件数は非公開）</p>
+                <p className="text-sm text-gray-400">検知中（母数{cat.threshold}件未満のため非公開）</p>
               )}
             </div>
           ))}

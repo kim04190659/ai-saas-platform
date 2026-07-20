@@ -33,6 +33,7 @@ interface AggregatedCategory {
   category: string
   dominantSeverity: 'info' | '注意' | '要対応'
   count: number | null
+  threshold: number
 }
 
 interface WellbeingPulseResponse {
@@ -122,7 +123,8 @@ export default function WellbeingBoardPage() {
             てつだっての会話より(Signal)
           </h2>
           <p className="text-xs text-gray-400 mb-3">
-            母数{data.signalPulse.threshold}件未満のカテゴリは件数を表示せず「検知中」とだけ表示します。
+            カテゴリごとに定めた母数（5〜20件、機微度が高いほど高い基準）未満のカテゴリは、
+            件数を表示せず「検知中」とだけ表示します。
           </p>
           {data.signalPulse.categories.length === 0 ? (
             <div className="bg-gray-50 border border-gray-200 text-gray-500 text-sm rounded-lg p-6 text-center">
@@ -139,7 +141,7 @@ export default function WellbeingBoardPage() {
                       <span className="text-sm font-normal text-gray-400 ml-1">件</span>
                     </p>
                   ) : (
-                    <p className="text-sm text-gray-400 mt-2">検知中(件数は非公開)</p>
+                    <p className="text-sm text-gray-400 mt-2">検知中(母数{cat.threshold}件未満)</p>
                   )}
                 </div>
               ))}

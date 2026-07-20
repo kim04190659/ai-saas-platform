@@ -23,9 +23,27 @@ const NOTION_VER = '2022-06-28'
 // 🔔 Signalログ DB(結) のID(2026-07-18 作成)
 export const SIGNAL_DB_ID = '685537658bf545419264d58b2e3d30d4'
 
-// 公開に必要な最低母数(Notion「コミュニティサイズ理論」の匿名化下限5〜20人に合わせる)
-// 環境変数で調整可能にしておく(実証段階では小さめに、本番は大きめに)
-const K_ANONYMITY_THRESHOLD = Number(process.env.SIGNAL_K_THRESHOLD ?? '5')
+// カテゴリ別の匿名化閾値(母数) — Notion「ゴール設計原則」2026-07-20決定分
+//   機微度が高いカテゴリ(健康・お金)ほど閾値を高くし、
+//   機微度が低いカテゴリ(移動・外出)は閾値を低くする。
+//   一覧に無いカテゴリは中間的な値(10人)を既定値として使う。
+const CATEGORY_THRESHOLDS: Record<SignalCategory, number> = {
+  '健康・体調':    20, // 体調・服薬など最も機微度が高い
+  '経済・お金':    20, // 金銭状況は機微度が高い
+  '孤立・つながり': 10, // 心理面に関わるため中程度
+  '生活・家事':    10, // 生活全般、中程度
+  'その他':       10, // 分類しきれない内容のため中程度で保守的に扱う
+  '移動・外出':    5,  // 相対的に機微度が低い
+}
+
+// 結全体として「これより下回ってはいけない」絶対下限。
+// カテゴリ別の値がこれを下回ることはない(下限のみ結が保証し、上は運用側の裁量)。
+const ABSOLUTE_MINIMUM_THRESHOLD = Number(process.env.SIGNAL_K_THRESHOLD_MIN ?? '5')
+
+function getThresholdForCategory(category: SignalCategory): number {
+  const configured = CATEGORY_THRESHOLDS[category] ?? 10
+  return Math.max(configured, ABSOLUTE_MINIMUM_THRESHOLD)
+}
 
 // ─── 内部参照IDの生成 ────────────────────────────────
 // 個人のNotionページIDをそのまま持たず、一方向ハッシュにしてから保存する。
@@ -83,18 +101,21 @@ export interface AggregatedCategory {
   dominantSeverity: SignalSeverity
   /** k-匿名性を満たした場合のみ実数、満たさない場合は null(「検知中」表示用) */
   count: number | null
+  /** このカテゴリに適用された閾値(母数)。画面側で「あと何人で公開」等は出さないが、基準値の説明に使う */
+  threshold: number
 }
 
 export interface SignalBoardResponse {
   status: 'success' | 'error'
   message?: string
+  /** 結全体の絶対下限(カテゴリ別の値の参考値。個々の基準は各カテゴリのthresholdを見ること) */
   threshold: number
   generatedAt: string
   categories: AggregatedCategory[]
 }
 
 /**
- * 直近のSignalをカテゴリ別に集計し、母数がK_ANONYMITY_THRESHOLD以上のものだけ
+ * 直近のSignalをカテゴリ別に集計し、カテゴリごとの母数閾値以上のものだけ
  * 実数を返す(未満のカテゴリは count: null にして「検知中」であることだけ伝える)。
  */
 export async function fetchAggregatedSignals(notionKey: string): Promise<SignalBoardResponse> {
@@ -113,7 +134,7 @@ export async function fetchAggregatedSignals(notionKey: string): Promise<SignalB
     return {
       status: 'error',
       message: `Notionクエリ失敗: ${res.status}`,
-      threshold: K_ANONYMITY_THRESHOLD,
+      threshold: ABSOLUTE_MINIMUM_THRESHOLD,
       generatedAt: new Date().toISOString(),
       categories: [],
     }
@@ -140,16 +161,18 @@ export async function fetchAggregatedSignals(notionKey: string): Promise<SignalB
     const dominantSeverity = (v.severities['要対応'] ? '要対応'
       : v.severities['注意'] ? '注意'
       : 'info') as SignalSeverity
+    const threshold = getThresholdForCategory(category as SignalCategory)
     return {
       category: category as SignalCategory,
       dominantSeverity,
-      count: v.count >= K_ANONYMITY_THRESHOLD ? v.count : null,
+      count: v.count >= threshold ? v.count : null,
+      threshold,
     }
   })
 
   return {
     status: 'success',
-    threshold: K_ANONYMITY_THRESHOLD,
+    threshold: ABSOLUTE_MINIMUM_THRESHOLD,
     generatedAt: new Date().toISOString(),
     categories,
   }
