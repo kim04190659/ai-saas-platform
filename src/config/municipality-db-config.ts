@@ -150,6 +150,7 @@ export const MUNICIPALITY_DB_CONFIG: Record<string, MunicipalityDbConfig> = {
     coachingDbId:     '0cc71d5ee76244ad8a65a917be4f9fd3',  // 住民WBコーチングDB
     infraDbId:        '941dfec2baa445cb9f79475f801d0083',  // インフラ施設DB（Sprint #51）
     fiscalDbId:       '6b4381510d7f4182b5249284024f6622',  // 財政健全化指標DB（Sprint #52）
+    migrationDbId:    '09a57fe8825d41cbaf588d45b2be1cd0',  // 移住相談DB（結YUI Pulse-native連携・2026-07-20新設）
   },
 }
 
