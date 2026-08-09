@@ -33,6 +33,13 @@ const CARDS = [
     reqId: 'REQ-03',
     description: '論点に対する立場を非同期・低圧力で記録する（てつだってのUIパターンを転用）。',
   },
+  {
+    href: '/runwith/agreement/vision',
+    emoji: '🗺️',
+    title: '画面イメージ案（議論用）',
+    reqId: '仮説',
+    description: 'KPI×合意形成の接続案を静的モックで先出し。8/10 鯨本さんMTGのたたき台（未実装・全て仮データ）。',
+  },
 ]
 
 export default function AgreementHubPage() {

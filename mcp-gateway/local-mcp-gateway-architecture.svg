@@ -1,0 +1,151 @@
+<svg viewBox="0 0 780 620" xmlns="http://www.w3.org/2000/svg" role="img">
+  <title>ローカルMCPゲートウェイ アーキテクチャ</title>
+  <desc>オンプレミスデータをクラウドにアップロードせず、MCPサーバ経由でClaudeからアクセスする構成</desc>
+
+  <defs>
+    <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#6b7280"/>
+    </marker>
+    <marker id="arr-blue" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#3b82f6"/>
+    </marker>
+  </defs>
+
+  <rect width="780" height="620" fill="#f9fafb"/>
+
+  <!-- Title -->
+  <text x="390" y="28" text-anchor="middle" font-size="14" font-weight="700" fill="#111827" font-family="sans-serif">ローカルMCPゲートウェイ構成（オンプレ × クラウド連携）</text>
+
+  <!-- ===== CLOUD ZONE ===== -->
+  <rect x="10" y="44" width="760" height="110" rx="8" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1.5" stroke-dasharray="6,3"/>
+  <text x="20" y="62" font-size="10" font-weight="600" fill="#3b82f6" font-family="sans-serif">☁️ クラウド（Vercel / Anthropic）</text>
+
+  <rect x="30" y="70" width="120" height="72" rx="6" fill="#fff" stroke="#93c5fd" stroke-width="1.5"/>
+  <text x="90" y="92" text-anchor="middle" font-size="11" font-weight="700" fill="#1d4ed8" font-family="sans-serif">Claude</text>
+  <text x="90" y="107" text-anchor="middle" font-size="9" fill="#6b7280" font-family="sans-serif">AI推論エンジン</text>
+  <text x="90" y="120" text-anchor="middle" font-size="9" fill="#6b7280" font-family="sans-serif">（クラウド側）</text>
+  <text x="90" y="133" text-anchor="middle" font-size="9" fill="#9ca3af" font-family="sans-serif">回答のみ受信</text>
+
+  <rect x="180" y="70" width="120" height="72" rx="6" fill="#fff" stroke="#93c5fd" stroke-width="1.5"/>
+  <text x="240" y="92" text-anchor="middle" font-size="11" font-weight="700" fill="#1d4ed8" font-family="sans-serif">Notion</text>
+  <text x="240" y="107" text-anchor="middle" font-size="9" fill="#6b7280" font-family="sans-serif">ナレッジ蓄積</text>
+  <text x="240" y="120" text-anchor="middle" font-size="9" fill="#6b7280" font-family="sans-serif">（集計サマリーのみ）</text>
+  <text x="240" y="133" text-anchor="middle" font-size="9" fill="#9ca3af" font-family="sans-serif">生データは保存しない</text>
+
+  <rect x="330" y="70" width="120" height="72" rx="6" fill="#fff" stroke="#93c5fd" stroke-width="1.5"/>
+  <text x="390" y="92" text-anchor="middle" font-size="11" font-weight="700" fill="#1d4ed8" font-family="sans-serif">RunWith App</text>
+  <text x="390" y="107" text-anchor="middle" font-size="9" fill="#6b7280" font-family="sans-serif">Vercel / Next.js</text>
+  <text x="390" y="120" text-anchor="middle" font-size="9" fill="#6b7280" font-family="sans-serif">（職員・住民UI）</text>
+  <text x="390" y="133" text-anchor="middle" font-size="9" fill="#9ca3af" font-family="sans-serif">クエリ結果のみ表示</text>
+
+  <rect x="490" y="70" width="265" height="72" rx="6" fill="#fef3c7" stroke="#fbbf24" stroke-width="1"/>
+  <text x="622" y="90" text-anchor="middle" font-size="10" font-weight="700" fill="#92400e" font-family="sans-serif">🔑 設計原則</text>
+  <text x="502" y="107" font-size="9" fill="#78350f" font-family="sans-serif">・生データはオンプレから出ない</text>
+  <text x="502" y="120" font-size="9" fill="#78350f" font-family="sans-serif">・クラウドには「クエリ結果」のみ送信</text>
+  <text x="502" y="133" font-size="9" fill="#78350f" font-family="sans-serif">・個人情報は匿名化・集計後に連携</text>
+
+  <!-- ===== GATEWAY ZONE ===== -->
+  <rect x="10" y="170" width="760" height="190" rx="8" fill="#f0fdf4" stroke="#86efac" stroke-width="1.5" stroke-dasharray="6,3"/>
+  <text x="20" y="188" font-size="10" font-weight="600" fill="#16a34a" font-family="sans-serif">🖥️ Mac mini（Coolify） — ローカルMCPゲートウェイ</text>
+
+  <rect x="270" y="196" width="240" height="148" rx="8" fill="#fff" stroke="#4ade80" stroke-width="2"/>
+  <text x="390" y="216" text-anchor="middle" font-size="12" font-weight="700" fill="#15803d" font-family="sans-serif">MCPゲートウェイサーバ</text>
+  <text x="390" y="232" text-anchor="middle" font-size="9" fill="#6b7280" font-family="sans-serif">Node.js / TypeScript on Coolify</text>
+  <line x1="280" y1="240" x2="500" y2="240" stroke="#e5e7eb" stroke-width="1"/>
+
+  <rect x="282" y="248" width="100" height="28" rx="4" fill="#f0fdf4" stroke="#86efac" stroke-width="1"/>
+  <text x="332" y="261" text-anchor="middle" font-size="9" fill="#15803d" font-family="sans-serif">クエリルーター</text>
+  <text x="332" y="271" text-anchor="middle" font-size="8" fill="#6b7280" font-family="sans-serif">dept → adapter</text>
+
+  <rect x="392" y="248" width="100" height="28" rx="4" fill="#f0fdf4" stroke="#86efac" stroke-width="1"/>
+  <text x="442" y="261" text-anchor="middle" font-size="9" fill="#15803d" font-family="sans-serif">認証・認可</text>
+  <text x="442" y="271" text-anchor="middle" font-size="8" fill="#6b7280" font-family="sans-serif">API Key / JWT</text>
+
+  <rect x="282" y="284" width="100" height="28" rx="4" fill="#f0fdf4" stroke="#86efac" stroke-width="1"/>
+  <text x="332" y="297" text-anchor="middle" font-size="9" fill="#15803d" font-family="sans-serif">データアダプタ</text>
+  <text x="332" y="307" text-anchor="middle" font-size="8" fill="#6b7280" font-family="sans-serif">CSV/Excel/DB</text>
+
+  <rect x="392" y="284" width="100" height="28" rx="4" fill="#f0fdf4" stroke="#86efac" stroke-width="1"/>
+  <text x="442" y="297" text-anchor="middle" font-size="9" fill="#15803d" font-family="sans-serif">匿名化エンジン</text>
+  <text x="442" y="307" text-anchor="middle" font-size="8" fill="#6b7280" font-family="sans-serif">個人情報マスク</text>
+
+  <rect x="282" y="320" width="210" height="18" rx="4" fill="#dcfce7" stroke="#86efac" stroke-width="1"/>
+  <text x="387" y="333" text-anchor="middle" font-size="9" fill="#15803d" font-family="sans-serif">ngrok secure tunnel（既存）</text>
+
+  <text x="390" y="358" text-anchor="middle" font-size="9" fill="#6b7280" font-family="sans-serif">↕ HTTPS（暗号化）</text>
+
+  <!-- ===== ON-PREM ZONE ===== -->
+  <rect x="10" y="376" width="760" height="230" rx="8" fill="#fef2f2" stroke="#fca5a5" stroke-width="1.5" stroke-dasharray="6,3"/>
+  <text x="20" y="394" font-size="10" font-weight="600" fill="#dc2626" font-family="sans-serif">🏛️ オンプレミス（各機関）— データは外に出ない</text>
+
+  <rect x="22" y="402" width="108" height="88" rx="6" fill="#fff" stroke="#fca5a5" stroke-width="1.5"/>
+  <text x="76" y="420" text-anchor="middle" font-size="10" font-weight="700" fill="#991b1b" font-family="sans-serif">🏛️ 市役所各課</text>
+  <text x="76" y="436" text-anchor="middle" font-size="8" fill="#6b7280" font-family="sans-serif">住民台帳</text>
+  <text x="76" y="448" text-anchor="middle" font-size="8" fill="#6b7280" font-family="sans-serif">税務データ</text>
+  <text x="76" y="460" text-anchor="middle" font-size="8" fill="#6b7280" font-family="sans-serif">福祉・介護</text>
+  <text x="76" y="476" text-anchor="middle" font-size="8" fill="#9ca3af" font-family="sans-serif">Excel / 庁内DB</text>
+
+  <rect x="142" y="402" width="108" height="88" rx="6" fill="#fff" stroke="#fca5a5" stroke-width="1.5"/>
+  <text x="196" y="420" text-anchor="middle" font-size="10" font-weight="700" fill="#991b1b" font-family="sans-serif">🏫 学校</text>
+  <text x="196" y="436" text-anchor="middle" font-size="8" fill="#6b7280" font-family="sans-serif">児童生徒情報</text>
+  <text x="196" y="448" text-anchor="middle" font-size="8" fill="#6b7280" font-family="sans-serif">出欠・成績</text>
+  <text x="196" y="460" text-anchor="middle" font-size="8" fill="#6b7280" font-family="sans-serif">健康診断</text>
+  <text x="196" y="476" text-anchor="middle" font-size="8" fill="#9ca3af" font-family="sans-serif">独自システム</text>
+
+  <rect x="262" y="402" width="108" height="88" rx="6" fill="#fff" stroke="#fca5a5" stroke-width="1.5"/>
+  <text x="316" y="420" text-anchor="middle" font-size="10" font-weight="700" fill="#991b1b" font-family="sans-serif">🚒 消防</text>
+  <text x="316" y="436" text-anchor="middle" font-size="8" fill="#6b7280" font-family="sans-serif">出動記録</text>
+  <text x="316" y="448" text-anchor="middle" font-size="8" fill="#6b7280" font-family="sans-serif">危険物台帳</text>
+  <text x="316" y="460" text-anchor="middle" font-size="8" fill="#6b7280" font-family="sans-serif">建物情報</text>
+  <text x="316" y="476" text-anchor="middle" font-size="8" fill="#9ca3af" font-family="sans-serif">基幹システム</text>
+
+  <rect x="382" y="402" width="108" height="88" rx="6" fill="#fff" stroke="#fca5a5" stroke-width="1.5"/>
+  <text x="436" y="420" text-anchor="middle" font-size="10" font-weight="700" fill="#991b1b" font-family="sans-serif">🚔 警察</text>
+  <text x="436" y="436" text-anchor="middle" font-size="8" fill="#6b7280" font-family="sans-serif">地域安全情報</text>
+  <text x="436" y="448" text-anchor="middle" font-size="8" fill="#6b7280" font-family="sans-serif">事案統計</text>
+  <text x="436" y="460" text-anchor="middle" font-size="8" fill="#6b7280" font-family="sans-serif">（集計値のみ）</text>
+  <text x="436" y="476" text-anchor="middle" font-size="8" fill="#9ca3af" font-family="sans-serif">閲覧専用API</text>
+
+  <rect x="502" y="402" width="108" height="88" rx="6" fill="#fff" stroke="#fca5a5" stroke-width="1.5"/>
+  <text x="556" y="420" text-anchor="middle" font-size="10" font-weight="700" fill="#991b1b" font-family="sans-serif">🏥 病院</text>
+  <text x="556" y="436" text-anchor="middle" font-size="8" fill="#6b7280" font-family="sans-serif">稼働状況</text>
+  <text x="556" y="448" text-anchor="middle" font-size="8" fill="#6b7280" font-family="sans-serif">救急受入統計</text>
+  <text x="556" y="460" text-anchor="middle" font-size="8" fill="#6b7280" font-family="sans-serif">（匿名集計）</text>
+  <text x="556" y="476" text-anchor="middle" font-size="8" fill="#9ca3af" font-family="sans-serif">HL7 / CSV</text>
+
+  <rect x="622" y="402" width="148" height="88" rx="6" fill="#fff" stroke="#fca5a5" stroke-width="1.5"/>
+  <text x="696" y="420" text-anchor="middle" font-size="10" font-weight="700" fill="#991b1b" font-family="sans-serif">🏠 老人ホーム等</text>
+  <text x="696" y="436" text-anchor="middle" font-size="8" fill="#6b7280" font-family="sans-serif">入所者状況</text>
+  <text x="696" y="448" text-anchor="middle" font-size="8" fill="#6b7280" font-family="sans-serif">要介護統計</text>
+  <text x="696" y="460" text-anchor="middle" font-size="8" fill="#6b7280" font-family="sans-serif">（施設別集計）</text>
+  <text x="696" y="476" text-anchor="middle" font-size="8" fill="#9ca3af" font-family="sans-serif">Excel / 独自DB</text>
+
+  <rect x="22" y="502" width="748" height="18" rx="4" fill="#fee2e2" stroke="#fca5a5" stroke-width="1"/>
+  <text x="390" y="515" text-anchor="middle" font-size="9" fill="#dc2626" font-family="sans-serif">🔒 庁内LAN / 専用線（インターネット非接続）— データはここから出ない</text>
+
+  <text x="76" y="540" text-anchor="middle" font-size="8" fill="#6b7280" font-family="sans-serif">CSVアダプタ</text>
+  <text x="196" y="540" text-anchor="middle" font-size="8" fill="#6b7280" font-family="sans-serif">REST APIアダプタ</text>
+  <text x="316" y="540" text-anchor="middle" font-size="8" fill="#6b7280" font-family="sans-serif">DBアダプタ</text>
+  <text x="436" y="540" text-anchor="middle" font-size="8" fill="#6b7280" font-family="sans-serif">閲覧APIアダプタ</text>
+  <text x="556" y="540" text-anchor="middle" font-size="8" fill="#6b7280" font-family="sans-serif">HL7アダプタ</text>
+  <text x="696" y="540" text-anchor="middle" font-size="8" fill="#6b7280" font-family="sans-serif">Excelアダプタ</text>
+
+  <line x1="76" y1="490" x2="76" y2="534" stroke="#9ca3af" stroke-width="1" stroke-dasharray="3,2"/>
+  <line x1="196" y1="490" x2="196" y2="534" stroke="#9ca3af" stroke-width="1" stroke-dasharray="3,2"/>
+  <line x1="316" y1="490" x2="316" y2="534" stroke="#9ca3af" stroke-width="1" stroke-dasharray="3,2"/>
+  <line x1="436" y1="490" x2="436" y2="534" stroke="#9ca3af" stroke-width="1" stroke-dasharray="3,2"/>
+  <line x1="556" y1="490" x2="556" y2="534" stroke="#9ca3af" stroke-width="1" stroke-dasharray="3,2"/>
+  <line x1="696" y1="490" x2="696" y2="534" stroke="#9ca3af" stroke-width="1" stroke-dasharray="3,2"/>
+
+  <line x1="76" y1="545" x2="300" y2="375" stroke="#9ca3af" stroke-width="1" stroke-dasharray="3,2" marker-end="url(#arr)"/>
+  <line x1="316" y1="545" x2="350" y2="375" stroke="#9ca3af" stroke-width="1" stroke-dasharray="3,2" marker-end="url(#arr)"/>
+  <line x1="436" y1="545" x2="400" y2="375" stroke="#9ca3af" stroke-width="1" stroke-dasharray="3,2" marker-end="url(#arr)"/>
+  <line x1="556" y1="545" x2="450" y2="375" stroke="#9ca3af" stroke-width="1" stroke-dasharray="3,2" marker-end="url(#arr)"/>
+  <line x1="696" y1="545" x2="490" y2="375" stroke="#9ca3af" stroke-width="1" stroke-dasharray="3,2" marker-end="url(#arr)"/>
+
+  <line x1="320" y1="196" x2="90" y2="142" stroke="#3b82f6" stroke-width="1.5" marker-end="url(#arr-blue)"/>
+  <line x1="340" y1="196" x2="240" y2="142" stroke="#3b82f6" stroke-width="1.5" marker-end="url(#arr-blue)"/>
+  <line x1="390" y1="196" x2="390" y2="142" stroke="#3b82f6" stroke-width="1.5" marker-end="url(#arr-blue)"/>
+
+  <text x="195" y="178" text-anchor="middle" font-size="8" fill="#3b82f6" font-family="sans-serif">クエリ結果のみ</text>
+</svg>
