@@ -16,14 +16,15 @@
 //    - fetch は一切行わない（＝本番データを壊す心配がない）
 // =====================================================
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 // ── 仮の対象島リスト（沖縄35島のうち議論用に4島だけ例示） ──
+// prefCode / cityCode は総務省の全国地方公共団体コード（RESAS APIの引数と共通）
 const MOCK_ISLANDS = [
-  { id: 'yakushima', name: '屋久島町', note: '検証フェーズ（実証中）' },
-  { id: 'ishigaki',  name: '石垣市',   note: '仮説：中核候補' },
-  { id: 'yonaguni',  name: '与那国町', note: '仮説：小規模実証向き' },
-  { id: 'zamami',    name: '座間味村', note: '仮説：小規模実証向き' },
+  { id: 'yakushima', name: '屋久島町', note: '検証フェーズ（実証中）', prefCode: 46, cityCode: '46505' },
+  { id: 'ishigaki',  name: '石垣市',   note: '仮説：中核候補',         prefCode: 47, cityCode: '47207' },
+  { id: 'yonaguni',  name: '与那国町', note: '仮説：小規模実証向き',   prefCode: 47, cityCode: '47382' },
+  { id: 'zamami',    name: '座間味村', note: '仮説：小規模実証向き',   prefCode: 47, cityCode: '47354' },
 ]
 
 // ── 仮のKPIカード（特定指標に固定しない、という設計方針を反映） ──
@@ -89,6 +90,67 @@ const MOCK_PREDICTIONS = [
   { label: '対策B：観光船寄港枠を拡大', population: '5年後 約2,850人（-9%）', note: '財政は改善、定住効果は限定的と仮定' },
 ]
 
+// ── RESAS（地域経済分析システム）連携パネル ──
+// /api/resas 経由で、選択中の島の「総人口推移」を取得して表示する。
+// RESAS_API_KEY が未設定の環境では「未接続」と正直に表示する（ダミー値を実データのように見せない）。
+interface ResasState {
+  loading:      boolean
+  available:    boolean
+  reason?:      string
+  series?:      Array<{ year: number; value: number }>
+}
+
+function ResasPanel({ prefCode, cityCode }: { prefCode: number; cityCode: string }) {
+  const [state, setState] = useState<ResasState>({ loading: true, available: false })
+
+  useEffect(() => {
+    let cancelled = false
+    // 島の切り替え時は呼び出し元で key={island.id} を渡してコンポーネントごと
+    // 再マウントする方針にしているため、ここでは初期化のsetStateを行わない
+    fetch(`/api/resas?prefCode=${prefCode}&cityCode=${cityCode}`)
+      .then(res => res.json())
+      .then(json => { if (!cancelled) setState({ loading: false, ...json }) })
+      .catch(() => { if (!cancelled) setState({ loading: false, available: false, reason: '取得に失敗しました' }) })
+    return () => { cancelled = true }
+  }, [prefCode, cityCode])
+
+  if (state.loading) {
+    return <div className="ml-8 text-xs text-gray-400">📊 RESASデータ取得中...</div>
+  }
+
+  if (!state.available) {
+    return (
+      <div className="ml-8 border border-dashed border-gray-300 rounded-lg p-3 bg-gray-50 text-xs text-gray-500 leading-relaxed">
+        📊 RESAS（地域経済分析システム）連携：
+        {state.reason === 'RESAS_API_KEY未設定'
+          ? 'APIキー未設定のため未接続です。'
+          : `未接続（${state.reason ?? '不明なエラー'}）`}
+        <br />
+        無料の利用申請を
+        <a className="text-teal-600 underline mx-1" href="https://opendata.resas-portal.go.jp/form.html" target="_blank" rel="noreferrer">
+          RESAS APIポータル
+        </a>
+        で行い、取得したキーをVercelの環境変数 <code className="bg-gray-100 px-1 rounded">RESAS_API_KEY</code> に設定すると、この場所に実データ（総人口推移）が自動的に表示されます。
+      </div>
+    )
+  }
+
+  const max = Math.max(...(state.series ?? []).map(s => s.value), 1)
+  return (
+    <div className="ml-8 border border-gray-100 rounded-lg p-3 bg-gray-50">
+      <div className="text-xs text-gray-500 mb-2">📊 RESAS 総人口推移（実データ・出典：地域経済分析システム）</div>
+      <div className="flex items-end gap-3 h-20">
+        {state.series?.map(s => (
+          <div key={s.year} className="flex flex-col items-center gap-1">
+            <div className="w-6 bg-teal-400 rounded-t" style={{ height: `${(s.value / max) * 64}px` }} />
+            <span className="text-[10px] text-gray-400">{s.year}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 function SectionLabel({ no, title, sub }: { no: string; title: string; sub: string }) {
   return (
     <div className="mb-3">
@@ -146,6 +208,10 @@ export default function AgreementVisionPage() {
               <div className="text-[11px] text-gray-400 mt-1">出典：{k.source}</div>
             </div>
           ))}
+        </div>
+
+        <div className="mt-3">
+          <ResasPanel key={island.id} prefCode={island.prefCode} cityCode={island.cityCode} />
         </div>
       </section>
 
