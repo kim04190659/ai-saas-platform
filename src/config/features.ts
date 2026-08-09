@@ -1880,6 +1880,14 @@ export const FEATURE_MODULES: FeatureModule[] = [
         description: '離島経済新聞社など地域外パートナーとの役割分担・合意状況を管理。合意形成レイヤーの起点機能',
       },
       {
+        // Sprint #94: 合意形成レイヤー MVP — 論点タイムライン(REQ-02)
+        id: 'platform-agreement',
+        label: '🗣️ 合意形成レイヤー',
+        href: '/runwith/agreement',
+        status: 'active',
+        description: 'ステークホルダーマップ・論点タイムライン・非同期意見収集。立場のズレを可視化し合意形成を時系列で追跡する',
+      },
+      {
         id: 'platform-knowledge',
         label: '🧠 集合知ナレッジブラウザ',
         href: '/runwith/knowledge',
