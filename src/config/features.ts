@@ -1872,6 +1872,14 @@ export const FEATURE_MODULES: FeatureModule[] = [
         description: 'IT資産・システム構成情報を登録・参照管理。更新期限アラートで契約更改を見逃さない',
       },
       {
+        // Sprint #91: 合意形成レイヤー — 地域外パートナーの役割分担・合意状況管理
+        id: 'platform-partners',
+        label: '🤝 パートナー役割分担',
+        href: '/runwith/partners',
+        status: 'active',
+        description: '離島経済新聞社など地域外パートナーとの役割分担・合意状況を管理。合意形成レイヤーの起点機能',
+      },
+      {
         id: 'platform-knowledge',
         label: '🧠 集合知ナレッジブラウザ',
         href: '/runwith/knowledge',
